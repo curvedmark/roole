@@ -1,0 +1,26 @@
+#!/usr/bin/env node
+'use strict'
+
+var args = process.argv.slice(2)
+var json = {}
+
+var stdin = ''
+process.stdin.resume()
+process.stdin.setEncoding('utf8')
+process.stdin.on('data', function (chunk) {
+	stdin += chunk
+})
+process.stdin.on('end', function () {
+	args.forEach(function(arg) {
+		var i = arg.indexOf('=')
+		var key = arg.substr(0, i)
+		var value = arg.substr(i + 1)
+
+		if (value === '-')
+			value = stdin.replace(/\n$/, '')
+
+		json[key] = value
+	})
+
+	console.log(JSON.stringify(json))
+})

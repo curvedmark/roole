@@ -1,0 +1,36 @@
+{
+  "name": "roole",
+  "version": "0.1.0",
+  "description": "A language that compiles to CSS",
+  "keywords": [
+    "css",
+    "preprocessor",
+    "language",
+    "roole",
+    "style",
+    "stylesheet",
+    "compiler"
+  ],
+  "author": "Glen Huang <curvedmark@gmail.com>",
+  "main": "lib/roole",
+  "bin": "bin/roole",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/curvedmark/roole.git"
+  },
+  "scripts": {
+    "install": "make -s parser",
+    "update": "make -s parser",
+    "test": "make test"
+  },
+  "dependencies": {
+    "pegjs": "git://github.com/curvedmark/pegjs.git#dfe457d27d2a6e75868283c227ecad84f1b25119",
+    "async": "~0.1.22"
+  },
+  "devDependencies": {
+    "mocha": "~1.7.3",
+    "coffee-script": "~1.4.0",
+    "uglify-js": "~2.2.2",
+    "jscoverage": "~0.3.4"
+  }
+}

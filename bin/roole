@@ -1,0 +1,35 @@
+#!/usr/bin/env node
+
+var fs = require('fs')
+var async = require('async')
+var roole = require('../lib/roole')
+
+var filePaths = process.argv.slice(2)
+
+async.map(filePaths, function(filePath, callback) {
+	fs.readFile(filePath, 'utf8', function(error, fileContent) {
+		if (error)
+			return callback(error)
+
+		var options = {
+			filePath: filePath,
+			showInput: true
+		}
+
+		roole.compile(fileContent, options, function(error, output) {
+			if (error)
+				return callback(error)
+
+			callback(null, output)
+		})
+	})
+}, function(error, contents) {
+	if (error)
+		throw error
+
+	contents = contents.filter(function(content) {
+		return content
+	})
+
+	console.log(contents.join('\n\n'))
+})
