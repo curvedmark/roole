@@ -25,7 +25,8 @@
   },
   "dependencies": {
     "pegjs": "git://github.com/curvedmark/pegjs.git#dfe457d27d2a6e75868283c227ecad84f1b25119",
-    "async": "~0.1.22"
+    "async": "~0.1.22",
+    "mustache": "~0.7.2"
   },
   "devDependencies": {
     "mocha": "~1.7.3",
