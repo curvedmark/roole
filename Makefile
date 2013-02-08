@@ -140,7 +140,7 @@ dist/roole.min.js: \
 	dist/roole.min.js.mustache \
 	package.json
 
-	 $< $(word 2,$^) -cm | \
+	$< $(word 2,$^) -cm | \
 	 	$(word 3,$^) version=$(VERSION) content=- | \
 		$(word 4,$^) $(word 5,$^) >$@
 
