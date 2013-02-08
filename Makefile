@@ -79,8 +79,10 @@ parser: lib/parser/generatedParser.js
 lib/parser/generatedParser.js: \
 	lib/parser/grammar.pegjs \
 	node_modules/.bin/pegjs \
-	build/json build/mustache \
-	lib/parser/generatedParser.js.mustache
+	build/json \
+	build/mustache \
+	lib/parser/generatedParser.js.mustache \
+	node_modules/mustache
 
 	cat $< | \
 		$(word 2,$^) -e '' --allowed-start-rules root,selector,mediaQuery | \
@@ -149,7 +151,8 @@ browser-test: parser roole test/test.js
 test/test.js: \
 	build/commonjs-stripper \
 	test/assert.js \
-	node_modules/.bin/coffee $(TEST_FILES)
+	node_modules/.bin/coffee \
+	$(TEST_FILES)
 
 	$< $(word 2,$^) >$@
 	$< $(TEST_FILES) | $(word 3,$^) -sbp >>$@
