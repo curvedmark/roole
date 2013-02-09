@@ -80,10 +80,21 @@ test 'with multiple trailing ;', ->
 		}
 	'''
 
+test 'with multiple trailing ; interspersed with spaces', ->
+	assert.compileTo '''
+		body
+			margin: 0; ; padding: 0; ;  ;
+	''', '''
+		body {
+			margin: 0;
+			padding: 0;
+		}
+	'''
+
 test 'with trailing ; and !important', ->
 	assert.compileTo '''
 		body
-			margin: 0 !important;; padding: 0;
+			margin: 0 !important; padding: 0;
 	''', '''
 		body {
 			margin: 0 !important;
