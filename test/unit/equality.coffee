@@ -41,3 +41,13 @@ test 'isnt, false', ->
 			-foo: false;
 		}
 	'''
+
+test 'inclusive range isnt exclusive range', ->
+	assert.compileTo '''
+		body
+			-foo: 1..2 isnt 1...2
+	''', '''
+		body {
+			-foo: true;
+		}
+	'''
