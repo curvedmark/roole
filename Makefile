@@ -160,9 +160,11 @@ test/test.js: \
 node_modules/%:
 	npm install
 
+publish: lib/parser/generatedParser.js
+	npm publish
+
 clean:
 	rm -rf \
-		lib/parser/generatedParser.js \
 		coverage \
 		dist/roole.js \
 		dist/roole.min.js \

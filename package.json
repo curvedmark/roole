@@ -1,6 +1,6 @@
 {
   "name": "roole",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "A language that compiles to CSS",
   "keywords": [
     "css",
@@ -18,17 +18,12 @@
     "type": "git",
     "url": "git://github.com/curvedmark/roole.git"
   },
-  "scripts": {
-    "install": "make -s parser",
-    "update": "make -s parser",
-    "test": "make test"
-  },
   "dependencies": {
-    "pegjs": "git://github.com/curvedmark/pegjs.git#dfe457d27d2a6e75868283c227ecad84f1b25119",
-    "async": "~0.1.22",
-    "mustache": "~0.7.2"
+    "async": "~0.1.22"
   },
   "devDependencies": {
+    "pegjs": "git://github.com/curvedmark/pegjs.git#dfe457d27d2a6e75868283c227ecad84f1b25119",
+    "mustache": "~0.7.2",
     "mocha": "~1.7.3",
     "coffee-script": "~1.4.0",
     "uglify-js": "~2.2.2",
