@@ -18,6 +18,9 @@
     "type": "git",
     "url": "git://github.com/curvedmark/roole.git"
   },
+  "scripts": {
+    "test": "make test"
+  },
   "dependencies": {
     "async": "~0.1.22"
   },
