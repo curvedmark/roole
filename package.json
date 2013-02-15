@@ -1,6 +1,6 @@
 {
   "name": "roole",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "A language that compiles to CSS",
   "keywords": [
     "css",
@@ -22,7 +22,7 @@
     "test": "make test"
   },
   "dependencies": {
-    "async": "~0.1.22"
+    "mkdirp": "~0.3.4"
   },
   "devDependencies": {
     "pegjs": "git://github.com/curvedmark/pegjs.git#dfe457d27d2a6e75868283c227ecad84f1b25119",
