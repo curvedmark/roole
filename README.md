@@ -1,7 +1,7 @@
 Roole
 =====
 
-[![Build Status](https://travis-ci.org/curvedmark/roole.png)](https://travis-ci.org/curvedmark/roole)
+[![Build Status](https://travis-ci.org/curvedmark/roole.png?branch=master)](https://travis-ci.org/curvedmark/roole)
 
 Roole is a language that compiles to CSS.
 
