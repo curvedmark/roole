@@ -70,7 +70,8 @@ LIB_FILES = \
 	$(call method-files,compiler) \
 	lib/compiler/index.js \
 	lib/formatter.js \
-	lib/roole.js
+	lib/roole.js \
+	lib/browser.js
 
 VERSION = $(shell node -e "console.log(require('./package.json').version)")
 
