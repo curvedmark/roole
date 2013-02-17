@@ -1,7 +1,7 @@
 /**
  * Generated Parser
  *
- * This module parses the input code
+ * Parse the input code.
  */
 'use strict'
 
