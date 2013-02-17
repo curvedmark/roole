@@ -59,7 +59,7 @@ while (args.length) {
 }
 
 var options = {
-	showInput: true
+	prettyError: true
 }
 
 if (!files.length)
