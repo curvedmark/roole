@@ -38,7 +38,7 @@ test 'mixed-line properties', ->
 		}
 	'''
 
-test 'started property', ->
+test 'starred property', ->
 	assert.compileTo '''
 		body
 			*zoom: 1
