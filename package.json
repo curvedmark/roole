@@ -1,6 +1,6 @@
 {
   "name": "roole",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "A language that compiles to CSS",
   "keywords": [
     "css",
