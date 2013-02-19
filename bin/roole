@@ -6,117 +6,189 @@ var mkdirp = require('mkdirp')
 var roole = require('../lib/roole')
 
 var usage = [
-	'  Usage: roole [options] [file|dir ...]'                                      ,
-	''                                                                             ,
-	'  Description:'                                                               ,
-	''                                                                             ,
-	'    The roole utility reads the specified files, or the standard input if no' ,
-	'    files are specified, and compiles the input to CSS.'                      ,
-	''                                                                             ,
-	'    If directories are specified, all .roo files inside it are compiled.'     ,
-	''                                                                             ,
-	'    Compiled files are saved as .css files unless their output locations are' ,
-	'    specified using a colon:'                                                 ,
-	''                                                                             ,
-	'        roole /path/to/style.roo:/somewhere/else/style.css'                   ,
-	''                                                                             ,
-	'    This also applies to directories:'                                        ,
-	''                                                                             ,
-	'        roole roo:css'                                                        ,
-	''                                                                             ,
-	'    which compiles all .roo files inside roo/ to css/'                        ,
-	''                                                                             ,
-	'  Options:'                                                                   ,
-	''                                                                             ,
-	'    -f, --force    Create files even when compile to empty string'            ,
-	'    -v, --version  Display the version number'                                ,
-	'    -h, --help     Display this help message'                                 ,
+	'',
+	'  Usage: roole [options] [file|dir ...]',
+	'',
+	'  Options:',
+	'',
+	'    -p, --print      Output compiled CSS to stdout ' ,
+	'    -o, --out <dir>  Write compiled files to <dir>',
+	'    -w, --watch      Watch files and re-compile if changed',
+	'    -f, --force      Create files even when compile to empty string',
+	'    -v, --version    Display the version number',
+	'    -h, --help       Display this help message',
 ].join('\n')
 
+var options = {}
+var filePaths = []
+
 var args = process.argv.slice(2)
-var files = []
-
-var flag = {}
-
 while (args.length) {
 	var arg = args.shift()
 	switch (arg) {
 	case '-h':
 	case '--help':
 		console.log(usage)
-		process.exit(0)
+		process.exit(1)
 	case '-v':
 	case '--version':
 		console.log(roole.version)
-		process.exit(0)
+		process.exit(2)
+	case '-p':
+	case '--print':
+		options.print = true
+		break
+	case '-o':
+	case '--out':
+		options.out = args.shift()
+		break
+	case '-w':
+	case '--watch':
+		options.watch = true
+		break
 	case '-f':
 	case '--force':
-		flag.force = true
+		options.force = true
 		break
 	default:
-		files.push(arg)
+		filePaths.push(arg)
 	}
 }
 
-var options = {
-	prettyError: true
+if (!filePaths.length) {
+	compileStdin(function(content) {
+		console.log(content)
+	})
+	return
 }
 
-if (!files.length)
-	compileStdin()
-else
-	compileFiles(files)
+if (options.print) {
+	compileFiles(filePaths, function(files) {
+		var content = files
+			.filter(function(file) { return file.content })
+			.map(function(file) { return file.content })
+			.join('\n\n')
 
-function compileStdin() {
+		console.log(content)
+	})
+	return
+}
+
+writeFiles(filePaths, function(files) {
+	if (!options.watch)
+		return
+
+	files.forEach(function(file) {
+		watchFile(file.origPath)
+	})
+})
+
+function compileStdin(callback) {
 	var stdin = ''
 	process.stdin.setEncoding('utf8')
 	process.stdin.on('data', function(chunk){ stdin += chunk })
 	process.stdin.on('end', function(){
-		var out = roole.compile(stdin, options, function(error, css) {
+		roole.compile(stdin, options, function(error, css) {
 			if (error)
 				throw error
 
-			console.log(css)
+			callback(css)
 		})
 	})
 }
 
-function compileFiles(files) {
-	files.forEach(function(file) {
-		var paths = file.split(':')
-		var inputFile = paths[0]
+function writeFiles(filePaths, callback) {
+	compileFiles(filePaths, function(files) {
+		files.forEach(function(file) {
+			if (!options.force && !file.content) {
+				console.log('INFO: ' + inputFile + ' compiles to empty string, no file created')
+				return
+			}
+			fs.writeFileSync(file.path, file.content)
+		})
 
-		var stat = fs.statSync(inputFile)
+		callback(files)
+	})
+}
+
+function compileFiles(filePaths, callback) {
+	var outputFiles = []
+	var i = -1
+	var fileCount = 0
+	var length = filePaths.length
+	filePaths.forEach(function(filePath) {
+		var stat = fs.statSync(filePath)
 		if (stat.isFile()) {
-			var outputFile = paths[1] || inputFile.replace(/\.roo$|$/, '.css')
-			compileFile(inputFile, outputFile)
-		} else if (stat.isDirectory()) {
-			var files = fs.readdirSync(inputFile)
-			files.filter(function(file) {
-				return /\.roo$/.test(file)
-			}).forEach(function(file) {
-				var outputDir = paths[1] || inputFile
-				if (!fs.existsSync(outputDir)) mkdirp.sync(outputDir)
-				var outputFile = path.join(outputDir, file).replace(/\.roo$/, '.css')
+			var index = ++i
+			compileFile(filePath, function(file) {
+				outputFiles[index] = file
 
-				compileFile(path.join(inputFile, file), outputFile)
+				if (++fileCount === length)
+					callback(outputFiles)
+			})
+		} else if (stat.isDirectory()) {
+			var index = i += filePaths.length
+			compileDir(filePath, function(files) {
+				outputFiles = outputFiles.concat(files)
+
+				if (++fileCount === length)
+					callback(outputFiles)
 			})
 		}
 	})
 }
 
-function compileFile(inputFile, outputFile) {
-	var content = fs.readFileSync(inputFile, 'utf8')
-	options.filePath = inputFile
-	roole.compile(content, options, function(error, css) {
+function compileFile(filePath, callback) {
+	var fileContent = fs.readFileSync(filePath, 'utf8')
+
+	roole.compile(fileContent, {
+		prettyError: true,
+		filePath: filePath
+	}, function(error, css) {
 		if (error)
 			throw error
 
-		if (!flag.force && !css) {
-			console.log('INFO: ' + inputFile + ' compiles to empty string, no file created')
-			return
+		var outputFilePath = filePath.replace(/\.roo$|$/, '.css')
+		if (options.out) {
+			var dir = path.dirname(outputFilePath)
+			var base = path.basename(outputFilePath)
+			dir = dir.split(path.sep)
+			dir.shift()
+			dir = dir.join(path.sep)
+			dir = path.join(options.out, dir)
+			if (!fs.existsSync(dir))
+				mkdirp.sync(dir)
+			outputFilePath = path.join(dir, base)
 		}
 
-		fs.writeFileSync(outputFile, css)
+		callback({
+			path: outputFilePath,
+			origPath: filePath,
+			content: css
+		})
+	})
+}
+
+function compileDir(dirPath, callback) {
+	var filePaths = fs.readdirSync(dirPath)
+		.filter(function(filePath) {
+			return /\.roo$/.test(filePath)
+		})
+		.map(function(filePath) {
+			return path.join(dirPath, filePath)
+		})
+
+	compileFiles(filePaths, callback)
+}
+
+function watchFile(filePath) {
+	console.log('  watching', filePath)
+	fs.watchFile(filePath, {interval: 100}, function(curr, prev) {
+		if (curr.mtime > prev.mtime) {
+			writeFiles([filePath], function(files) {
+				var file = files[0]
+				console.log('  compiling', file.origPath, 'to', file.path)
+			})
+		}
 	})
 }
