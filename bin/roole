@@ -28,11 +28,11 @@ while (args.length) {
 	switch (arg) {
 	case '-h':
 	case '--help':
-		console.log(usage)
+		console.error(usage)
 		process.exit(1)
 	case '-v':
 	case '--version':
-		console.log(roole.version)
+		console.error(roole.version)
 		process.exit(2)
 	case '-p':
 	case '--print':
