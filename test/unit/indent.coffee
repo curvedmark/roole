@@ -46,3 +46,11 @@ test 'start with indent', ->
 			height: auto;
 		}
 	'''
+
+test 'start with indent, end with outdent', ->
+	assert.compileTo '''
+		\t@import url(example.com)
+		\t
+	''', '''
+		@import url(example.com);
+	'''
