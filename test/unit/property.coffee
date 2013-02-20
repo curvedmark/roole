@@ -101,3 +101,41 @@ test 'with trailing ; and !important', ->
 			padding: 0;
 		}
 	'''
+
+test 'multi-line values', ->
+	assert.compileTo '''
+		body
+			background:
+				url(a)
+				url(b)
+	''', '''
+		body {
+			background: url(a), url(b);
+		}
+	'''
+
+test 'mixed-line values', ->
+	assert.compileTo '''
+		body
+			background:
+				url(a)
+				url(b), url(c)
+				url(d)
+	''', '''
+		body {
+			background: url(a), url(b), url(c), url(d);
+		}
+	'''
+
+test 'multi-line values with !important', ->
+	assert.compileTo '''
+		body
+			background:
+				url(a)
+				url(b)
+				!important
+	''', '''
+		body {
+			background: url(a), url(b) !important;
+		}
+	'''
