@@ -101,7 +101,7 @@ function writeFiles(filePaths, callback) {
 	compileFiles(filePaths, function(files) {
 		files.forEach(function(file) {
 			if (!options.force && !file.content) {
-				console.log('INFO: ' + inputFile + ' compiles to empty string, no file created')
+				console.log('INFO: ' + file.origPath + ' compiles to empty string, no file created')
 				return
 			}
 			fs.writeFileSync(file.path, file.content)
