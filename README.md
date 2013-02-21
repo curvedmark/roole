@@ -1,4 +1,4 @@
-Roole
+![Roole](http://roole.org/img/logo.png)
 =====
 
 [![Build Status](https://travis-ci.org/curvedmark/roole.png?branch=master)](https://travis-ci.org/curvedmark/roole)
