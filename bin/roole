@@ -74,6 +74,15 @@ if (options.print) {
 	return
 }
 
+if (options.watch)
+	filePaths.forEach(function(filePath) {
+		var stat = fs.statSync(filePath)
+		if (stat.isDirectory() && filePath.slice(-1) !== '/')
+			filePath += '/'
+
+		console.log('  watching', filePath)
+	})
+
 writeFiles(filePaths, function(files) {
 	if (!options.watch)
 		return
@@ -182,7 +191,6 @@ function compileDir(dirPath, callback) {
 }
 
 function watchFile(filePath) {
-	console.log('  watching', filePath)
 	fs.watchFile(filePath, {interval: 100}, function(curr, prev) {
 		if (curr.mtime > prev.mtime) {
 			writeFiles([filePath], function(files) {
