@@ -122,7 +122,9 @@ function compileFile(file, callback) {
 }
 
 function writeFiles(files) {
-	files.forEach(writeFile)
+	files.forEach(function(file) {
+		writeFile(file)
+	})
 }
 
 function writeFile(file, watching) {
@@ -151,7 +153,9 @@ function watchFiles(files) {
 		console.log('  watching', filePath)
 	})
 
-	files.forEach(watchFile)
+	files.forEach(function(file) {
+		watchFile(file)
+	})
 }
 
 function watchFile(file) {
