@@ -22,11 +22,7 @@ if (!program.args.length) {
 	return
 }
 
-var filePaths = program.args
-var files = resolveFiles(filePaths)
-var watching = false
-
-compileFiles(files, function() {
+compileFiles(resolveFiles(program.args), function(files) {
 	if (program.print) {
 		var content = files
 			.filter(function(file) { return file.compiledContent })
@@ -39,17 +35,8 @@ compileFiles(files, function() {
 
 	writeFiles(files)
 
-	if (program.watch) {
-		filePaths.forEach(function(filePath) {
-			var stat = fs.statSync(filePath)
-			if (stat.isDirectory() && filePath.slice(-1) !== '/')
-				filePath += '/'
-
-			console.log('  watching', filePath)
-		})
+	if (program.watch)
 		watchFiles(files)
-		watching = true
-	}
 })
 
 function compileStdin(callback) {
@@ -138,7 +125,7 @@ function writeFiles(files) {
 	files.forEach(writeFile)
 }
 
-function writeFile(file) {
+function writeFile(file, watching) {
 	var dir = path.dirname(file.outputPath)
 	if (!fs.existsSync(dir))
 		mkdirp.sync(dir)
@@ -156,6 +143,14 @@ function writeFile(file) {
 }
 
 function watchFiles(files) {
+	program.args.forEach(function(filePath) {
+		var stat = fs.statSync(filePath)
+		if (stat.isDirectory() && filePath.slice(-1) !== '/')
+			filePath += '/'
+
+		console.log('  watching', filePath)
+	})
+
 	files.forEach(watchFile)
 }
 
@@ -164,6 +159,8 @@ function watchFile(file) {
 		if (curr.mtime <= prev.mtime)
 			return
 
-		compileFile(file, writeFile)
+		compileFile(file, function() {
+			writeFile(file, true)
+		})
 	})
 }
