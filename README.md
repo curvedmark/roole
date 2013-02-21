@@ -2,4 +2,4 @@
 
 [![Build Status](https://travis-ci.org/curvedmark/roole.png?branch=master)](https://travis-ci.org/curvedmark/roole)
 
-For detailed documntation, usage and examples, please visit [roole.org](http://roole.org)
+Visit [roole.org](http://roole.org) to see the documntation.
