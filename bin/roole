@@ -3,70 +3,31 @@
 var fs = require('fs')
 var path = require('path')
 var mkdirp = require('mkdirp')
+var program = require('commander')
 var roole = require('../lib/roole')
 
-var usage = [
-	'',
-	'  Usage: roole [options] [file|dir ...]',
-	'',
-	'  Options:',
-	'',
-	'    -p, --print      Output compiled CSS to stdout ' ,
-	'    -o, --out <dir>  Write compiled files to <dir>',
-	'    -w, --watch      Watch files and re-compile if changed',
-	'    -f, --force      Create files even when compile to empty string',
-	'    -v, --version    Display the version number',
-	'    -h, --help       Display this help message',
-].join('\n')
+program
+	.version(roole.version, '-v, --version')
+	.usage('[options] [file|dir ...]')
+	.option('-p, --print', 'Output compiled CSS to stdout')
+	.option('-o, --out <dir>', 'Write compiled files to <dir>')
+	.option('-w, --watch', 'Watch files and re-compile if changed')
+	.option('-f, --force', 'Create files even when compile to empty string')
+	.parse(process.argv)
 
-var options = {}
-var filePaths = []
-
-var args = process.argv.slice(2)
-while (args.length) {
-	var arg = args.shift()
-	switch (arg) {
-	case '-h':
-	case '--help':
-		console.error(usage)
-		process.exit(1)
-	case '-v':
-	case '--version':
-		console.error(roole.version)
-		process.exit(2)
-	case '-p':
-	case '--print':
-		options.print = true
-		break
-	case '-o':
-	case '--out':
-		options.out = args.shift()
-		break
-	case '-w':
-	case '--watch':
-		options.watch = true
-		break
-	case '-f':
-	case '--force':
-		options.force = true
-		break
-	default:
-		filePaths.push(arg)
-	}
-}
-
-if (!filePaths.length) {
+if (!program.args.length) {
 	compileStdin(function(content) {
 		console.log(content)
 	})
 	return
 }
 
+var filePaths = program.args
 var files = resolveFiles(filePaths)
 var watching = false
 
 compileFiles(files, function() {
-	if (options.print) {
+	if (program.print) {
 		var content = files
 			.filter(function(file) { return file.compiledContent })
 			.map(function(file) { return file.compiledContent })
@@ -78,7 +39,7 @@ compileFiles(files, function() {
 
 	writeFiles(files)
 
-	if (options.watch) {
+	if (program.watch) {
 		filePaths.forEach(function(filePath) {
 			var stat = fs.statSync(filePath)
 			if (stat.isDirectory() && filePath.slice(-1) !== '/')
@@ -96,7 +57,7 @@ function compileStdin(callback) {
 	process.stdin.setEncoding('utf8')
 	process.stdin.on('data', function(chunk){ stdin += chunk })
 	process.stdin.on('end', function(){
-		roole.compile(stdin, options, function(error, css) {
+		roole.compile(stdin, {prettyError: true}, function(error, css) {
 			if (error)
 				throw error
 
@@ -115,15 +76,15 @@ function resolveFiles(filePaths, dirPath) {
 				content: fs.readFileSync(filePath, 'utf8')
 			}
 
-			if (!options.out) {
+			if (!program.out) {
 				file.outputPath = file.path
 			} else {
 				if (!dirPath) {
 					var base = path.basename(file.path)
-					file.outputPath = path.join(options.out, base)
+					file.outputPath = path.join(program.out, base)
 				} else {
 					var subpath = path.relative(dirPath, file.path)
-					file.outputPath = path.join(options.out, subpath)
+					file.outputPath = path.join(program.out, subpath)
 				}
 			}
 			file.outputPath = file.outputPath.replace(/\.roo$|$/, '.css')
@@ -183,13 +144,13 @@ function writeFile(file) {
 		mkdirp.sync(dir)
 	fs.writeFileSync(file.outputPath, file.compiledContent)
 
-	if (!options.force && !file.compiledContent) {
-		if (!options.watch)
+	if (!program.force && !file.compiledContent) {
+		if (!program.watch)
 			console.log('INFO:', file.path, 'compiles to empty string, not writing to file')
 		else if (watching)
 			console.log('  compiled', file.path, 'to empty string, not writing to file')
 	} else {
-		if (options.watch && watching)
+		if (program.watch && watching)
 			console.log('  compiled', file.path, 'to', file.outputPath)
 	}
 }

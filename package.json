@@ -22,7 +22,8 @@
     "test": "make test"
   },
   "dependencies": {
-    "mkdirp": "~0.3.4"
+    "mkdirp": "~0.3.4",
+    "commander": "~1.1.1"
   },
   "devDependencies": {
     "pegjs": "git://github.com/curvedmark/pegjs.git#dfe457d27d2a6e75868283c227ecad84f1b25119",
