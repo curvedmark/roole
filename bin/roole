@@ -62,34 +62,33 @@ if (!filePaths.length) {
 	return
 }
 
-if (options.print) {
-	compileFiles(filePaths, function(files) {
+var files = resolveFiles(filePaths)
+var watching = false
+
+compileFiles(files, function() {
+	if (options.print) {
 		var content = files
-			.filter(function(file) { return file.content })
-			.map(function(file) { return file.content })
+			.filter(function(file) { return file.compiledContent })
+			.map(function(file) { return file.compiledContent })
 			.join('\n\n')
 
 		console.log(content)
-	})
-	return
-}
-
-if (options.watch)
-	filePaths.forEach(function(filePath) {
-		var stat = fs.statSync(filePath)
-		if (stat.isDirectory() && filePath.slice(-1) !== '/')
-			filePath += '/'
-
-		console.log('  watching', filePath)
-	})
-
-writeFiles(filePaths, function(files) {
-	if (!options.watch)
 		return
+	}
 
-	files.forEach(function(file) {
-		watchFile(file.origPath)
-	})
+	writeFiles(files)
+
+	if (options.watch) {
+		filePaths.forEach(function(filePath) {
+			var stat = fs.statSync(filePath)
+			if (stat.isDirectory() && filePath.slice(-1) !== '/')
+				filePath += '/'
+
+			console.log('  watching', filePath)
+		})
+		watchFiles(files)
+		watching = true
+	}
 })
 
 function compileStdin(callback) {
@@ -106,100 +105,104 @@ function compileStdin(callback) {
 	})
 }
 
-function writeFiles(filePaths, callback) {
-	compileFiles(filePaths, function(files) {
-		files.forEach(function(file) {
-			if (!options.force && !options.watch && !file.content) {
-				console.log('INFO: ' + file.origPath + ' compiles to empty string, not writing to file')
-				return
-			}
-			fs.writeFileSync(file.path, file.content)
-		})
-
-		callback(files)
-	})
-}
-
-function compileFiles(filePaths, callback) {
-	var outputFiles = []
-	var i = -1
-	var fileCount = 0
-	var length = filePaths.length
+function resolveFiles(filePaths, dirPath) {
+	var files = []
 	filePaths.forEach(function(filePath) {
 		var stat = fs.statSync(filePath)
 		if (stat.isFile()) {
-			var index = ++i
-			compileFile(filePath, function(file) {
-				outputFiles[index] = file
+			var file = {
+				path: filePath,
+				content: fs.readFileSync(filePath, 'utf8')
+			}
 
-				if (++fileCount === length)
-					callback(outputFiles)
-			})
+			if (!options.out) {
+				file.outputPath = file.path
+			} else {
+				if (!dirPath) {
+					var base = path.basename(file.path)
+					file.outputPath = path.join(options.out, base)
+				} else {
+					var subpath = path.relative(dirPath, file.path)
+					file.outputPath = path.join(options.out, subpath)
+				}
+			}
+			file.outputPath = file.outputPath.replace(/\.roo$|$/, '.css')
+
+			files.push(file)
 		} else if (stat.isDirectory()) {
-			var index = i += filePaths.length
-			compileDir(filePath, function(files) {
-				outputFiles = outputFiles.concat(files)
+			var dir = filePath
+			var filePaths = fs.readdirSync(dir)
+			filePaths = filePaths.map(function(filePath) {
+				return path.join(dir, filePath)
+			}).filter(function(filePath) {
+				var stat = fs.statSync(filePath)
+				if (stat.isFile())
+					return /\.roo$/.test(filePath)
 
-				if (++fileCount === length)
-					callback(outputFiles)
+				return stat.isDirectory()
 			})
+			files = files.concat(resolveFiles(filePaths, dirPath || filePath))
 		}
+	})
+	return files
+}
+
+function compileFiles(files, callback) {
+	var i = 0
+	var length = files.length
+
+	files.forEach(function(file) {
+		compileFile(file, function() {
+			if (++i === length)
+				callback(files)
+		})
 	})
 }
 
-function compileFile(filePath, callback) {
-	var fileContent = fs.readFileSync(filePath, 'utf8')
-
-	roole.compile(fileContent, {
+function compileFile(file, callback) {
+	roole.compile(file.content, {
 		prettyError: true,
-		filePath: filePath
+		filePath: file.path
 	}, function(error, css) {
 		if (error)
 			throw error
 
-		var outputFilePath = filePath.replace(/\.roo$|$/, '.css')
-		if (options.out) {
-			var dir = path.dirname(outputFilePath)
-			var base = path.basename(outputFilePath)
-			dir = dir.split(path.sep)
-			dir.shift()
-			dir = dir.join(path.sep)
-			dir = path.join(options.out, dir)
-			if (!fs.existsSync(dir))
-				mkdirp.sync(dir)
-			outputFilePath = path.join(dir, base)
-		}
+		file.compiledContent = css
 
-		callback({
-			path: outputFilePath,
-			origPath: filePath,
-			content: css
-		})
+		callback(file)
 	})
 }
 
-function compileDir(dirPath, callback) {
-	var filePaths = fs.readdirSync(dirPath)
-		.filter(function(filePath) {
-			return /\.roo$/.test(filePath)
-		})
-		.map(function(filePath) {
-			return path.join(dirPath, filePath)
-		})
-
-	compileFiles(filePaths, callback)
+function writeFiles(files) {
+	files.forEach(writeFile)
 }
 
-function watchFile(filePath) {
-	fs.watchFile(filePath, {interval: 100}, function(curr, prev) {
-		if (curr.mtime > prev.mtime) {
-			writeFiles([filePath], function(files) {
-				var file = files[0]
-				var output = options.force || file.content ?
-					file.path : 'empty string, not writing to file'
+function writeFile(file) {
+	var dir = path.dirname(file.outputPath)
+	if (!fs.existsSync(dir))
+		mkdirp.sync(dir)
+	fs.writeFileSync(file.outputPath, file.compiledContent)
 
-				console.log('  compiled', file.origPath, 'to', output)
-			})
-		}
+	if (!options.force && !file.compiledContent) {
+		if (!options.watch)
+			console.log('INFO:', file.path, 'compiles to empty string, not writing to file')
+		else if (watching)
+			console.log('  compiled', file.path, 'to empty string, not writing to file')
+	} else {
+		if (options.watch && watching)
+			console.log('  compiled', file.path, 'to', file.outputPath)
+	}
+}
+
+function watchFiles(files) {
+	files.forEach(watchFile)
+}
+
+function watchFile(file) {
+	fs.watchFile(file.path, {interval: 100}, function(curr, prev) {
+		if (curr.mtime <= prev.mtime)
+			return
+
+		compileFile(file, writeFile)
 	})
 }
