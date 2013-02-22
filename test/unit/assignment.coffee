@@ -2,7 +2,7 @@ assert = require '../assert'
 
 suite 'assignment'
 
-test 'variable is case-insensitive', ->
+test 'variables are case-sensitive', ->
 	assert.compileTo '''
 		$width = 960px
 		$Width = 480px
@@ -10,7 +10,7 @@ test 'variable is case-insensitive', ->
 			width: $width
 	''', '''
 		body {
-			width: 480px;
+			width: 960px;
 		}
 	'''
 
