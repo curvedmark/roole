@@ -360,3 +360,23 @@ test 'multi-line pseudo selector', ->
 			text-decoration: underline;
 		}
 	'''
+
+test 'functional pseudo selector', ->
+	assert.compileTo '''
+		a:nth-child(2n+1)
+			text-decoration: underline
+	''', '''
+		a:nth-child(2n+1) {
+			text-decoration: underline;
+		}
+	'''
+
+test 'functional pseudo selector with identifier', ->
+	assert.compileTo '''
+		a:nth-child(odd)
+			text-decoration: underline
+	''', '''
+		a:nth-child(odd) {
+			text-decoration: underline;
+		}
+	'''
