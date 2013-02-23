@@ -55,3 +55,14 @@ test 'nested rulesets, single-line', ->
 				padding: 0;
 			}
 	'''
+
+test '@import and ruleset, single-line', ->
+	assert.compileTo '''
+		@import url(file); body { margin: 0; }
+	''', '''
+		@import url(file);
+
+		body {
+			margin: 0;
+		}
+	'''
