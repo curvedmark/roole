@@ -82,6 +82,15 @@ test '@import and ruleset, single-line', ->
 		}
 	'''
 
+test 'assignment and ruleset, single-line', ->
+	assert.compileTo '''
+		body { $width = 960px; .container { width: $width } }
+	''', '''
+		body .container {
+			width: 960px;
+		}
+	'''
+
 test '@if and @else', ->
 	assert.compileTo '''
 		body {
