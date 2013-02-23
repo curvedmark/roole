@@ -44,6 +44,21 @@ test 'open brace in a different line, single-line', ->
 		}
 	'''
 
+test '@extend and property, single-line', ->
+	assert.compileTo '''
+		html { margin: 0 }
+		body { @extend html; padding: 0 }
+	''', '''
+		html,
+		body {
+			margin: 0;
+		}
+
+		body {
+			padding: 0;
+		}
+	'''
+
 test 'nested rulesets, single-line', ->
 	assert.compileTo '''
 		body { margin: 0; p { padding: 0 } }
