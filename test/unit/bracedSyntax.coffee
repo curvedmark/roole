@@ -66,3 +66,18 @@ test '@import and ruleset, single-line', ->
 			margin: 0;
 		}
 	'''
+
+test '@if and @else', ->
+	assert.compileTo '''
+		body {
+			@if (false) {
+				margin: 0
+			} @else {
+				margin: 1px
+			}
+		}
+	''', '''
+		body {
+			margin: 1px;
+		}
+	'''
