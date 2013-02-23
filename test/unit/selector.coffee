@@ -380,3 +380,13 @@ test 'functional pseudo selector with identifier', ->
 			text-decoration: underline;
 		}
 	'''
+
+test 'negation selector', ->
+	assert.compileTo '''
+		a:not(.link)
+			text-decoration: none
+	''', '''
+		a:not(.link) {
+			text-decoration: none;
+		}
+	'''
