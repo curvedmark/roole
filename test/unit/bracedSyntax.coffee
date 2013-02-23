@@ -87,6 +87,22 @@ test '@if and @else', ->
 		body {
 			@if (false) {
 				margin: 0
+			}
+			@else {
+				margin: 1px
+			}
+		}
+	''', '''
+		body {
+			margin: 1px;
+		}
+	'''
+
+test '@if and @else, compact', ->
+	assert.compileTo '''
+		body {
+			@if (false) {
+				margin: 0
 			} @else {
 				margin: 1px
 			}
