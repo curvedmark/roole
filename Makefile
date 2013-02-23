@@ -36,7 +36,7 @@ TEST_FILES = \
 	test/unit/prefix.coffee \
 	test/unit/keyframes.coffee \
 	test/unit/fontFace.coffee \
-	test/unit/braced-syntax.coffee
+	test/unit/bracedSyntax.coffee
 
 method-files = $(patsubst %,lib/$(1)/%.js,$(shell grep -oE "\./node/\w+" lib/$(1)/$(1).js))
 
