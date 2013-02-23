@@ -81,3 +81,12 @@ test '@if and @else', ->
 			margin: 1px;
 		}
 	'''
+
+test '@if and @else, single-line', ->
+	assert.compileTo '''
+		body { @if (false) { margin: 0 } @else { margin: 1px } }
+	''', '''
+		body {
+			margin: 1px;
+		}
+	'''
