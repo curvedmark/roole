@@ -4,8 +4,9 @@ suite 'range'
 
 test 'natural range', ->
 	assert.compileTo '''
-		body
-			-foo: 1..3
+		body {
+			-foo: 1..3;
+		}
 	''', '''
 		body {
 			-foo: 1 2 3;
@@ -14,8 +15,9 @@ test 'natural range', ->
 
 test 'natural exclusive range', ->
 	assert.compileTo '''
-		body
-			-foo: 1...3
+		body {
+			-foo: 1...3;
+		}
 	''', '''
 		body {
 			-foo: 1 2;
@@ -24,8 +26,9 @@ test 'natural exclusive range', ->
 
 test 'reversed range', ->
 	assert.compileTo '''
-		body
-			-foo: 3..1
+		body {
+			-foo: 3..1;
+		}
 	''', '''
 		body {
 			-foo: 3 2 1;
@@ -34,8 +37,9 @@ test 'reversed range', ->
 
 test 'reversed exclusive range', ->
 	assert.compileTo '''
-		body
-			-foo: 3...1
+		body {
+			-foo: 3...1;
+		}
 	''', '''
 		body {
 			-foo: 3 2;
@@ -44,8 +48,9 @@ test 'reversed exclusive range', ->
 
 test 'one number range', ->
 	assert.compileTo '''
-		body
-			-foo: 1..1
+		body {
+			-foo: 1..1;
+		}
 	''', '''
 		body {
 			-foo: 1;
@@ -54,8 +59,9 @@ test 'one number range', ->
 
 test 'empty range', ->
 	assert.compileTo '''
-		body
-			-foo: 1...1
+		body {
+			-foo: 1...1;
+		}
 	''', '''
 		body {
 			-foo: null;
@@ -64,8 +70,9 @@ test 'empty range', ->
 
 test 'percentage range', ->
 	assert.compileTo '''
-		body
-			-foo: 0%..2%
+		body {
+			-foo: 0%..2%;
+		}
 	''', '''
 		body {
 			-foo: 0% 1% 2%;
@@ -74,8 +81,9 @@ test 'percentage range', ->
 
 test 'dimension range', ->
 	assert.compileTo '''
-		body
-			-foo: 100px..102px
+		body {
+			-foo: 100px..102px;
+		}
 	''', '''
 		body {
 			-foo: 100px 101px 102px;
@@ -84,8 +92,9 @@ test 'dimension range', ->
 
 test 'mixed range', ->
 	assert.compileTo '''
-		body
-			-foo: 1px..3%
+		body {
+			-foo: 1px..3%;
+		}
 	''', '''
 		body {
 			-foo: 1px 2px 3px;
@@ -94,12 +103,14 @@ test 'mixed range', ->
 
 test 'start number must be numberic', ->
 	assert.failAt '''
-		body
-			-foo: a...3
+		body {
+			-foo: a...3;
+		}
 	''', 2, 8
 
 test 'end number must be numberic', ->
 	assert.failAt '''
-		body
-			-foo: 1..b
+		body {
+			-foo: 1..b;
+		}
 	''', 2, 11

@@ -4,8 +4,9 @@ suite 'identifier'
 
 test 'starting with a dash', ->
 	assert.compileTo '''
-		body
-			-webkit-box-sizing: border-box
+		body {
+			-webkit-box-sizing: border-box;
+		}
 	''', '''
 		body {
 			-webkit-box-sizing: border-box;
@@ -14,15 +15,17 @@ test 'starting with a dash', ->
 
 test 'not allow starting with double-dash', ->
 	assert.failAt '''
-		body
-			--webkit-box-sizing: border-box
+		body {
+			--webkit-box-sizing: border-box;
+		}
 	''', 2, 3
 
 test 'interpolate identifier', ->
 	assert.compileTo '''
-		$name = star
-		.icon-$name
-			float: left
+		$name = star;
+		.icon-$name {
+			float: left;
+		}
 	''', '''
 		.icon-star {
 			float: left;
@@ -31,9 +34,10 @@ test 'interpolate identifier', ->
 
 test 'interpolate number', ->
 	assert.compileTo '''
-		$num = 12
-		.icon-$num
-			float: left
+		$num = 12;
+		.icon-$num {
+			float: left;
+		}
 	''', '''
 		.icon-12 {
 			float: left;
@@ -42,9 +46,10 @@ test 'interpolate number', ->
 
 test 'interpolate string', ->
 	assert.compileTo '''
-		$name = 'star'
-		.icon-$name
-			float: left
+		$name = 'star';
+		.icon-$name {
+			float: left;
+		}
 	''', '''
 		.icon-star {
 			float: left;
@@ -53,9 +58,10 @@ test 'interpolate string', ->
 
 test 'interpolate list', ->
 	assert.compileTo '''
-		$name = star span
-		.icon-$name
-			float: left
+		$name = star span;
+		.icon-$name {
+			float: left;
+		}
 	''', '''
 		.icon-star span {
 			float: left;
@@ -64,19 +70,23 @@ test 'interpolate list', ->
 
 test 'not allow interpolating mixin', ->
 	assert.failAt '''
-		$name = @mixin
-			body
-				margin: auto
-		.icon-$name
-			float: left
-	''', 4, 7
+		$name = @mixin {
+			body {
+				margin: auto;
+			}
+		};
+		.icon-$name {
+			float: left;
+		}
+	''', 6, 7
 
 test 'interpolate multiple variables', ->
 	assert.compileTo '''
-		$size = big
-		$name = star
-		.icon-$size$name
-			float: left
+		$size = big;
+		$name = star;
+		.icon-$size$name {
+			float: left;
+		}
 	''', '''
 		.icon-bigstar {
 			float: left;
@@ -85,10 +95,11 @@ test 'interpolate multiple variables', ->
 
 test 'interpolation consists only two variables', ->
 	assert.compileTo '''
-		$prop = border
-		$pos = -left
-		body
-			$prop$pos: solid
+		$prop = border;
+		$pos = -left;
+		body {
+			$prop$pos: solid;
+		}
 	''', '''
 		body {
 			border-left: solid;
@@ -97,9 +108,10 @@ test 'interpolation consists only two variables', ->
 
 test 'braced interpolation', ->
 	assert.compileTo '''
-		$prop = border
-		body
-			{$prop}: solid
+		$prop = border;
+		body {
+			{$prop}: solid;
+		}
 	''', '''
 		body {
 			border: solid;
@@ -108,10 +120,11 @@ test 'braced interpolation', ->
 
 test 'contain dangling dash', ->
 	assert.compileTo '''
-		$prop = border
-		$pos = left
-		body
-			{$prop}-$pos: solid
+		$prop = border;
+		$pos = left;
+		body {
+			{$prop}-$pos: solid;
+		}
 	''', '''
 		body {
 			border-left: solid;
@@ -120,10 +133,11 @@ test 'contain dangling dash', ->
 
 test 'start with dangling dash', ->
 	assert.compileTo '''
-		$prefix = moz
-		$prop = box-sizing
-		body
-			-{$prefix}-$prop: border-box
+		$prefix = moz;
+		$prop = box-sizing;
+		body {
+			-{$prefix}-$prop: border-box;
+		}
 	''', '''
 		body {
 			-moz-box-sizing: border-box;

@@ -4,11 +4,14 @@ suite '@keyframes'
 
 test 'prefixed @keyframes', ->
 	assert.compileTo '''
-		@-webkit-keyframes name
-			0%
-				top: 0
-			100%
-				top: 100px
+		@-webkit-keyframes name {
+			0% {
+				top: 0;
+			}
+			100% {
+				top: 100px;
+			}
+		}
 	''', '''
 		@-webkit-keyframes name {
 			0% {
@@ -22,11 +25,14 @@ test 'prefixed @keyframes', ->
 
 test 'from to', ->
 	assert.compileTo '''
-		@-webkit-keyframes name
-			from
-				top: 0
-			to
-				top: 100px
+		@-webkit-keyframes name {
+			from {
+				top: 0;
+			}
+			to {
+				top: 100px;
+			}
+		}
 	''', '''
 		@-webkit-keyframes name {
 			from {
@@ -40,13 +46,17 @@ test 'from to', ->
 
 test 'keyframe selector list', ->
 	assert.compileTo '''
-		@-webkit-keyframes name
-			0%
-				top: 0
-			50%, 60%
-				top: 50px
-			100%
-				top: 100px
+		@-webkit-keyframes name {
+			0% {
+				top: 0;
+			}
+			50%, 60% {
+				top: 50px;
+			}
+			100% {
+				top: 100px;
+			}
+		}
 	''', '''
 		@-webkit-keyframes name {
 			0% {
@@ -63,11 +73,14 @@ test 'keyframe selector list', ->
 
 test 'unprefixed @keyframes', ->
 	assert.compileTo '''
-		@keyframes name
-			0%
-				top: 0
-			100%
-				top: 100px
+		@keyframes name {
+			0% {
+				top: 0;
+			}
+			100% {
+				top: 100px;
+			}
+		}
 	''', '''
 		@-webkit-keyframes name {
 			0% {
@@ -108,11 +121,14 @@ test 'unprefixed @keyframes', ->
 
 test 'contain property needs to be prefixed', ->
 	assert.compileTo '''
-		@keyframes name
-			from
-				border-radius: 0
-			to
-				border-radius: 10px
+		@keyframes name {
+			from {
+				border-radius: 0;
+			}
+			to {
+				border-radius: 10px;
+			}
+		}
 	''', '''
 		@-webkit-keyframes name {
 			from {

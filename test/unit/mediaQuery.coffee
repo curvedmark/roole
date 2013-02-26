@@ -5,9 +5,11 @@ suite 'media query'
 
 test 'media type', ->
 	assert.compileTo '''
-		@media print
-			body
-				width: auto
+		@media print {
+			body {
+				width: auto;
+			}
+		}
 	''', '''
 		@media print {
 			body {
@@ -18,9 +20,11 @@ test 'media type', ->
 
 test 'media type with prefix', ->
 	assert.compileTo '''
-		@media not screen
-			body
-				width: auto
+		@media not screen {
+			body {
+				width: auto;
+			}
+		}
 	''', '''
 		@media not screen {
 			body {
@@ -31,9 +35,11 @@ test 'media type with prefix', ->
 
 test 'media feature', ->
 	assert.compileTo '''
-		@media (max-width: 980px)
-			body
-				width: auto
+		@media (max-width: 980px) {
+			body {
+				width: auto;
+			}
+		}
 	''', '''
 		@media (max-width: 980px) {
 			body {
@@ -44,9 +50,11 @@ test 'media feature', ->
 
 test 'media feature without value', ->
 	assert.compileTo '''
-		@media (color)
-			body
-				width: auto
+		@media (color) {
+			body {
+				width: auto;
+			}
+		}
 	''', '''
 		@media (color) {
 			body {
@@ -57,9 +65,11 @@ test 'media feature without value', ->
 
 test 'media query', ->
 	assert.compileTo '''
-		@media only screen and (color)
-			body
-				width: auto
+		@media only screen and (color) {
+			body {
+				width: auto;
+			}
+		}
 	''', '''
 		@media only screen and (color) {
 			body {
@@ -70,10 +80,13 @@ test 'media query', ->
 
 test 'nest media query under media query', ->
 	assert.compileTo '''
-		@media screen
-			@media (color)
-				body
-					width: auto
+		@media screen {
+			@media (color) {
+				body {
+					width: auto;
+				}
+			}
+		}
 	''', '''
 		@media screen and (color) {
 			body {
@@ -84,10 +97,13 @@ test 'nest media query under media query', ->
 
 test 'nest media query list under media query', ->
 	assert.compileTo '''
-		@media screen
-			@media (max-width: 980px), (max-width: 560px)
-				body
-					width: auto
+		@media screen {
+			@media (max-width: 980px), (max-width: 560px) {
+				body {
+					width: auto;
+				}
+			}
+		}
 	''', '''
 		@media
 		screen and (max-width: 980px),
@@ -100,10 +116,13 @@ test 'nest media query list under media query', ->
 
 test 'nest media query under media query list', ->
 	assert.compileTo '''
-		@media screen, print
-			@media (max-width: 980px)
-				body
-					width: auto
+		@media screen, print {
+			@media (max-width: 980px) {
+				body {
+					width: auto;
+				}
+			}
+		}
 	''', '''
 		@media
 		screen and (max-width: 980px),
@@ -116,10 +135,13 @@ test 'nest media query under media query list', ->
 
 test 'nest media query list under media query list', ->
 	assert.compileTo '''
-		@media screen, print
-			@media (max-width: 980px), (max-width: 560px)
-				body
-					width: auto
+		@media screen, print {
+			@media (max-width: 980px), (max-width: 560px) {
+				body {
+					width: auto;
+				}
+			}
+		}
 	''', '''
 		@media
 		screen and (max-width: 980px),
@@ -134,19 +156,26 @@ test 'nest media query list under media query list', ->
 
 test 'deeply nest media query', ->
 	assert.compileTo '''
-		@media screen
-			body
-				width: auto
-				@media (color)
-					@media (monochrome)
-						height: auto
+		@media screen {
+			body {
+				width: auto;
+				@media (color) {
+					@media (monochrome) {
+						height: auto;
+					}
+				}
 
-				div
-					height: auto
+				div {
+					height: auto;
+				}
+			}
 
-			@media (monochrome)
-				p
-					margin: 0
+			@media (monochrome) {
+				p {
+					margin: 0;
+				}
+			}
+		}
 	''', '''
 		@media screen {
 			body {
@@ -170,10 +199,12 @@ test 'deeply nest media query', ->
 
 test 'interpolating media query', ->
 	assert.compileTo '''
-		$qry = 'not  screen'
-		@media $qry
-			body
-				width: auto
+		$qry = 'not  screen';
+		@media $qry {
+			body {
+				width: auto;
+			}
+		}
 	''', '''
 		@media not screen {
 			body {
@@ -184,10 +215,12 @@ test 'interpolating media query', ->
 
 test 'interpolating media query into media query', ->
 	assert.compileTo '''
-		$qry = '( max-width: 980px )'
-		@media screen and $qry
-			body
-				width: auto
+		$qry = '( max-width: 980px )';
+		@media screen and $qry {
+			body {
+				width: auto;
+			}
+		}
 	''', '''
 		@media screen and (max-width: 980px) {
 			body {
@@ -198,11 +231,13 @@ test 'interpolating media query into media query', ->
 
 test 'interpolating media query into media query list', ->
 	assert.compileTo '''
-		$qry1 = ' only screen  and (max-width: 980px) '
-		$qry2 = '(max-width: 560px)'
-		@media $qry1, $qry2
-			body
-				width: auto
+		$qry1 = ' only screen  and (max-width: 980px) ';
+		$qry2 = '(max-width: 560px)';
+		@media $qry1, $qry2 {
+			body {
+				width: auto;
+			}
+		}
 	''', '''
 		@media
 		only screen and (max-width: 980px),
@@ -215,10 +250,12 @@ test 'interpolating media query into media query list', ->
 
 test 'interpolating identifier', ->
 	assert.compileTo '''
-		$qry = screen
-		@media $qry
-			body
-				width: auto
+		$qry = screen;
+		@media $qry {
+			body {
+				width: auto;
+			}
+		}
 	''', '''
 		@media screen {
 			body {
@@ -229,18 +266,23 @@ test 'interpolating identifier', ->
 
 test 'not allow interpolating invalid media query', ->
 	assert.failAt '''
-		$qry = 'screen @'
-		@media $qry
-			body
-				width: auto
+		$qry = 'screen @';
+		@media $qry {
+			body {
+				width: auto;
+			}
+		}
 	''', 2, 8
 
 test 'allow nesting media type', ->
 	assert.compileTo '''
-		@media screen
-			@media not print
-				body
-					width: auto
+		@media screen {
+			@media not print {
+				body {
+					width: auto;
+				}
+			}
+		}
 	''', '''
 		@media screen and not print {
 			body {

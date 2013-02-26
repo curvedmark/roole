@@ -4,12 +4,14 @@ suite 'scope'
 
 test 'ruleset creates new scope', ->
 	assert.compileTo '''
-		$width = 980px
-		body
-			$width = 500px
-			width: $width
-		html
-			width: $width
+		$width = 980px;
+		body {
+			$width = 500px;
+			width: $width;
+		}
+		html {
+			width: $width;
+		}
 	''', '''
 		body {
 			width: 500px;
@@ -22,15 +24,18 @@ test 'ruleset creates new scope', ->
 
 test '@media creates new scope', ->
 	assert.compileTo '''
-		$width = 980px
+		$width = 980px;
 
-		@media screen
-			$width = 500px
-			body
-				width: $width
+		@media screen {
+			$width = 500px;
+			body {
+				width: $width;
+			}
+		}
 
-		html
-			width: $width
+		html {
+			width: $width;
+		}
 	''', '''
 		@media screen {
 			body {
@@ -46,17 +51,19 @@ test '@media creates new scope', ->
 test '@import does not create new scope', ->
 	assert.compileTo {
 		'base.roo': '''
-			$width = 500px
-			body
-				width: $width
+			$width = 500px;
+			body {
+				width: $width;
+			}
 		'''
 	}, '''
-		$width = 980px
+		$width = 980px;
 
-		@import 'base'
+		@import 'base';
 
-		html
-			width: $width
+		html {
+			width: $width;
+		}
 	''', '''
 		body {
 			width: 500px;
@@ -69,17 +76,21 @@ test '@import does not create new scope', ->
 
 test '@void creates new scope', ->
 	assert.compileTo '''
-		$width = 100px
-		@void
-			$width = 50px
-			.button
-				width: $width
+		$width = 100px;
+		@void {
+			$width = 50px;
+			.button {
+				width: $width;
+			}
+		}
 
-		#submit
-			@extend .button
+		#submit {
+			@extend .button;
+		}
 
-		#reset
-			width: $width
+		#reset {
+			width: $width;
+		}
 	''', '''
 		#submit {
 			width: 50px;
@@ -92,13 +103,16 @@ test '@void creates new scope', ->
 
 test '@block creates new scope', ->
 	assert.compileTo '''
-		$width = 980px
-		@block
-			$width = 500px
-			body
-				width: $width
-		html
-			width: $width
+		$width = 980px;
+		@block {
+			$width = 500px;
+			body {
+				width: $width;
+			}
+		}
+		html {
+			width: $width;
+		}
 	''', '''
 		body {
 			width: 500px;
@@ -111,13 +125,15 @@ test '@block creates new scope', ->
 
 test '@if does not create new scope', ->
 	assert.compileTo '''
-		$width = 980px
+		$width = 980px;
 
-		@if true
-			$width = 500px
+		@if true {
+			$width = 500px;
+		}
 
-		body
-			width: $width
+		body {
+			width: $width;
+		}
 	''', '''
 		body {
 			width: 500px;
@@ -126,13 +142,15 @@ test '@if does not create new scope', ->
 
 test '@for does not create new scope', ->
 	assert.compileTo '''
-		$width = 980px
+		$width = 980px;
 
-		@for $i in 1
-			$width = 500px
+		@for $i in 1 {
+			$width = 500px;
+		}
 
-		body
-			width: $width
+		body {
+			width: $width;
+		}
 	''', '''
 		body {
 			width: 500px;

@@ -4,11 +4,13 @@ suite 'mixin'
 
 test 'no params', ->
 	assert.compileTo '''
-		$mixin = @mixin
-			width: auto
+		$mixin = @mixin {
+			width: auto;
+		};
 
-		body
-			$mixin()
+		body {
+			$mixin();
+		}
 	''', '''
 		body {
 			width: auto;
@@ -17,29 +19,33 @@ test 'no params', ->
 
 test 'not allow undefined mixin', ->
 	assert.failAt '''
-		body
-			$mixin()
+		body {
+			$mixin();
+		}
 	''', 2, 2
 
 test 'not allow non-mixin to be called', ->
 	assert.failAt '''
-		$mixin = 0
+		$mixin = 0;
 
-		body
-			$mixin()
+		body {
+			$mixin();
+		}
 	''', 4, 2
 
 test 'call mixin multiple times', ->
 	assert.compileTo '''
-		$mixin = @mixin
-			body
-				width: $width
+		$mixin = @mixin {
+			body {
+				width: $width;
+			}
+		};
 
-		$width = 980px
-		$mixin()
+		$width = 980px;
+		$mixin();
 
-		$width = 500px
-		$mixin()
+		$width = 500px;
+		$mixin();
 	''', '''
 		body {
 			width: 980px;
@@ -52,11 +58,13 @@ test 'call mixin multiple times', ->
 
 test 'specify parameter', ->
 	assert.compileTo '''
-		$mixin = @mixin $width
-			body
-				width: $width
+		$mixin = @mixin $width {
+			body {
+				width: $width;
+			}
+		};
 
-		$mixin(980px)
+		$mixin(980px);
 	''', '''
 		body {
 			width: 980px;
@@ -65,12 +73,14 @@ test 'specify parameter', ->
 
 test 'specify default parameter', ->
 	assert.compileTo '''
-		$mixin = @mixin $width, $height = 100px
-			body
-				width: $width
-				height: $height
+		$mixin = @mixin $width, $height = 100px {
+			body {
+				width: $width;
+				height: $height;
+			}
+		};
 
-		$mixin(980px)
+		$mixin(980px);
 	''', '''
 		body {
 			width: 980px;
@@ -80,12 +90,14 @@ test 'specify default parameter', ->
 
 test 'under-specify arguments', ->
 	assert.compileTo '''
-		$mixin = @mixin $width, $height
-			body
-				width: $width
-				height: $height
+		$mixin = @mixin $width, $height {
+			body {
+				width: $width;
+				height: $height;
+			}
+		};
 
-		$mixin(980px)
+		$mixin(980px);
 	''', '''
 		body {
 			width: 980px;
@@ -95,12 +107,14 @@ test 'under-specify arguments', ->
 
 test 'under-specify arguments for default parameter', ->
 	assert.compileTo '''
-		$mixin = @mixin $width, $height = 300px
-			body
-				width: $width
-				height: $height
+		$mixin = @mixin $width, $height = 300px {
+			body {
+				width: $width;
+				height: $height;
+			}
+		};
 
-		$mixin()
+		$mixin();
 	''', '''
 		body {
 			width: null;

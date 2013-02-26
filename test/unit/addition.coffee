@@ -4,8 +4,9 @@ suite 'addition'
 
 test 'number + number', ->
 	assert.compileTo '''
-		body
-			-foo: 1 + 1
+		body {
+			-foo: 1 + 1;
+		}
 	''', '''
 		body {
 			-foo: 2;
@@ -14,8 +15,9 @@ test 'number + number', ->
 
 test 'number + percentage', ->
 	assert.compileTo '''
-		body
-			-foo: 1 + 1%
+		body {
+			-foo: 1 + 1%;
+		}
 	''', '''
 		body {
 			-foo: 2%;
@@ -24,37 +26,32 @@ test 'number + percentage', ->
 
 test 'number + dimension', ->
 	assert.compileTo '''
-		body
-			-foo: 1 + 1px
+		body {
+			-foo: 1 + 1px;
+		}
 	''', '''
 		body {
 			-foo: 2px;
 		}
 	'''
 
-test 'number + identifier', ->
-	assert.compileTo '''
-		body
-			-foo: 1 + id
-	''', '''
-		body {
-			-foo: 1id;
-		}
-	'''
-
 test 'number + mixin, not allowed', ->
 	assert.failAt '''
-		$mixin = @mixin
-			body
-				margin: 0
-		body
-			-foo: 1 + $mixin
-	''', 5, 8
+		$mixin = @mixin {
+			body {
+				margin: 0;
+			}
+		};
+		body {
+			-foo: 1 + $mixin;
+		}
+	''', 7, 8
 
 test 'number + string', ->
 	assert.compileTo '''
-		body
-			-foo: 1 + 'str'
+		body {
+			-foo: 1 + 'str';
+		}
 	''', '''
 		body {
 			-foo: '1str';
@@ -63,8 +60,9 @@ test 'number + string', ->
 
 test 'percentage + number', ->
 	assert.compileTo '''
-		body
-			-foo: 1% + 1
+		body {
+			-foo: 1% + 1;
+		}
 	''', '''
 		body {
 			-foo: 2%;
@@ -73,8 +71,9 @@ test 'percentage + number', ->
 
 test 'percentage + percentage', ->
 	assert.compileTo '''
-		body
-			-foo: 1% + 1%
+		body {
+			-foo: 1% + 1%;
+		}
 	''', '''
 		body {
 			-foo: 2%;
@@ -83,8 +82,9 @@ test 'percentage + percentage', ->
 
 test 'percentage + dimension', ->
 	assert.compileTo '''
-		body
-			-foo: 2% + 1px
+		body {
+			-foo: 2% + 1px;
+		}
 	''', '''
 		body {
 			-foo: 3%;
@@ -93,8 +93,9 @@ test 'percentage + dimension', ->
 
 test 'percentage + string', ->
 	assert.compileTo '''
-		body
-			-foo: 2% + 'str'
+		body {
+			-foo: 2% + 'str';
+		}
 	''', '''
 		body {
 			-foo: '2%str';
@@ -103,8 +104,9 @@ test 'percentage + string', ->
 
 test 'dimension + number', ->
 	assert.compileTo '''
-		body
-			-foo: 1px + 1
+		body {
+			-foo: 1px + 1;
+		}
 	''', '''
 		body {
 			-foo: 2px;
@@ -113,8 +115,9 @@ test 'dimension + number', ->
 
 test 'dimension + dimension', ->
 	assert.compileTo '''
-		body
-			-foo: 1px + 1px
+		body {
+			-foo: 1px + 1px;
+		}
 	''', '''
 		body {
 			-foo: 2px;
@@ -123,8 +126,9 @@ test 'dimension + dimension', ->
 
 test 'dimension + dimension, different units', ->
 	assert.compileTo '''
-		body
-			-foo: 1em + 1px
+		body {
+			-foo: 1em + 1px;
+		}
 	''', '''
 		body {
 			-foo: 2em;
@@ -133,8 +137,9 @@ test 'dimension + dimension, different units', ->
 
 test 'dimension + identifier', ->
 	assert.compileTo '''
-		body
-			-foo: 1px + id
+		body {
+			-foo: 1px + id;
+		}
 	''', '''
 		body {
 			-foo: 1pxid;
@@ -143,8 +148,9 @@ test 'dimension + identifier', ->
 
 test 'dimension + string', ->
 	assert.compileTo '''
-		body
-			-foo: 1px + 'str'
+		body {
+			-foo: 1px + 'str';
+		}
 	''', '''
 		body {
 			-foo: '1pxstr';
@@ -153,8 +159,9 @@ test 'dimension + string', ->
 
 test 'boolean + identifier', ->
 	assert.compileTo '''
-		body
-			-foo: true + id
+		body {
+			-foo: true + id;
+		}
 	''', '''
 		body {
 			-foo: trueid;
@@ -163,8 +170,9 @@ test 'boolean + identifier', ->
 
 test 'boolean + string', ->
 	assert.compileTo '''
-		body
-			-foo: true + 'str'
+		body {
+			-foo: true + 'str';
+		}
 	''', '''
 		body {
 			-foo: 'truestr';
@@ -173,8 +181,9 @@ test 'boolean + string', ->
 
 test 'identifier + number', ->
 	assert.compileTo '''
-		body
-			-foo: id + 1
+		body {
+			-foo: id + 1;
+		}
 	''', '''
 		body {
 			-foo: id1;
@@ -183,8 +192,9 @@ test 'identifier + number', ->
 
 test 'identifier + identifier', ->
 	assert.compileTo '''
-		body
-			-foo: -webkit + -moz
+		body {
+			-foo: -webkit + -moz;
+		}
 	''', '''
 		body {
 			-foo: -webkit-moz;
@@ -193,8 +203,9 @@ test 'identifier + identifier', ->
 
 test 'identifier + dimension', ->
 	assert.compileTo '''
-		body
-			-foo: id + 1px
+		body {
+			-foo: id + 1px;
+		}
 	''', '''
 		body {
 			-foo: id1px;
@@ -203,8 +214,9 @@ test 'identifier + dimension', ->
 
 test 'identifier + boolean', ->
 	assert.compileTo '''
-		body
-			-foo: id + true
+		body {
+			-foo: id + true;
+		}
 	''', '''
 		body {
 			-foo: idtrue;
@@ -213,8 +225,9 @@ test 'identifier + boolean', ->
 
 test 'identifier + str', ->
 	assert.compileTo '''
-		body
-			-foo: id + 'str'
+		body {
+			-foo: id + 'str';
+		}
 	''', '''
 		body {
 			-foo: 'idstr';
@@ -223,8 +236,9 @@ test 'identifier + str', ->
 
 test 'string + number', ->
 	assert.compileTo '''
-		body
-			-foo: 'str' + 1
+		body {
+			-foo: 'str' + 1;
+		}
 	''', '''
 		body {
 			-foo: 'str1';
@@ -233,8 +247,9 @@ test 'string + number', ->
 
 test 'string + percentage', ->
 	assert.compileTo '''
-		body
-			-foo: 'str' + 1%
+		body {
+			-foo: 'str' + 1%;
+		}
 	''', '''
 		body {
 			-foo: 'str1%';
@@ -243,8 +258,9 @@ test 'string + percentage', ->
 
 test 'string + dimension', ->
 	assert.compileTo '''
-		body
-			-foo: 'str' + 1px
+		body {
+			-foo: 'str' + 1px;
+		}
 	''', '''
 		body {
 			-foo: 'str1px';
@@ -253,8 +269,9 @@ test 'string + dimension', ->
 
 test 'string + boolean', ->
 	assert.compileTo '''
-		body
-			-foo: 'str' + false
+		body {
+			-foo: 'str' + false;
+		}
 	''', '''
 		body {
 			-foo: 'strfalse';
@@ -263,8 +280,9 @@ test 'string + boolean', ->
 
 test 'string + identifier', ->
 	assert.compileTo '''
-		body
-			-foo: 'str' + id
+		body {
+			-foo: 'str' + id;
+		}
 	''', '''
 		body {
 			-foo: 'strid';
@@ -273,8 +291,9 @@ test 'string + identifier', ->
 
 test 'string + string', ->
 	assert.compileTo '''
-		body
-			-foo: 'foo' + 'bar'
+		body {
+			-foo: 'foo' + 'bar';
+		}
 	''', '''
 		body {
 			-foo: 'foobar';
@@ -283,8 +302,9 @@ test 'string + string', ->
 
 test 'string + string, different quotes', ->
 	assert.compileTo '''
-		body
-			-foo: "foo" + 'bar'
+		body {
+			-foo: "foo" + 'bar';
+		}
 	''', '''
 		body {
 			-foo: "foobar";
@@ -293,8 +313,9 @@ test 'string + string, different quotes', ->
 
 test 'number+number', ->
 	assert.compileTo '''
-		body
-			-foo: 1+1
+		body {
+			-foo: 1+1;
+		}
 	''', '''
 		body {
 			-foo: 2;
@@ -303,8 +324,9 @@ test 'number+number', ->
 
 test 'number+ number', ->
 	assert.compileTo '''
-		body
-			-foo: 1+ 1
+		body {
+			-foo: 1+ 1;
+		}
 	''', '''
 		body {
 			-foo: 2;

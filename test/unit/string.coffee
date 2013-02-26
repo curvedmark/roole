@@ -4,8 +4,9 @@ suite 'string'
 
 test 'single-quoted string with escaped quote', ->
 	assert.compileTo '''
-		a
-			content: '"a\\''
+		a {
+			content: '"a\\'';
+		}
 	''', '''
 		a {
 			content: '"a\\'';
@@ -14,8 +15,9 @@ test 'single-quoted string with escaped quote', ->
 
 test 'empty single-quoted string', ->
 	assert.compileTo '''
-		a
-			content: ''
+		a {
+			content: '';
+		}
 	''', '''
 		a {
 			content: '';
@@ -24,8 +26,9 @@ test 'empty single-quoted string', ->
 
 test 'not interpolating single-quoted string', ->
 	assert.compileTo '''
-		a
-			content: 'a $var'
+		a {
+			content: 'a $var';
+		}
 	''', '''
 		a {
 			content: 'a $var';
@@ -34,8 +37,9 @@ test 'not interpolating single-quoted string', ->
 
 test 'double-quoted string with escaped quote', ->
 	assert.compileTo '''
-		a
-			content: "'a0\\""
+		a {
+			content: "'a0\\"";
+		}
 	''', '''
 		a {
 			content: "'a0\\"";
@@ -44,8 +48,9 @@ test 'double-quoted string with escaped quote', ->
 
 test 'empty double-quoted string', ->
 	assert.compileTo '''
-		a
-			content: ""
+		a {
+			content: "";
+		}
 	''', '''
 		a {
 			content: "";
@@ -54,9 +59,10 @@ test 'empty double-quoted string', ->
 
 test 'interpolate identifier', ->
 	assert.compileTo '''
-		$name = guest
-		a
-			content: "hello $name"
+		$name = guest;
+		a {
+			content: "hello $name";
+		}
 	''', '''
 		a {
 			content: "hello guest";
@@ -65,9 +71,10 @@ test 'interpolate identifier', ->
 
 test 'interpolate single-quoted string', ->
 	assert.compileTo '''
-		$name = 'guest'
-		a
-			content: "hello $name"
+		$name = 'guest';
+		a {
+			content: "hello $name";
+		}
 	''', '''
 		a {
 			content: "hello guest";
@@ -76,9 +83,10 @@ test 'interpolate single-quoted string', ->
 
 test 'interpolate double-quoted string', ->
 	assert.compileTo '''
-		$name = "guest"
-		a
-			content: "hello $name"
+		$name = "guest";
+		a {
+			content: "hello $name";
+		}
 	''', '''
 		a {
 			content: "hello guest";
@@ -87,9 +95,10 @@ test 'interpolate double-quoted string', ->
 
 test 'interpolate list', ->
 	assert.compileTo '''
-		$name = john doe
-		a
-			content: "hello $name"
+		$name = john doe;
+		a {
+			content: "hello $name";
+		}
 	''', '''
 		a {
 			content: "hello john doe";
@@ -98,18 +107,22 @@ test 'interpolate list', ->
 
 test 'not allow interpolating mixin', ->
 	assert.failAt '''
-		$name = @mixin
-			body
-				margin: auto
-		a
-			content: "hello $name"
-	''', 5, 18
+		$name = @mixin {
+			body {
+				margin: auto;
+			}
+		};
+		a {
+			content: "hello $name";
+		}
+	''', 7, 18
 
 test 'contain braced variable', ->
 	assert.compileTo '''
-		$chapter = 4
-		figcaption
-			content: "Figure {$chapter}-12"
+		$chapter = 4;
+		figcaption {
+			content: "Figure {$chapter}-12";
+		}
 	''', '''
 		figcaption {
 			content: "Figure 4-12";
@@ -118,8 +131,9 @@ test 'contain braced variable', ->
 
 test 'escape braced variable', ->
 	assert.compileTo '''
-		figcaption
-			content: "Figure \\{\\$chapter}-12"
+		figcaption {
+			content: "Figure \\{\\$chapter}-12";
+		}
 	''', '''
 		figcaption {
 			content: "Figure \\{\\$chapter}-12";
@@ -128,9 +142,10 @@ test 'escape braced variable', ->
 
 test 'contain braces but not variable', ->
 	assert.compileTo '''
-		$chapter = 4
-		figcaption
-			content: "Figure {chapter}-12"
+		$chapter = 4;
+		figcaption {
+			content: "Figure {chapter}-12";
+		}
 	''', '''
 		figcaption {
 			content: "Figure {chapter}-12";
@@ -139,9 +154,10 @@ test 'contain braces but not variable', ->
 
 test 'escape double quotes', ->
 	assert.compileTo '''
-		$str = '"\\""'
-		a
-			content: "$str"
+		$str = '"\\""';
+		a {
+			content: "$str";
+		}
 	''', '''
 		a {
 			content: "\\"\\"\\"";

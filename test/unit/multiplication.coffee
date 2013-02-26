@@ -4,8 +4,9 @@ suite 'multiplication'
 
 test 'number * number', ->
 	assert.compileTo '''
-		body
-			-foo: 1 * 2
+		body {
+			-foo: 1 * 2;
+		}
 	''', '''
 		body {
 			-foo: 2;
@@ -14,8 +15,9 @@ test 'number * number', ->
 
 test 'number * percentage', ->
 	assert.compileTo '''
-		body
-			-foo: 2 * 1%
+		body {
+			-foo: 2 * 1%;
+		}
 	''', '''
 		body {
 			-foo: 2%;
@@ -24,8 +26,9 @@ test 'number * percentage', ->
 
 test 'number * dimension', ->
 	assert.compileTo '''
-		body
-			-foo: 1 * 2px
+		body {
+			-foo: 1 * 2px;
+		}
 	''', '''
 		body {
 			-foo: 2px;
@@ -34,8 +37,9 @@ test 'number * dimension', ->
 
 test 'percentage * number', ->
 	assert.compileTo '''
-		body
-			-foo: 1% * 2
+		body {
+			-foo: 1% * 2;
+		}
 	''', '''
 		body {
 			-foo: 2%;
@@ -44,8 +48,9 @@ test 'percentage * number', ->
 
 test 'percentage * percentage', ->
 	assert.compileTo '''
-		body
-			-foo: 1% * 1%
+		body {
+			-foo: 1% * 1%;
+		}
 	''', '''
 		body {
 			-foo: 1%;
@@ -54,8 +59,9 @@ test 'percentage * percentage', ->
 
 test 'percentage * dimension', ->
 	assert.compileTo '''
-		body
-			-foo: 1% * 2px
+		body {
+			-foo: 1% * 2px;
+		}
 	''', '''
 		body {
 			-foo: 2%;
@@ -64,8 +70,9 @@ test 'percentage * dimension', ->
 
 test 'dimension * number', ->
 	assert.compileTo '''
-		body
-			-foo: 1px * 1
+		body {
+			-foo: 1px * 1;
+		}
 	''', '''
 		body {
 			-foo: 1px;
@@ -74,8 +81,9 @@ test 'dimension * number', ->
 
 test 'dimension * dimension', ->
 	assert.compileTo '''
-		body
-			-foo: 1px * 1px
+		body {
+			-foo: 1px * 1px;
+		}
 	''', '''
 		body {
 			-foo: 1px;
@@ -84,8 +92,9 @@ test 'dimension * dimension', ->
 
 test 'dimension * dimension, different units', ->
 	assert.compileTo '''
-		body
-			-foo: 1em * 2px
+		body {
+			-foo: 1em * 2px;
+		}
 	''', '''
 		body {
 			-foo: 2em;
@@ -94,8 +103,9 @@ test 'dimension * dimension, different units', ->
 
 test 'number*number', ->
 	assert.compileTo '''
-		body
-			-foo: 1*2
+		body {
+			-foo: 1*2;
+		}
 	''', '''
 		body {
 			-foo: 2;
@@ -104,8 +114,9 @@ test 'number*number', ->
 
 test 'number* number', ->
 	assert.compileTo '''
-		body
-			-foo: 1* 2
+		body {
+			-foo: 1* 2;
+		}
 	''', '''
 		body {
 			-foo: 2;
@@ -114,8 +125,9 @@ test 'number* number', ->
 
 test 'number *number', ->
 	assert.compileTo '''
-		body
-			-foo: 1 *2
+		body {
+			-foo: 1 *2;
+		}
 	''', '''
 		body {
 			-foo: 2;

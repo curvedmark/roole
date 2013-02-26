@@ -5,11 +5,12 @@ suite '@import'
 test 'import with string', ->
 	assert.compileTo {
 		'base.roo': '''
-			body
-				margin: 0
+			body {
+				margin: 0;
+			}
 		'''
 	}, '''
-		@import 'base'
+		@import 'base';
 	''', '''
 		body {
 			margin: 0;
@@ -18,28 +19,21 @@ test 'import with string', ->
 
 test 'import with url()', ->
 	assert.compileTo '''
-		@import url(base)
+		@import url(base);
 	''', '''
 		@import url(base);
 	'''
 
 test 'import with url starting with protocol', ->
 	assert.compileTo '''
-		@import 'http://example.com/style'
+		@import 'http://example.com/style';
 	''', '''
 		@import 'http://example.com/style';
 	'''
 
-test 'import with url end with .css', ->
-	assert.compileTo '''
-		@import 'style.css'
-	''', '''
-		@import 'style.css';
-	'''
-
 test 'import with media query', ->
 	assert.compileTo '''
-		@import 'base' screen
+		@import 'base' screen;
 	''', '''
 		@import 'base' screen;
 	'''
@@ -47,12 +41,14 @@ test 'import with media query', ->
 test 'nest under ruleset', ->
 	assert.compileTo {
 		'base.roo': '''
-			body
-				margin: 0
+			body {
+				margin: 0;
+			}
 		'''
 	}, '''
-		html
-			@import 'base'
+		html {
+			@import 'base';
+		}
 	''', '''
 		html body {
 			margin: 0;
@@ -62,17 +58,19 @@ test 'nest under ruleset', ->
 test 'recursively import', ->
 	assert.compileTo {
 		'reset.roo': '''
-			body
-				margin: 0
+			body {
+				margin: 0;
+			}
 		'''
 		'button.roo': '''
-			@import 'reset'
+			@import 'reset';
 
-			.button
-				display: inline-block
+			.button {
+				display: inline-block;
+			}
 		'''
 	}, '''
-		@import 'button'
+		@import 'button';
 	''', '''
 		body {
 			margin: 0;
@@ -86,24 +84,27 @@ test 'recursively import', ->
 test 'import same file multiple times', ->
 	assert.compileTo {
 		'reset.roo': '''
-			body
-				margin: 0
+			body {
+				margin: 0;
+			}
 		'''
 		'button.roo': '''
-			@import 'reset'
+			@import 'reset';
 
-			.button
-				display: inline-block
+			.button {
+				display: inline-block;
+			}
 		'''
 		'tabs.roo': '''
-			@import 'reset'
+			@import 'reset';
 
-			.tabs
-				overflow: hidden
+			.tabs {
+				overflow: hidden;
+			}
 		'''
 	}, '''
-		@import 'button'
-		@import 'tabs'
+		@import 'button';
+		@import 'tabs';
 	''', '''
 		body {
 			margin: 0;
@@ -121,17 +122,19 @@ test 'import same file multiple times', ->
 test 'recursively import files of the same directory', ->
 	assert.compileTo {
 		'tabs/tab.roo': '''
-			.tab
-				float: left
+			.tab {
+				float: left;
+			}
 		'''
-		'tabs/tabs.roo': '''
-			@import 'tab'
+		'tabs/index.roo': '''
+			@import 'tab';
 
-			.tabs
-				overflow: hidden
+			.tabs {
+				overflow: hidden;
+			}
 		'''
 	}, '''
-		@import 'tabs/tabs'
+		@import 'tabs/index';
 	''', '''
 		.tab {
 			float: left;
@@ -145,17 +148,19 @@ test 'recursively import files of the same directory', ->
 test 'recursively import files of different directories', ->
 	assert.compileTo {
 		'reset.roo': '''
-			body
-				margin: 0
+			body {
+				margin: 0;
+			}
 		'''
 		'tabs/index.roo': '''
-			@import '../reset'
+			@import '../reset';
 
-			.tabs
-				overflow: hidden
+			.tabs {
+				overflow: hidden;
+			}
 		'''
 	}, '''
-		@import 'tabs/index'
+		@import 'tabs/index';
 	''', '''
 		body {
 			margin: 0;
@@ -169,13 +174,14 @@ test 'recursively import files of different directories', ->
 test 'import empty file', ->
 	assert.compileTo {
 		'var.roo': '''
-			$width = 980px
+			$width = 980px;
 		'''
 	}, '''
-		@import 'var'
+		@import 'var';
 
-		body
-			width: $width
+		body {
+			width: $width;
+		}
 	''', '''
 		body {
 			width: 980px;
@@ -184,8 +190,8 @@ test 'import empty file', ->
 
 test 'not importing file with variables in the path', ->
 	assert.compileTo '''
-		$path = 'tabs'
-		@import $path
+		$path = 'tabs';
+		@import $path;
 	''', '''
 		@import 'tabs';
 	'''
@@ -193,9 +199,10 @@ test 'not importing file with variables in the path', ->
 test 'not allow importing file has syntax error', ->
 	assert.failAt {
 		'base.roo': '''
-			body @
-				margin: 0
+			body # {
+				margin: 0;
+			}
 		'''
 	}, '''
-		@import 'base'
-	''', 1, 6, 'base.roo'
+		@import 'base';
+	''', 1, 7, 'base.roo'

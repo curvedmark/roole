@@ -4,19 +4,24 @@ suite '@void'
 
 test 'unextended ruleset', ->
 	assert.compileTo '''
-		@void
-			body
-				width: auto
+		@void {
+			body {
+				width: auto;
+			}
+		}
 	''', ''
 
 test 'extended ruleset', ->
 	assert.compileTo '''
-		@void
-			.button
-				display: inline-block
+		@void {
+			.button {
+				display: inline-block;
+			}
+		}
 
-		#submit
-			@extend .button
+		#submit {
+			@extend .button;
+		}
 	''', '''
 		#submit {
 			display: inline-block;
@@ -24,18 +29,23 @@ test 'extended ruleset', ->
 	'''
 test 'extend ruleset inside @void', ->
 	assert.compileTo '''
-		@void
-			.button
-				display: inline-block
-				.icon
-					float: left
+		@void {
+			.button {
+				display: inline-block;
+				.icon {
+					float: left;
+				}
+			}
 
-			.large-button
-				@extend .button
-				display: block
+			.large-button {
+				@extend .button;
+				display: block;
+			}
+		}
 
-		#submit
-			@extend .large-button
+		#submit {
+			@extend .large-button;
+		}
 	''', '''
 		#submit {
 			display: inline-block;
@@ -51,19 +61,23 @@ test 'extend ruleset inside @void', ->
 
 test 'extend ruleset outside @void has no effect', ->
 	assert.compileTo '''
-		.button
-			display: inline-block
+		.button {
+			display: inline-block;
+		}
 
-		@void
-			.button
-				display: block
+		@void {
+			.button {
+				display: block;
+			}
 
-			.large-button
-				@extend .button
+			.large-button {
+				@extend .button;
+			}
+		}
 
-
-		#submit
-			@extend .large-button
+		#submit {
+			@extend .large-button;
+		}
 	''', '''
 		.button {
 			display: inline-block;
@@ -77,19 +91,23 @@ test 'extend ruleset outside @void has no effect', ->
 test 'nest @import under @void', ->
 	assert.compileTo {
 		'button.roo': '''
-			.button
-				display: inline-block
+			.button {
+				display: inline-block;
+			}
 
-			.large-button
-				@extend .button
-				width: 100px
+			.large-button {
+				@extend .button;
+				width: 100px;
+			}
 		'''
 	}, '''
-		@void
-			@import 'button'
+		@void {
+			@import 'button';
+		}
 
-		#submit
-			@extend .large-button
+		#submit {
+			@extend .large-button;
+		}
 	''', '''
 		#submit {
 			display: inline-block;

@@ -55,7 +55,10 @@ assert.failAt = function(imports, input, line, column, filePath) {
 	if (!filePath)
 		filePath = ''
 
-	var options = {imports: imports}
+	var options = {
+		imports: imports,
+		prettyError: true
+	}
 
 	roole.compile(input, options, function(error, css) {
 		if (!error)
@@ -66,14 +69,23 @@ assert.failAt = function(imports, input, line, column, filePath) {
 
 		called = true
 
-		if (error.line !== line)
-			throw new Error('error has line number ' + error.line + ' instead of ' + line)
+		if (error.line !== line) {
+			var message = 'error has line number ' + error.line + ' instead of ' + line
+			error.message = message + ':\n\n' + error.message
+			throw error
+		}
 
-		if (error.column !== column)
-			throw new Error('error has column number ' + error.column + ' instead of ' + column)
+		if (error.column !== column) {
+			var message = 'error has column number ' + error.column + ' instead of ' + column
+			error.message = message + ':\n\n' + error.message
+			throw error
+		}
 
-		if (error.filePath !== filePath)
-			throw new Error('error has file path ' + error.filePath + ' instead of ' + filePath)
+		if (error.filePath !== filePath) {
+			var message = 'error has file path ' + error.filePath + ' instead of ' + filePath
+			error.message = message + ':\n\n' + error.message
+			throw error
+		}
 	})
 
 	if (!called)

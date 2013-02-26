@@ -4,8 +4,9 @@ suite 'unary'
 
 test '+number', ->
 	assert.compileTo '''
-		body
-			-foo: +1
+		body {
+			-foo: +1;
+		}
 	''', '''
 		body {
 			-foo: 1;
@@ -14,8 +15,9 @@ test '+number', ->
 
 test '+percentage', ->
 	assert.compileTo '''
-		body
-			-foo: +1%
+		body {
+			-foo: +1%;
+		}
 	''', '''
 		body {
 			-foo: 1%;
@@ -24,8 +26,9 @@ test '+percentage', ->
 
 test '+dimension', ->
 	assert.compileTo '''
-		body
-			-foo: +1px
+		body {
+			-foo: +1px;
+		}
 	''', '''
 		body {
 			-foo: 1px;
@@ -34,14 +37,16 @@ test '+dimension', ->
 
 test '+string, not allowed', ->
 	assert.failAt '''
-		body
-			-foo: +'a'
+		body {
+			-foo: +'a';
+		}
 	''', 2, 8
 
 test '-number', ->
 	assert.compileTo '''
-		body
-			-foo: -1
+		body {
+			-foo: -1;
+		}
 	''', '''
 		body {
 			-foo: -1;
@@ -50,8 +55,9 @@ test '-number', ->
 
 test '-percentage', ->
 	assert.compileTo '''
-		body
-			-foo: -1%
+		body {
+			-foo: -1%;
+		}
 	''', '''
 		body {
 			-foo: -1%;
@@ -60,8 +66,9 @@ test '-percentage', ->
 
 test '-dimension', ->
 	assert.compileTo '''
-		body
-			-foo: -1px
+		body {
+			-foo: -1px;
+		}
 	''', '''
 		body {
 			-foo: -1px;

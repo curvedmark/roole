@@ -4,11 +4,13 @@ suite '@extend'
 
 test 'extend selector', ->
 	assert.compileTo '''
-		.button
-			display: inline-block
+		.button {
+			display: inline-block;
+		}
 
-		#submit
-			@extend .button
+		#submit {
+			@extend .button;
+		}
 	''', '''
 		.button,
 		#submit {
@@ -18,14 +20,17 @@ test 'extend selector', ->
 
 test 'ignore following selectors', ->
 	assert.compileTo '''
-		.button
-			display: inline-block
+		.button {
+			display: inline-block;
+		}
 
-		#submit
-			@extend .button
+		#submit {
+			@extend .button;
+		}
 
-		.button
-			display: block
+		.button {
+			display: block;
+		}
 	''', '''
 		.button,
 		#submit {
@@ -39,12 +44,15 @@ test 'ignore following selectors', ->
 
 test 'extend selector containing nested selector', ->
 	assert.compileTo '''
-		.button
-			.icon
-					display:block
+		.button {
+			.icon {
+				display:block;
+			}
+		}
 
-		#submit
-			@extend .button
+		#submit {
+			@extend .button;
+		}
 	''', '''
 		.button .icon,
 		#submit .icon {
@@ -54,13 +62,17 @@ test 'extend selector containing nested selector', ->
 
 test 'extend selector containing deeply nested selector', ->
 	assert.compileTo '''
-		.button
-			.icon
-				img
-					display:block
+		.button {
+			.icon {
+				img {
+					display:block;
+				}
+			}
+		}
 
-		#submit
-			@extend .button
+		#submit {
+			@extend .button;
+		}
 	''', '''
 		.button .icon img,
 		#submit .icon img {
@@ -70,12 +82,15 @@ test 'extend selector containing deeply nested selector', ->
 
 test 'extend compound selector', ->
 	assert.compileTo '''
-		.button
-			& .icon
-				float: left
+		.button {
+			& .icon {
+				float: left;
+			}
+		}
 
-		#submit .icon
-			@extend .button .icon
+		#submit .icon {
+			@extend .button .icon;
+		}
 	''', '''
 		.button .icon,
 		#submit .icon {
@@ -85,12 +100,15 @@ test 'extend compound selector', ->
 
 test 'extend selector containing nested & selector', ->
 	assert.compileTo '''
-		.button
-			& .icon
-				float: left
+		.button {
+			& .icon {
+				float: left;
+			}
+		}
 
-		#submit
-			@extend .button
+		#submit {
+			@extend .button;
+		}
 	''', '''
 		.button .icon,
 		#submit .icon {
@@ -100,11 +118,13 @@ test 'extend selector containing nested & selector', ->
 
 test 'extend selector with selector list', ->
 	assert.compileTo '''
-		.button .icon
-			float: left
+		.button .icon {
+			float: left;
+		}
 
-		#submit .icon, #reset .icon
-			@extend .button .icon
+		#submit .icon, #reset .icon {
+			@extend .button .icon;
+		}
 	''', '''
 		.button .icon,
 		#submit .icon,
@@ -115,15 +135,18 @@ test 'extend selector with selector list', ->
 
 test 'deeply extend selector', ->
 	assert.compileTo '''
-		.button
-			display: inline-block
+		.button {
+			display: inline-block;
+		}
 
-		.large-button
-			@extend .button
-			display: block
+		.large-button {
+			@extend .button;
+			display: block;
+		}
 
-		#submit
-			@extend .large-button
+		#submit {
+			@extend .large-button;
+		}
 	''', '''
 		.button,
 		.large-button,
@@ -139,12 +162,15 @@ test 'deeply extend selector', ->
 
 test 'extend selector under the same ruleset', ->
 	assert.compileTo '''
-		.button
-			.icon
-				float: left
+		.button {
+			.icon {
+				float: left;
+			}
 
-			.large-icon
-				@extend .button .icon
+			.large-icon {
+				@extend .button .icon;
+			}
+		}
 	''', '''
 		.button .icon,
 		.button .large-icon {
@@ -157,13 +183,16 @@ test 'extend selector under the same ruleset', ->
 # resulting in duplicate selectors is acceptable
 test 'extend self', ->
 	assert.compileTo '''
-		.button
-			.icon
-				float: left
+		.button {
+			.icon {
+				float: left;
+			}
 
-			.icon
-				@extend .button .icon
-				display: block
+			.icon {
+				@extend .button .icon;
+				display: block;
+			}
+		}
 	''', '''
 		.button .icon,
 		.button .icon {
@@ -178,14 +207,17 @@ test 'extend self', ->
 
 test 'extend by multiple selectors', ->
 	assert.compileTo '''
-		.button
-			display: inline-block
+		.button {
+			display: inline-block;
+		}
 
-		#submit
-			@extend .button
+		#submit {
+			@extend .button;
+		}
 
-		#reset
-			@extend .button
+		#reset {
+			@extend .button;
+		}
 	''', '''
 		.button,
 		#submit,
@@ -196,16 +228,19 @@ test 'extend by multiple selectors', ->
 
 test 'extend selector containing selector by multiple selectors', ->
 	assert.compileTo '''
-		.button
-			.icon
-				float: left
+		.button {
+			.icon {
+				float: left;
+			}
+		}
 
+		#submit {
+			@extend .button;
+		}
 
-		#submit
-			@extend .button
-
-		#reset
-			@extend .button
+		#reset {
+			@extend .button;
+		}
 	''', '''
 		.button .icon,
 		#submit .icon,
@@ -216,15 +251,19 @@ test 'extend selector containing selector by multiple selectors', ->
 
 test 'extend selector containg nested @media', ->
 	assert.compileTo '''
-		.button
-			display: inline-block
-			@media screen
-				display: block
-			@media print
-				display: none
+		.button {
+			display: inline-block;
+			@media screen {
+				display: block;
+			}
+			@media print {
+				display: none;
+			}
+		}
 
-		#submit
-			@extend .button
+		#submit {
+			@extend .button;
+		}
 	''', '''
 		.button,
 		#submit {
@@ -246,19 +285,25 @@ test 'extend selector containg nested @media', ->
 
 test 'extend selector nested under same @media', ->
 	assert.compileTo '''
-		.button
-			display: inline-block
+		.button {
+			display: inline-block;
+		}
 
-		@media print
-			.button
-				display: block
+		@media print {
+			.button {
+				display: block;
+			}
+		}
 
-		@media not screen
-			.button
-				display: block
+		@media not screen {
+			.button {
+				display: block;
+			}
 
-			#submit
-				@extend .button
+			#submit {
+				@extend .button;
+			}
+		}
 	''', '''
 		.button {
 			display: inline-block;
@@ -280,21 +325,29 @@ test 'extend selector nested under same @media', ->
 
 test 'extend selector nested under @media with same media query', ->
 	assert.compileTo '''
-		@media screen
-			.button
-				display: inline-block
+		@media screen {
+			.button {
+				display: inline-block;
+			}
 
-			@media (color), (monochrome)
-				.button
-					display: block
+			@media (color), (monochrome) {
+				.button {
+					display: block;
+				}
+			}
 
-			@media (color)
-				.button
-					display: inline-block
+			@media (color) {
+				.button {
+					display: inline-block;
+				}
+			}
+		}
 
-		@media screen and (color)
-			#submit
-				@extend .button
+		@media screen and (color) {
+			#submit {
+				@extend .button;
+			}
+		}
 	''', '''
 		@media screen {
 			.button {
@@ -318,17 +371,23 @@ test 'extend selector nested under @media with same media query', ->
 
 test 'ignore following @media', ->
 	assert.compileTo '''
-		@media screen and (color)
-			.button
-				display: inline-block
+		@media screen and (color) {
+			.button {
+				display: inline-block;
+			}
+		}
 
-		@media screen and (color)
-			#submit
-				@extend .button
+		@media screen and (color) {
+			#submit {
+				@extend .button;
+			}
+		}
 
-		@media screen and (color)
-			.button
-				display: block
+		@media screen and (color) {
+			.button {
+				display: block;
+			}
+		}
 	''', '''
 		@media screen and (color) {
 			.button,
@@ -347,14 +406,16 @@ test 'ignore following @media', ->
 test 'extend selector in the imported file', ->
 	assert.compileTo {
 		'button.roo': '''
-			.button
-				display: inline-block
+			.button {
+				display: inline-block;
+			}
 		'''
 	}, '''
-		@import 'button'
+		@import 'button';
 
-		#submit
-			@extend .button
+		#submit {
+			@extend .button;
+		}
 	''', '''
 		.button,
 		#submit {
@@ -365,15 +426,17 @@ test 'extend selector in the imported file', ->
 test 'not extending selector in the importing file', ->
 	assert.compileTo {
 		'button.roo': '''
-			#submit
-				@extend .button
-				display: block
+			#submit {
+				@extend .button;
+				display: block;
+			}
 		'''
 	}, '''
-		.button
-			display: inline-block
+		.button {
+			display: inline-block;
+		}
 
-		@import 'button'
+		@import 'button';
 	''', '''
 		.button {
 			display: inline-block;
