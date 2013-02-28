@@ -13,7 +13,31 @@ program
 	.option('-o, --out <dir>', 'Write compiled files to <dir>')
 	.option('-w, --watch', 'Watch files and re-compile if changed')
 	.option('-f, --force', 'Create files even when compile to empty string')
+	.option('    --prefix <names>', 'Use comma-seperated vendor names for prefixing')
+	.option('    --indent <str>', 'Indentation string to use in CSS')
+	.option('    --precision <num>', 'Max number of decimal digits to use in CSS')
+	.option('    --skip-prefixed', 'Skip rules that are already prefixed')
 	.parse(process.argv)
+
+var rooleOptions = {
+	prettyError: true
+}
+
+if ('prefix' in program) {
+	var prefixes = program.prefix.split(',')
+	prefixes = prefixes.map(function(prefix) {
+		return prefix.trim()
+	})
+	rooleOptions.prefix = prefixes
+}
+
+if ('indent' in program)
+	rooleOptions.indent = program.indent
+
+if ('precision' in program)
+	rooleOptions.precision = program.precision
+
+rooleOptions.skipPrefixed = program.skipPrefixed
 
 if (!program.args.length) {
 	compileStdin(function(content) {
@@ -45,7 +69,7 @@ function compileStdin(callback) {
 	process.stdin.setEncoding('utf8')
 	process.stdin.on('data', function(chunk){ stdin += chunk })
 	process.stdin.on('end', function(){
-		roole.compile(stdin, {prettyError: true}, function(error, css) {
+		roole.compile(stdin, rooleOptions, function(error, css) {
 			if (error)
 				throw error
 
@@ -109,10 +133,8 @@ function compileFiles(files, callback) {
 }
 
 function compileFile(file, callback) {
-	roole.compile(file.content, {
-		prettyError: true,
-		filePath: file.path
-	}, function(error, css) {
+	rooleOptions.filePath = file.path
+	roole.compile(file.content, rooleOptions, function(error, css) {
 		if (error)
 			throw error
 
