@@ -27,6 +27,7 @@ TEST_FILES = \
 	test/unit/media.coffee \
 	test/unit/import.coffee \
 	test/unit/extend.coffee \
+	test/unit/extendAll.coffee \
 	test/unit/void.coffee \
 	test/unit/if.coffee \
 	test/unit/for.coffee \
@@ -57,7 +58,7 @@ LIB_FILES = \
 	lib/extender/extender.js \
 	$(call method-files,extender) \
 	lib/extender/mediaFilter.js \
-	lib/extender/rulesetFilter.js \
+	lib/extender/selectorExtender.js \
 	lib/extender/rulesetExtender.js \
 	lib/extender/index.js \
 	lib/normalizer/normalizer.js \
