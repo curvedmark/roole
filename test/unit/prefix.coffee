@@ -81,3 +81,19 @@ test 'background with regular value', ->
 			background: #fff;
 		}
 	'''
+
+test 'skip prefixed property', ->
+	assert.compileTo '''
+		body {
+			-moz-box-sizing: padding-box;
+			box-sizing: border-box;
+		}
+	''', '''
+		body {
+			-moz-box-sizing: padding-box;
+			-webkit-box-sizing: border-box;
+			box-sizing: border-box;
+		}
+	''', {
+		skipPrefixed: true
+	}

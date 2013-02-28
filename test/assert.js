@@ -4,19 +4,21 @@ var roole = require('../lib/roole')
 
 var assert = exports
 
-assert.compileTo = function(imports, input, css) {
+assert.compileTo = function(imports, input, css, options) {
 	var called = false
 
 	if (typeof imports !== 'object') {
+		options = css
 		css = input
 		input = imports
 		imports = {}
 	}
 
-	var options = {
-		imports: imports,
-		prettyError: true
-	}
+	if (!options)
+		options = {}
+
+	options.imports = imports
+	options.prettyError = true
 
 	roole.compile(input, options, function(error, output) {
 		called = true
