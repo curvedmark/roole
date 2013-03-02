@@ -10,11 +10,32 @@ test 'extend simple selector', ->
 
 		#submit {
 			@extend-all .button;
+			border: 1px solid;
 		}
 	''', '''
 		.button.active,
 		#submit.active {
 			display: inline-block;
+		}
+
+		#submit {
+			border: 1px solid;
+		}
+	'''
+
+test 'extend multiple simple selectors', ->
+	assert.compileTo '''
+		.menu .menu {
+			position: absolute;
+		}
+
+		.my-menu {
+			@extend-all .menu;
+		}
+	''', '''
+		.menu .menu,
+		.my-menu .my-menu {
+			position: absolute;
 		}
 	'''
 
