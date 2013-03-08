@@ -13,10 +13,10 @@ program
 	.option('-o, --out <dir>', 'Write compiled files to <dir>')
 	.option('-w, --watch', 'Watch files and re-compile if changed')
 	.option('-f, --force', 'Create files even when compile to empty string')
-	.option('    --prefix <names>', 'Use comma-seperated vendor names for prefixing')
+	.option('    --prefix <names>', 'Comma-seperated vendor names to use for prefixing')
 	.option('    --indent <str>', 'Indentation string to use in CSS')
 	.option('    --precision <num>', 'Max number of decimal digits to use in CSS')
-	.option('    --skip-prefixed', 'Skip rules that are already prefixed')
+	.option('    --skip-prefixed', 'Not generate prefixed rule that already exists')
 	.parse(process.argv)
 
 var rooleOptions = {
