@@ -1,36 +1,36 @@
 {
-  "name": "roole",
-  "version": "0.3.1",
-  "description": "A language that compiles to CSS",
-  "keywords": [
-    "css",
-    "preprocessor",
-    "language",
-    "roole",
-    "style",
-    "stylesheet",
-    "compiler"
-  ],
-  "author": "Glen Huang <curvedmark@gmail.com>",
-  "main": "lib/roole",
-  "bin": "bin/roole",
-  "repository": {
-    "type": "git",
-    "url": "git://github.com/curvedmark/roole.git"
-  },
-  "scripts": {
-    "test": "make test"
-  },
-  "dependencies": {
-    "mkdirp": "~0.3.4",
-    "commander": "~1.1.1"
-  },
-  "devDependencies": {
-    "pegjs": "git://github.com/curvedmark/pegjs.git#dfe457d27d2a6e75868283c227ecad84f1b25119",
-    "mustache": "~0.7.2",
-    "mocha": "~1.8.1",
-    "coffee-script": "~1.5.0",
-    "uglify-js": "~2.2.2",
-    "jscoverage": "~0.3.4"
-  }
+	"name": "roole",
+	"version": "0.3.1",
+	"description": "A language that compiles to CSS",
+	"keywords": [
+		"css",
+		"preprocessor",
+		"language",
+		"roole",
+		"style",
+		"stylesheet",
+		"compiler"
+	],
+	"author": "Glen Huang <curvedmark@gmail.com>",
+	"main": "lib/roole",
+	"bin": "bin/roole",
+	"repository": {
+		"type": "git",
+		"url": "git://github.com/curvedmark/roole.git"
+	},
+	"scripts": {
+		"test": "make test"
+	},
+	"dependencies": {
+		"mkdirp": "0.3.x",
+		"commander": "1.x"
+	},
+	"devDependencies": {
+		"pegjs": "git://github.com/curvedmark/pegjs.git#dfe457d27d2a6e75868283c227ecad84f1b25119",
+		"mustache": "0.7.x",
+		"mocha": "1.x",
+		"coffee-script": "1.x",
+		"uglify-js": "2.x",
+		"jscoverage": "0.3.x"
+	}
 }
