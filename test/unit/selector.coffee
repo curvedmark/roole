@@ -62,6 +62,19 @@ test 'nest & selector under selector', ->
 		}
 	'''
 
+test 'nest & selector followed by identifier under selector', ->
+	assert.compileTo '''
+		.menu {
+			&-item {
+				width: auto;
+			}
+		}
+	''', '''
+		.menu-item {
+			width: auto;
+		}
+	'''
+
 test 'nest selector containing & selector under selector', ->
 	assert.compileTo '''
 		body {
