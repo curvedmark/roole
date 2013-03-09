@@ -164,6 +164,10 @@ test/test.js: \
 node_modules/%:
 	npm install
 
+JS_FILES = $(shell find lib -type f \( -name '*.js' ! -name 'generatedParser.js' \))
+lint: node_modules/.bin/jshint
+	$< bin/roole test/assert.js $(JS_FILES)
+
 publish: lib/parser/generatedParser.js
 	npm publish
 

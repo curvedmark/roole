@@ -1,10 +1,11 @@
 #!/usr/bin/env node
+'use strict';
 
-var fs = require('fs')
-var path = require('path')
-var mkdirp = require('mkdirp')
-var program = require('commander')
-var roole = require('../lib/roole')
+var fs = require('fs');
+var path = require('path');
+var mkdirp = require('mkdirp');
+var program = require('commander');
+var roole = require('../lib/roole');
 
 program
 	.version(roole.version, '-v, --version')
@@ -17,177 +18,175 @@ program
 	.option('    --indent <str>', 'Indentation string to use in CSS')
 	.option('    --precision <num>', 'Max number of decimal digits to use in CSS')
 	.option('    --skip-prefixed', 'Not generate prefixed rule that already exists')
-	.parse(process.argv)
+	.parse(process.argv);
 
 var rooleOptions = {
 	prettyError: true
-}
+};
 
 if ('prefix' in program) {
-	var prefixes = program.prefix.split(',')
+	var prefixes = program.prefix.split(',');
 	prefixes = prefixes.map(function(prefix) {
-		return prefix.trim()
-	})
-	rooleOptions.prefix = prefixes
+		return prefix.trim();
+	});
+	rooleOptions.prefix = prefixes;
 }
 
-if ('indent' in program)
-	rooleOptions.indent = program.indent
-
-if ('precision' in program)
-	rooleOptions.precision = program.precision
-
-rooleOptions.skipPrefixed = program.skipPrefixed
+if (program.indent != null) rooleOptions.indent = program.indent;
+if (program.precision != null) rooleOptions.precision = program.precision;
+if (program.skipPrefixed != null) rooleOptions.skipPrefixed = program.skipPrefixed;
 
 if (!program.args.length) {
 	compileStdin(function(content) {
-		console.log(content)
-	})
-	return
+		console.log(content);
+	});
+	return;
 }
 
 compileFiles(resolveFiles(program.args), function(files) {
 	if (program.print) {
 		var content = files
-			.filter(function(file) { return file.compiledContent })
-			.map(function(file) { return file.compiledContent })
-			.join('\n\n')
+			.filter(function(file) { return file.compiledContent; })
+			.map(function(file) { return file.compiledContent; })
+			.join('\n\n');
 
-		console.log(content)
-		return
+		console.log(content);
+		return;
 	}
 
-	writeFiles(files)
+	writeFiles(files);
 
 	if (program.watch)
-		watchFiles(files)
-})
+		watchFiles(files);
+});
 
 function compileStdin(callback) {
-	var stdin = ''
-	process.stdin.resume()
-	process.stdin.setEncoding('utf8')
-	process.stdin.on('data', function(chunk){ stdin += chunk })
+	var stdin = '';
+	process.stdin.resume();
+	process.stdin.setEncoding('utf8');
+	process.stdin.on('data', function(chunk){ stdin += chunk; });
 	process.stdin.on('end', function(){
 		roole.compile(stdin, rooleOptions, function(error, css) {
 			if (error)
-				throw error
+				throw error;
 
-			callback(css)
-		})
-	})
+			callback(css);
+		});
+	});
 }
 
 function resolveFiles(filePaths, dirPath) {
-	var files = []
+	var files = [];
 	filePaths.forEach(function(filePath) {
-		var stat = fs.statSync(filePath)
+		var stat = fs.statSync(filePath);
 		if (stat.isFile()) {
 			var file = {
 				path: filePath,
 				content: fs.readFileSync(filePath, 'utf8')
-			}
+			};
 
 			if (!program.out) {
-				file.outputPath = file.path
+				file.outputPath = file.path;
 			} else {
 				if (!dirPath) {
-					var base = path.basename(file.path)
-					file.outputPath = path.join(program.out, base)
+					var base = path.basename(file.path);
+					file.outputPath = path.join(program.out, base);
 				} else {
-					var subpath = path.relative(dirPath, file.path)
-					file.outputPath = path.join(program.out, subpath)
+					var subpath = path.relative(dirPath, file.path);
+					file.outputPath = path.join(program.out, subpath);
 				}
 			}
-			file.outputPath = file.outputPath.replace(/\.roo$|$/, '.css')
+			file.outputPath = file.outputPath.replace(/\.roo$|$/, '.css');
 
-			files.push(file)
+			files.push(file);
 		} else if (stat.isDirectory()) {
-			var dir = filePath
-			var filePaths = fs.readdirSync(dir)
+			var dir = filePath;
+			var filePaths = fs.readdirSync(dir);
 			filePaths = filePaths.map(function(filePath) {
-				return path.join(dir, filePath)
+				return path.join(dir, filePath);
 			}).filter(function(filePath) {
-				var stat = fs.statSync(filePath)
-				if (stat.isFile())
-					return /\.roo$/.test(filePath)
+				var stat = fs.statSync(filePath);
+				if (stat.isFile()) {
+					var hasExt = /\.roo$/.test(filePath);
+					return hasExt;
+				}
 
-				return stat.isDirectory()
-			})
-			files = files.concat(resolveFiles(filePaths, dirPath || filePath))
+				return stat.isDirectory();
+			});
+			files = files.concat(resolveFiles(filePaths, dirPath || filePath));
 		}
-	})
-	return files
+	});
+	return files;
 }
 
 function compileFiles(files, callback) {
-	var i = 0
-	var length = files.length
+	var i = 0;
+	var length = files.length;
 
 	files.forEach(function(file) {
 		compileFile(file, function() {
 			if (++i === length)
-				callback(files)
-		})
-	})
+				callback(files);
+		});
+	});
 }
 
 function compileFile(file, callback) {
-	rooleOptions.filePath = file.path
+	rooleOptions.filePath = file.path;
 	roole.compile(file.content, rooleOptions, function(error, css) {
 		if (error)
-			throw error
+			throw error;
 
-		file.compiledContent = css
+		file.compiledContent = css;
 
-		callback(file)
-	})
+		callback(file);
+	});
 }
 
 function writeFiles(files) {
 	files.forEach(function(file) {
-		writeFile(file)
-	})
+		writeFile(file);
+	});
 }
 
 function writeFile(file, watching) {
-	var dir = path.dirname(file.outputPath)
+	var dir = path.dirname(file.outputPath);
 	if (!fs.existsSync(dir))
-		mkdirp.sync(dir)
-	fs.writeFileSync(file.outputPath, file.compiledContent)
+		mkdirp.sync(dir);
+	fs.writeFileSync(file.outputPath, file.compiledContent);
 
 	if (!program.force && !file.compiledContent) {
 		if (!program.watch)
-			console.log('INFO:', file.path, 'compiles to empty string, not writing to file')
+			console.log('INFO:', file.path, 'compiles to empty string, not writing to file');
 		else if (watching)
-			console.log('  compiled', file.path, 'to empty string, not writing to file')
+			console.log('  compiled', file.path, 'to empty string, not writing to file');
 	} else {
 		if (program.watch && watching)
-			console.log('  compiled', file.path, 'to', file.outputPath)
+			console.log('  compiled', file.path, 'to', file.outputPath);
 	}
 }
 
 function watchFiles(files) {
 	program.args.forEach(function(filePath) {
-		var stat = fs.statSync(filePath)
+		var stat = fs.statSync(filePath);
 		if (stat.isDirectory() && filePath.slice(-1) !== '/')
-			filePath += '/'
+			filePath += '/';
 
-		console.log('  watching', filePath)
-	})
+		console.log('  watching', filePath);
+	});
 
 	files.forEach(function(file) {
-		watchFile(file)
-	})
+		watchFile(file);
+	});
 }
 
 function watchFile(file) {
 	fs.watchFile(file.path, {interval: 100}, function(curr, prev) {
 		if (curr.mtime <= prev.mtime)
-			return
+			return;
 
 		compileFile(file, function() {
-			writeFile(file, true)
-		})
-	})
+			writeFile(file, true);
+		});
+	});
 }
