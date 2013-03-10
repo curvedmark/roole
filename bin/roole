@@ -14,7 +14,7 @@ program
 	.option('-o, --out <dir>', 'Write compiled files to <dir>')
 	.option('-w, --watch', 'Watch files and re-compile if changed')
 	.option('-f, --force', 'Create files even when compile to empty string')
-	.option('    --prefix <names>', 'Comma-seperated vendor names to use for prefixing')
+	.option('    --prefix <names>', 'Space-separated vendor names to use for prefixing')
 	.option('    --indent <str>', 'Indentation string to use in CSS')
 	.option('    --precision <num>', 'Max number of decimal digits to use in CSS')
 	.option('    --skip-prefixed', 'Not generate prefixed rule that already exists')
@@ -24,14 +24,7 @@ var rooleOptions = {
 	prettyError: true
 };
 
-if ('prefix' in program) {
-	var prefixes = program.prefix.split(',');
-	prefixes = prefixes.map(function(prefix) {
-		return prefix.trim();
-	});
-	rooleOptions.prefix = prefixes;
-}
-
+if (program.prefix != null) rooleOptions.prefix = program.prefix;
 if (program.indent != null) rooleOptions.indent = program.indent;
 if (program.precision != null) rooleOptions.precision = program.precision;
 if (program.skipPrefixed != null) rooleOptions.skipPrefixed = program.skipPrefixed;
