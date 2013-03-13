@@ -105,7 +105,8 @@ coverage/index.html: \
 	$(COV_LIB_FILES) \
 	$(COV_TEST_FILES)\
 	coverage/lib/importer/fs-loader.js \
-	coverage/test/assert.js
+	coverage/test/assert.js \
+	coverage/package.json
 
 	$< \
 		-R html-cov \
@@ -121,6 +122,9 @@ coverage/test/%: test/% | coverage/test/unit
 
 coverage/test/unit:
 	mkdir -p $@
+
+coverage/package.json: package.json
+	cp $< $@
 
 roole: dist/roole.js
 
