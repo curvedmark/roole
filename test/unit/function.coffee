@@ -116,21 +116,20 @@ test 'under-specify arguments', ->
 
 test 'rest argument', ->
 	assert.compileTo '''
-		$icons = @function $size, ...$icon-names {
-			width: $size;
-			@for $icon-name in $icon-names {
-				background: url("$icon-name");
+		$add = @function ...$numbers {
+			$sum = 0;
+			@for $number in $numbers {
+				$sum = $sum + $number;
 			}
+			@return $sum;
 		};
 
 		body {
-			@mixin $icons(20px, star, heart);
+			width: $add(1, 2, 3, 4);
 		}
 	''', '''
 		body {
-			width: 20px;
-			background: url("star");
-			background: url("heart");
+			width: 10;
 		}
 	'''
 
@@ -189,3 +188,5 @@ test 'implicit @return', ->
 			width: null;
 		}
 	'''
+
+test '$arguments', ->
