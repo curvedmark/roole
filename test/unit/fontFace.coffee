@@ -2,6 +2,11 @@ assert = require '../assert'
 
 suite '@font-face'
 
+test 'remove empty @font-face', ->
+	assert.compileTo '''
+		@font-face {}
+	''', ''
+
 test '@font-face', ->
 	assert.compileTo '''
 		@font-face {
