@@ -2,6 +2,18 @@ assert = require '../assert'
 
 suite '@keyframes'
 
+test 'remove empty @keyframes', ->
+	assert.compileTo '''
+		@keyframes name {}
+	''', ''
+
+test 'remove empty keyframe block', ->
+	assert.compileTo '''
+		@keyframes name {
+			0% {}
+		}
+	''', ''
+
 test 'prefixed @keyframes', ->
 	assert.compileTo '''
 		@-webkit-keyframes name {
