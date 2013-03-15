@@ -156,3 +156,37 @@ test '@for does not create new scope', ->
 			width: 500px;
 		}
 	'''
+
+test '@keyframes creates new scope', ->
+	assert.compileTo '''
+		$width = 960px;
+
+		@-webkit-keyframes name {
+			$width = 400px;
+
+			from {
+				$width = 200px;
+				width: $width;
+			}
+			to {
+				width: $width;
+			}
+		}
+
+		body {
+			width: $width;
+		}
+	''', '''
+		@-webkit-keyframes name {
+			from {
+				width: 200px;
+			}
+			to {
+				width: 400px;
+			}
+		}
+
+		body {
+			width: 960px;
+		}
+	'''
