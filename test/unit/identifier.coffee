@@ -68,9 +68,9 @@ test 'interpolate list', ->
 		}
 	'''
 
-test 'not allow interpolating mixin', ->
+test 'not allow interpolating function', ->
 	assert.failAt '''
-		$name = @mixin {
+		$name = @function {
 			body {
 				margin: auto;
 			}

@@ -8,7 +8,7 @@ inputPaths.forEach(function(inputPath, i) {
 
 	content = content
 		.replace(/[^\n]*\brequire[( ][^\n]+(?:\s*\n)?/g, '')
-		.replace(/(\w+) = exports\n/g, '$1 = {}\n')
+		.replace(/(\w+) = exports;/g, '$1 = {};\n')
 		.replace(/= module\.exports =/g, '=')
 		.trim()
 

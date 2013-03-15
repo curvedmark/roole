@@ -2,14 +2,14 @@ assert = require '../assert'
 
 suite 'mixin'
 
-test 'no params', ->
+test 'mixin rules', ->
 	assert.compileTo '''
-		$mixin = @mixin {
+		$property = @function {
 			width: auto;
 		};
 
 		body {
-			$mixin();
+			@mixin $property();
 		}
 	''', '''
 		body {
@@ -17,107 +17,20 @@ test 'no params', ->
 		}
 	'''
 
-test 'not allow undefined mixin', ->
-	assert.failAt '''
-		body {
-			$mixin();
-		}
-	''', 2, 2
-
-test 'not allow non-mixin to be called', ->
-	assert.failAt '''
-		$mixin = 0;
-
-		body {
-			$mixin();
-		}
-	''', 4, 2
-
-test 'call mixin multiple times', ->
+test 'ignore @return', ->
 	assert.compileTo '''
-		$mixin = @mixin {
-			body {
-				width: $width;
-			}
+		$rules = @function {
+			width: auto;
+			@return 960px;
+			height: auto;
 		};
 
-		$width = 980px;
-		$mixin();
-
-		$width = 500px;
-		$mixin();
+		body {
+			@mixin $rules();
+		}
 	''', '''
 		body {
-			width: 980px;
-		}
-
-		body {
-			width: 500px;
-		}
-	'''
-
-test 'specify parameter', ->
-	assert.compileTo '''
-		$mixin = @mixin $width {
-			body {
-				width: $width;
-			}
-		};
-
-		$mixin(980px);
-	''', '''
-		body {
-			width: 980px;
-		}
-	'''
-
-test 'specify default parameter', ->
-	assert.compileTo '''
-		$mixin = @mixin $width, $height = 100px {
-			body {
-				width: $width;
-				height: $height;
-			}
-		};
-
-		$mixin(980px);
-	''', '''
-		body {
-			width: 980px;
-			height: 100px;
-		}
-	'''
-
-test 'under-specify arguments', ->
-	assert.compileTo '''
-		$mixin = @mixin $width, $height {
-			body {
-				width: $width;
-				height: $height;
-			}
-		};
-
-		$mixin(980px);
-	''', '''
-		body {
-			width: 980px;
-			height: null;
-		}
-	'''
-
-test 'under-specify arguments for default parameter', ->
-	assert.compileTo '''
-		$mixin = @mixin $width, $height = 300px {
-			body {
-				width: $width;
-				height: $height;
-			}
-		};
-
-		$mixin();
-	''', '''
-		body {
-			width: null;
-			height: 300px;
+			width: auto;
+			height: auto;
 		}
 	'''

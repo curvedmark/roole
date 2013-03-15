@@ -35,15 +35,15 @@ test 'number + dimension', ->
 		}
 	'''
 
-test 'number + mixin, not allowed', ->
+test 'number + function, not allowed', ->
 	assert.failAt '''
-		$mixin = @mixin {
+		$function = @function {
 			body {
 				margin: 0;
 			}
 		};
 		body {
-			-foo: 1 + $mixin;
+			-foo: 1 + $function;
 		}
 	''', 7, 8
 

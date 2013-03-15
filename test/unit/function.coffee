@@ -2,24 +2,170 @@ assert = require '../assert'
 
 suite 'function'
 
-test 'single argument', ->
+test 'no params', ->
 	assert.compileTo '''
-		a {
-			content: attr(href);
+		$width = @function {
+			@return 960px;
+		};
+
+		body {
+			width: $width();
 		}
 	''', '''
-		a {
-			content: attr(href);
+		body {
+			width: 960px;
 		}
 	'''
 
-test 'multiple arguments', ->
+test 'not allow undefined function', ->
+	assert.failAt '''
+		body {
+			width: $width();
+		}
+	''', 2, 9
+
+test 'not allow non-function to be called', ->
+	assert.failAt '''
+		$width = 960px;
+
+		body {
+			width: $width();
+		}
+	''', 4, 9
+
+test 'call function multiple times', ->
 	assert.compileTo '''
-		a {
-			content: counters(item, '.');
+		$get-value = @function {
+			@return $value;
+		};
+
+		body {
+			$value = 960px;
+			width: $get-value();
+
+			$value = 400px;
+			height: $get-value();
+		}
+
+	''', '''
+		body {
+			width: 960px;
+			height: 400px;
+		}
+	'''
+
+test 'specify parameter', ->
+	assert.compileTo '''
+		$width = @function $width {
+			@return $width;
+		};
+
+		body {
+			width: $width(960px);
 		}
 	''', '''
-		a {
-			content: counters(item, '.');
+		body {
+			width: 960px;
+		}
+	'''
+
+test 'specify default parameter', ->
+	assert.compileTo '''
+		$width = @function $width = 960px {
+			@return $width;
+		};
+
+		body {
+			width: $width();
+		}
+	''', '''
+		body {
+			width: 960px;
+		}
+	'''
+
+test 'specify default parameter, overriden', ->
+	assert.compileTo '''
+		$width = @function $width = 960px {
+			@return $width;
+		};
+
+		body {
+			width: $width(400px);
+		}
+	''', '''
+		body {
+			width: 400px;
+		}
+	'''
+
+test 'under-specify arguments', ->
+	assert.compileTo '''
+		$margin = @function $h, $v {
+			@return $h $v;
+		};
+
+		body {
+			margin: $margin(20px);
+		}
+	''', '''
+		body {
+			margin: 20px null;
+		}
+	'''
+
+test 'ignore rules under @return', ->
+	assert.compileTo '''
+		$width = @function {
+			$width = 960px;
+			@return $width;
+
+			$width = 400px;
+			@return $width;
+		};
+
+		body {
+			width: $width();
+		}
+	''', '''
+		body {
+			width: 960px;
+		}
+	'''
+
+test 'ignore block rules', ->
+	assert.compileTo '''
+		$width = @function {
+			div {
+				margin: 0;
+			}
+
+			$width = 960px;
+			@return $width;
+		};
+
+		body {
+			width: $width();
+		}
+	''', '''
+		body {
+			width: 960px;
+		}
+	'''
+
+test 'implicit @return', ->
+	assert.compileTo '''
+		$width = @function {
+			div {
+				margin: 0;
+			}
+		};
+
+		body {
+			width: $width();
+		}
+	''', '''
+		body {
+			width: null;
 		}
 	'''
