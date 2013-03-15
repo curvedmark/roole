@@ -114,6 +114,26 @@ test 'under-specify arguments', ->
 		}
 	'''
 
+test 'rest argument', ->
+	assert.compileTo '''
+		$icons = @function $size, ...$icon-names {
+			width: $size;
+			@for $icon-name in $icon-names {
+				background: url("$icon-name");
+			}
+		};
+
+		body {
+			@mixin $icons(20px, star, heart);
+		}
+	''', '''
+		body {
+			width: 20px;
+			background: url("star");
+			background: url("heart");
+		}
+	'''
+
 test 'ignore rules under @return', ->
 	assert.compileTo '''
 		$width = @function {
