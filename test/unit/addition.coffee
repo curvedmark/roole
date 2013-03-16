@@ -45,7 +45,7 @@ test 'number + function, not allowed', ->
 		body {
 			-foo: 1 + $function;
 		}
-	''', 7, 8
+	''', {line: 7, column: 8}
 
 test 'number + string', ->
 	assert.compileTo '''

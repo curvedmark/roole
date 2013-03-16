@@ -115,7 +115,7 @@ test 'not allow interpolating function', ->
 		a {
 			content: "hello $name";
 		}
-	''', 7, 18
+	''', {line: 7, column: 18}
 
 test 'contain braced variable', ->
 	assert.compileTo '''

@@ -272,7 +272,7 @@ test 'not allow interpolating invalid media query', ->
 				width: auto;
 			}
 		}
-	''', 2, 8
+	''', {line: 2, column: 8}
 
 test 'allow nesting media type', ->
 	assert.compileTo '''

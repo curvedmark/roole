@@ -175,7 +175,7 @@ test 'not allow step number to be zero', ->
 				width: auto;
 			}
 		}
-	''', 1, 12
+	''', {line: 1, column: 12}
 
 test 'only allow step number to be numberic', ->
 	assert.failAt '''
@@ -184,7 +184,7 @@ test 'only allow step number to be numberic', ->
 				width: auto;
 			}
 		}
-	''', 1, 12
+	''', {line: 1, column: 12}
 
 test 'loop list', ->
 	assert.compileTo '''

@@ -50,12 +50,13 @@ test '@media creates new scope', ->
 
 test '@import does not create new scope', ->
 	assert.compileTo {
-		'base.roo': '''
-			$width = 500px;
-			body {
-				width: $width;
-			}
-		'''
+		imports:
+			'base.roo': '''
+				$width = 500px;
+				body {
+					width: $width;
+				}
+			'''
 	}, '''
 		$width = 980px;
 

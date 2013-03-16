@@ -18,7 +18,7 @@ test 'not allow starting with double-dash', ->
 		body {
 			--webkit-box-sizing: border-box;
 		}
-	''', 2, 3
+	''', {line: 2, column: 3}
 
 test 'interpolate identifier', ->
 	assert.compileTo '''
@@ -78,7 +78,7 @@ test 'not allow interpolating function', ->
 		.icon-$name {
 			float: left;
 		}
-	''', 6, 7
+	''', {line: 6, column: 7}
 
 test 'interpolate multiple variables', ->
 	assert.compileTo '''

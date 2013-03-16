@@ -18,7 +18,7 @@ test 'number / 0, not allowed', ->
 		body {
 			-foo: 1 / 0;
 		}
-	''', 2, 12
+	''', {line: 2, column: 12}
 
 test 'number / number, result in fraction', ->
 	assert.compileTo '''
@@ -47,7 +47,7 @@ test 'number / 0%, not allowed', ->
 		body {
 			-foo: 1 / 0%;
 		}
-	''', 2, 12
+	''', {line: 2, column: 12}
 
 test 'number / dimension', ->
 	assert.compileTo '''
@@ -65,7 +65,7 @@ test 'number / 0px, not allowed', ->
 		body {
 			-foo: 1 / 0px;
 		}
-	''', 2, 12
+	''', {line: 2, column: 12}
 
 test 'percentage / number', ->
 	assert.compileTo '''
@@ -83,7 +83,7 @@ test 'percentage / 0, not allowed', ->
 		body {
 			-foo: 1% / 0;
 		}
-	''', 2, 13
+	''', {line: 2, column: 13}
 
 test 'percentage / percentage', ->
 	assert.compileTo '''
@@ -101,7 +101,7 @@ test 'percentage / 0%, not allowed', ->
 		body {
 			-foo: 1% / 0%;
 		}
-	''', 2, 13
+	''', {line: 2, column: 13}
 
 test 'percentage / dimension', ->
 	assert.compileTo '''
@@ -119,7 +119,7 @@ test 'percentage / 0px, not allowed', ->
 		body {
 			-foo: 1% / 0px;
 		}
-	''', 2, 13
+	''', {line: 2, column: 13}
 
 test 'dimension / number', ->
 	assert.compileTo '''
@@ -137,7 +137,7 @@ test 'dimension / 0, not allowed', ->
 		body {
 			-foo: 1px / 0;
 		}
-	''', 2, 14
+	''', {line: 2, column: 14}
 
 test 'dimension / percentage', ->
 	assert.compileTo '''
@@ -155,7 +155,7 @@ test 'dimension / 0%, not allowed', ->
 		body {
 			-foo: 1px / 0%;
 		}
-	''', 2, 14
+	''', {line: 2, column: 14}
 
 test 'dimension / dimension', ->
 	assert.compileTo '''
@@ -184,7 +184,7 @@ test 'dimension / 0px, not allowed', ->
 		body {
 			-foo: 1px / 0px;
 		}
-	''', 2, 14
+	''', {line: 2, column: 14}
 
 test 'number/ number', ->
 	assert.compileTo '''

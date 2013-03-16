@@ -40,7 +40,7 @@ test '+string, not allowed', ->
 		body {
 			-foo: +'a';
 		}
-	''', 2, 8
+	''', {line: 2, column: 8}
 
 test '-number', ->
 	assert.compileTo '''

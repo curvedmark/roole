@@ -22,7 +22,7 @@ test 'not allow undefined function', ->
 		body {
 			width: $width();
 		}
-	''', 2, 9
+	''', {line: 2, column: 9}
 
 test 'not allow non-function to be called', ->
 	assert.failAt '''
@@ -31,7 +31,7 @@ test 'not allow non-function to be called', ->
 		body {
 			width: $width();
 		}
-	''', 4, 9
+	''', {line: 4, column: 9}
 
 test 'call function multiple times', ->
 	assert.compileTo '''

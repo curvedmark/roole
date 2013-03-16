@@ -4,11 +4,12 @@ suite '@import'
 
 test 'import with string', ->
 	assert.compileTo {
-		'base.roo': '''
-			body {
-				margin: 0;
-			}
-		'''
+		imports:
+			'base.roo': '''
+				body {
+					margin: 0;
+				}
+			'''
 	}, '''
 		@import 'base';
 	''', '''
@@ -40,11 +41,12 @@ test 'import with media query', ->
 
 test 'nest under ruleset', ->
 	assert.compileTo {
-		'base.roo': '''
-			body {
-				margin: 0;
-			}
-		'''
+		imports:
+			'base.roo': '''
+				body {
+					margin: 0;
+				}
+			'''
 	}, '''
 		html {
 			@import 'base';
@@ -57,18 +59,19 @@ test 'nest under ruleset', ->
 
 test 'recursively import', ->
 	assert.compileTo {
-		'reset.roo': '''
-			body {
-				margin: 0;
-			}
-		'''
-		'button.roo': '''
-			@import 'reset';
+		imports:
+			'reset.roo': '''
+				body {
+					margin: 0;
+				}
+			'''
+			'button.roo': '''
+				@import 'reset';
 
-			.button {
-				display: inline-block;
-			}
-		'''
+				.button {
+					display: inline-block;
+				}
+			'''
 	}, '''
 		@import 'button';
 	''', '''
@@ -83,25 +86,26 @@ test 'recursively import', ->
 
 test 'import same file multiple times', ->
 	assert.compileTo {
-		'reset.roo': '''
-			body {
-				margin: 0;
-			}
-		'''
-		'button.roo': '''
-			@import 'reset';
+		imports:
+			'reset.roo': '''
+				body {
+					margin: 0;
+				}
+			'''
+			'button.roo': '''
+				@import 'reset';
 
-			.button {
-				display: inline-block;
-			}
-		'''
-		'tabs.roo': '''
-			@import 'reset';
+				.button {
+					display: inline-block;
+				}
+			'''
+			'tabs.roo': '''
+				@import 'reset';
 
-			.tabs {
-				overflow: hidden;
-			}
-		'''
+				.tabs {
+					overflow: hidden;
+				}
+			'''
 	}, '''
 		@import 'button';
 		@import 'tabs';
@@ -121,18 +125,19 @@ test 'import same file multiple times', ->
 
 test 'recursively import files of the same directory', ->
 	assert.compileTo {
-		'tabs/tab.roo': '''
-			.tab {
-				float: left;
-			}
-		'''
-		'tabs/index.roo': '''
-			@import 'tab';
+		imports:
+			'tabs/tab.roo': '''
+				.tab {
+					float: left;
+				}
+			'''
+			'tabs/index.roo': '''
+				@import 'tab';
 
-			.tabs {
-				overflow: hidden;
-			}
-		'''
+				.tabs {
+					overflow: hidden;
+				}
+			'''
 	}, '''
 		@import 'tabs/index';
 	''', '''
@@ -147,18 +152,19 @@ test 'recursively import files of the same directory', ->
 
 test 'recursively import files of different directories', ->
 	assert.compileTo {
-		'reset.roo': '''
-			body {
-				margin: 0;
-			}
-		'''
-		'tabs/index.roo': '''
-			@import '../reset';
+		imports:
+			'reset.roo': '''
+				body {
+					margin: 0;
+				}
+			'''
+			'tabs/index.roo': '''
+				@import '../reset';
 
-			.tabs {
-				overflow: hidden;
-			}
-		'''
+				.tabs {
+					overflow: hidden;
+				}
+			'''
 	}, '''
 		@import 'tabs/index';
 	''', '''
@@ -173,9 +179,10 @@ test 'recursively import files of different directories', ->
 
 test 'import empty file', ->
 	assert.compileTo {
-		'var.roo': '''
-			$width = 980px;
-		'''
+		imports:
+			'var.roo': '''
+				$width = 980px;
+			'''
 	}, '''
 		@import 'var';
 
@@ -198,11 +205,12 @@ test 'not importing file with variables in the path', ->
 
 test 'not allow importing file has syntax error', ->
 	assert.failAt {
-		'base.roo': '''
-			body # {
-				margin: 0;
-			}
-		'''
+		imports:
+			'base.roo': '''
+				body # {
+					margin: 0;
+				}
+			'''
 	}, '''
 		@import 'base';
-	''', 1, 7, 'base.roo'
+	''', {line: 1, column: 7, filePath: 'base.roo'}

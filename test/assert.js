@@ -4,21 +4,16 @@ var roole = require('../lib/roole');
 
 var assert = exports;
 
-assert.compileTo = function(imports, input, css, options) {
-	var called = false;
-
-	if (typeof imports !== 'object') {
-		options = css;
+assert.compileTo = function(options, input, css) {
+	if (arguments.length < 3) {
 		css = input;
-		input = imports;
-		imports = {};
+		input = options;
+		options = {};
 	}
 
-	if (options == null)
-		options = {};
-
-	options.imports = imports;
 	options.prettyError = true;
+
+	var called = false;
 
 	roole.compile(input, options, function(error, output) {
 		called = true;
@@ -43,24 +38,17 @@ assert.compileTo = function(imports, input, css, options) {
 		throw new Error('input is never compiled');
 };
 
-assert.failAt = function(imports, input, line, column, filePath) {
-	var called = false;
-
-	if (typeof imports !== 'object') {
-		filePath = column;
-		column = line;
-		line = input;
-		input = imports;
-		imports = {};
+assert.failAt = function(options, input, loc) {
+	if (arguments.length < 3) {
+		loc = input;
+		input = options;
+		options = {};
 	}
 
-	if (!filePath)
-		filePath = '';
+	options.prettyError = true;
+	if (!loc.filePath) loc.filePath = '';
 
-	var options = {
-		imports: imports,
-		prettyError: true
-	};
+	var called = false;
 
 	roole.compile(input, options, function(error) {
 		if (!error)
@@ -71,20 +59,20 @@ assert.failAt = function(imports, input, line, column, filePath) {
 
 		called = true;
 
-		if (error.line !== line) {
-			var message = 'error has line number ' + error.line + ' instead of ' + line;
+		if (error.line !== loc.line) {
+			var message = 'error has line number ' + error.line + ' instead of ' + loc.line;
 			error.message = message + ':\n\n' + error.message;
 			throw error;
 		}
 
-		if (error.column !== column) {
-			var message = 'error has column number ' + error.column + ' instead of ' + column;
+		if (error.column !== loc.column) {
+			var message = 'error has column number ' + error.column + ' instead of ' + loc.column;
 			error.message = message + ':\n\n' + error.message;
 			throw error;
 		}
 
-		if (error.filePath !== filePath) {
-			var message = 'error has file path ' + error.filePath + ' instead of ' + filePath;
+		if (error.filePath !== loc.filePath) {
+			var message = 'error has file path ' + error.filePath + ' instead of ' + loc.filePath;
 			error.message = message + ':\n\n' + error.message;
 			throw error;
 		}

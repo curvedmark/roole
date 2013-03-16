@@ -106,11 +106,11 @@ test 'start number must be numberic', ->
 		body {
 			-foo: a...3;
 		}
-	''', 2, 8
+	''', {line: 2, column: 8}
 
 test 'end number must be numberic', ->
 	assert.failAt '''
 		body {
 			-foo: 1..b;
 		}
-	''', 2, 11
+	''', {line: 2, column: 11}

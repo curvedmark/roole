@@ -253,21 +253,21 @@ test 'not allow & selector at the top level', ->
 		& {
 			width: auto;
 		}
-	''', 1, 1
+	''', {line: 1, column: 1}
 
 test 'not allow selector starting with a combinator at the top level', ->
 	assert.failAt '''
 		> div {
 			width: auto;
 		}
-	''', 1, 1
+	''', {line: 1, column: 1}
 
 test 'not allow & selector at the top level', ->
 	assert.failAt '''
 		& {
 			width: auto;
 		}
-	''', 1, 1
+	''', {line: 1, column: 1}
 
 test 'interpolating selector', ->
 	assert.compileTo '''
@@ -287,7 +287,7 @@ test 'not allow interpolating invalid selector', ->
 		$sel {
 			width: auto;
 		}
-	''', 2, 1
+	''', {line: 2, column: 1}
 
 test 'not allow interpolating & selector at the top level', ->
 	assert.failAt '''
@@ -295,7 +295,7 @@ test 'not allow interpolating & selector at the top level', ->
 		$sel {
 			width: auto;
 		}
-	''', 2, 1
+	''', {line: 2, column: 1}
 
 test 'interpolating selector inside selector', ->
 	assert.compileTo '''
@@ -327,7 +327,7 @@ test 'not allow interpolating & selector inside selector at the top level', ->
 		body $sel {
 			width: auto;
 		}
-	''', 2, 6
+	''', {line: 2, column: 6}
 
 test 'interpolating selector containing & selector and nested under selector', ->
 	assert.compileTo '''
@@ -349,7 +349,7 @@ test 'not allow interpolating selector list inside selector', ->
 		body $sel {
 			width: auto;
 		}
-	''', 2, 6
+	''', {line: 2, column: 6}
 
 test 'interpolate identifier', ->
 	assert.compileTo '''

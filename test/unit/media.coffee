@@ -7,7 +7,7 @@ test 'not allow containing properties at root level', ->
 		@media screen {
 			width: auto;
 		}
-	''', 1, 1
+	''', {line: 1, column: 1}
 
 test 'nest inside ruleset', ->
 	assert.compileTo '''
