@@ -24,10 +24,10 @@ var rooleOptions = {
 	prettyError: true
 };
 
-if (program.prefix != null) rooleOptions.prefix = program.prefix;
-if (program.indent != null) rooleOptions.indent = program.indent;
-if (program.precision != null) rooleOptions.precision = program.precision;
-if (program.skipPrefixed != null) rooleOptions.skipPrefixed = program.skipPrefixed;
+if (program.prefix != null) { rooleOptions.prefix = program.prefix; }
+if (program.indent != null) { rooleOptions.indent = program.indent; }
+if (program.precision != null) { rooleOptions.precision = program.precision; }
+if (program.skipPrefixed != null) { rooleOptions.skipPrefixed = program.skipPrefixed; }
 
 if (!program.args.length) {
 	compileStdin(function(content) {
@@ -48,20 +48,19 @@ compileFiles(resolveFiles(program.args), function(files) {
 	}
 
 	writeFiles(files);
-
-	if (program.watch)
-		watchFiles(files);
+	if (program.watch) { watchFiles(files); }
 });
 
 function compileStdin(callback) {
 	var stdin = '';
 	process.stdin.resume();
 	process.stdin.setEncoding('utf8');
-	process.stdin.on('data', function(chunk){ stdin += chunk; });
+	process.stdin.on('data', function(chunk) { stdin += chunk; });
 	process.stdin.on('end', function(){
 		roole.compile(stdin, rooleOptions, function(error, css) {
-			if (error)
+			if (error) {
 				throw error;
+			}
 
 			callback(css);
 		});
@@ -118,8 +117,9 @@ function compileFiles(files, callback) {
 
 	files.forEach(function(file) {
 		compileFile(file, function() {
-			if (++i === length)
+			if (++i === length) {
 				callback(files);
+			}
 		});
 	});
 }
@@ -127,8 +127,9 @@ function compileFiles(files, callback) {
 function compileFile(file, callback) {
 	rooleOptions.filePath = file.path;
 	roole.compile(file.content, rooleOptions, function(error, css) {
-		if (error)
+		if (error) {
 			throw error;
+		}
 
 		file.compiledContent = css;
 
@@ -144,26 +145,26 @@ function writeFiles(files) {
 
 function writeFile(file, watching) {
 	var dir = path.dirname(file.outputPath);
-	if (!fs.existsSync(dir))
-		mkdirp.sync(dir);
+	if (!fs.existsSync(dir)) { mkdirp.sync(dir); }
 	fs.writeFileSync(file.outputPath, file.compiledContent);
 
 	if (!program.force && !file.compiledContent) {
-		if (!program.watch)
+		if (!program.watch) {
 			console.log('INFO:', file.path, 'compiles to empty string, not writing to file');
-		else if (watching)
+		} else if (watching) {
 			console.log('  compiled', file.path, 'to empty string, not writing to file');
-	} else {
-		if (program.watch && watching)
-			console.log('  compiled', file.path, 'to', file.outputPath);
+		}
+	} else if (program.watch && watching) {
+		console.log('  compiled', file.path, 'to', file.outputPath);
 	}
 }
 
 function watchFiles(files) {
 	program.args.forEach(function(filePath) {
 		var stat = fs.statSync(filePath);
-		if (stat.isDirectory() && filePath.slice(-1) !== '/')
+		if (stat.isDirectory() && filePath.slice(-1) !== '/') {
 			filePath += '/';
+		}
 
 		console.log('  watching', filePath);
 	});
@@ -175,8 +176,9 @@ function watchFiles(files) {
 
 function watchFile(file) {
 	fs.watchFile(file.path, {interval: 100}, function(curr, prev) {
-		if (curr.mtime <= prev.mtime)
+		if (curr.mtime <= prev.mtime) {
 			return;
+		}
 
 		compileFile(file, function() {
 			writeFile(file, true);

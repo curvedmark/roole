@@ -18,8 +18,9 @@ assert.compileTo = function(options, input, css) {
 	roole.compile(input, options, function(error, output) {
 		called = true;
 
-		if (error)
+		if (error) {
 			throw error;
+		}
 
 		if (output !== css) {
 			error = new Error('');
@@ -34,8 +35,9 @@ assert.compileTo = function(options, input, css) {
 		}
 	});
 
-	if (!called)
+	if (!called) {
 		throw new Error('input is never compiled');
+	}
 };
 
 assert.failAt = function(options, input, loc) {
@@ -46,16 +48,18 @@ assert.failAt = function(options, input, loc) {
 	}
 
 	options.prettyError = true;
-	if (!loc.filePath) loc.filePath = '';
+	if (!loc.filePath) { loc.filePath = ''; }
 
 	var called = false;
 
 	roole.compile(input, options, function(error) {
-		if (!error)
+		if (!error) {
 			throw new Error('no error is thrown');
+		}
 
-		if (!error.line)
+		if (!error.line) {
 			throw error;
+		}
 
 		called = true;
 
@@ -78,6 +82,7 @@ assert.failAt = function(options, input, loc) {
 		}
 	});
 
-	if (!called)
+	if (!called) {
 		throw new Error('input is never compiled');
+	}
 };
