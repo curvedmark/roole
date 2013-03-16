@@ -14,7 +14,7 @@
 	"undef": true,
 	"unused": true,
 	"trailing": true,
-	"maxdepth": 3,
+	"maxdepth": 4,
 	"maxparams": 3,
 	"eqnull": true,
 	"globalstrict": true,
