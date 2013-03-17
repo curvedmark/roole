@@ -1,3 +1,5 @@
+node_modules
+components
 /coverage
 /dist/roole.js
 /dist/roole.min.js
