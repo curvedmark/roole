@@ -244,3 +244,17 @@ test 'access list with reversed range, from positive to negative', ->
 			-foo: 2 1;
 		}
 	'''
+
+test 'not allow access list with invalid type', ->
+	assert.failAt '''
+		body {
+			-foo: (0 1 2)[true];
+		}
+	''', {line: 2, column: 16}
+
+test 'not allow access null', ->
+	assert.failAt '''
+		body {
+			-foo: null[0];
+		}
+	''', {line: 2, column: 8}
