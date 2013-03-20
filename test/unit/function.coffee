@@ -33,6 +33,13 @@ test 'not allow non-function to be called', ->
 		}
 	''', {line: 4, column: 9}
 
+test 'not allow using @return outside @function', ->
+	assert.failAt '''
+		body {
+			@return 1;
+		}
+	''', {line: 2, column: 2}
+
 test 'call function multiple times', ->
 	assert.compileTo '''
 		$get-value = @function {
