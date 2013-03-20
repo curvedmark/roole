@@ -197,3 +197,16 @@ test 'implicit @return', ->
 	'''
 
 test '$arguments', ->
+	assert.compileTo '''
+		$arguments = @function {
+			@return $arguments;
+		};
+
+		body {
+			-foo: $arguments(foo, bar)
+		}
+	''', '''
+		body {
+			-foo: foo, bar;
+		}
+	'''
