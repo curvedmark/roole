@@ -4,7 +4,6 @@
 	"camelcase": true,
 	"curly": true,
 	"eqeqeq": true,
-	"forin": true,
 	"immed": true,
 	"noempty": true,
 	"newcap": false,
