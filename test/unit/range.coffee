@@ -101,6 +101,17 @@ test 'mixed range', ->
 		}
 	'''
 
+test 'reversed single-number mixed exclusiverange', ->
+	assert.compileTo '''
+		body {
+			-foo: 2px...1%;
+		}
+	''', '''
+		body {
+			-foo: 2px;
+		}
+	'''
+
 test 'start number must be numberic', ->
 	assert.failAt '''
 		body {
