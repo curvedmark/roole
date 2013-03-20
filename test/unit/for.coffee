@@ -208,6 +208,36 @@ test 'loop list', ->
 		}
 	'''
 
+test 'loop number', ->
+	assert.compileTo '''
+		@for $i in 1 {
+			.span-$i {
+				width: $i * 60px;
+			}
+		}
+	''', '''
+		.span-1 {
+			width: 60px;
+		}
+	'''
+
+test 'loop null', ->
+	assert.compileTo '''
+		@for $i in null {
+			body {
+				margin: 0;
+			}
+		}
+
+		body {
+			-foo: $i;
+		}
+	''', '''
+		body {
+			-foo: null;
+		}
+	'''
+
 test 'loop list with index', ->
 	assert.compileTo '''
 		@for $icon, $i in foo bar, qux {
@@ -250,33 +280,28 @@ test 'loop list with index with negative step', ->
 		}
 	'''
 
-
-test 'loop number', ->
+test 'loop value with index', ->
 	assert.compileTo '''
-		@for $i in 1 {
-			.span-$i {
-				width: $i * 60px;
+		@for $icon, $i in foo {
+			.icon-$icon {
+				content: "$i $icon";
 			}
 		}
 	''', '''
-		.span-1 {
-			width: 60px;
+		.icon-foo {
+			content: "0 foo";
 		}
 	'''
 
-test 'loop null', ->
+test 'loop null with index', ->
 	assert.compileTo '''
-		@for $i in null {
-			body {
-				margin: 0;
-			}
-		}
+		@for $value, $i in null {}
 
 		body {
-			-foo: $i;
+			-foo: $value $i;
 		}
 	''', '''
 		body {
-			-foo: null;
+			-foo: null null;
 		}
 	'''
