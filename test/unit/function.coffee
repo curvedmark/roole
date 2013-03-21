@@ -210,3 +210,20 @@ test '$arguments', ->
 			-foo: foo, bar;
 		}
 	'''
+
+test 'not modify arguments by direct assignment', ->
+	assert.compileTo '''
+		$modify = @function $param {
+			$param = 1;
+			@return $param;
+		};
+
+		body {
+			$arg = 0;
+			-foo: $modify($arg) $arg;
+		}
+	''', '''
+		body {
+			-foo: 1 0;
+		}
+	'''

@@ -23,7 +23,6 @@ TEST_FILES = \
 	test/unit/logical.coffee \
 	test/unit/range.coffee \
 	test/unit/unary.coffee \
-	test/unit/member.coffee \
 	test/unit/expression.coffee \
 	test/unit/mediaQuery.coffee \
 	test/unit/media.coffee \
