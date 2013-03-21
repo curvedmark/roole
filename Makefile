@@ -96,6 +96,7 @@ lib/parser/generatedParser.js: \
 
 test: node_modules/.bin/mocha parser
 	$< -bu qunit --compilers coffee:coffee-script $(TEST_FILES)
+	$(MAKE) lint
 
 coverage: coverage/index.html
 
