@@ -39,3 +39,16 @@ test 'lone ?= ', ->
 			width: 480px;
 		}
 	'''
+
+test '+=', ->
+	assert.compileTo '''
+		$width = 480px;
+		$width += 100px;
+		body {
+			width: $width;
+		}
+	''', '''
+		body {
+			width: 580px;
+		}
+	'''
