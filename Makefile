@@ -18,6 +18,7 @@ TEST_FILES = \
 	test/unit/subtraction.coffee \
 	test/unit/multiplication.coffee \
 	test/unit/division.coffee \
+	test/unit/modulus.coffee \
 	test/unit/relational.coffee \
 	test/unit/equality.coffee \
 	test/unit/logical.coffee \
