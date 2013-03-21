@@ -56,18 +56,6 @@ test 'interpolate string', ->
 		}
 	'''
 
-test 'interpolate list', ->
-	assert.compileTo '''
-		$name = star span;
-		.icon-$name {
-			float: left;
-		}
-	''', '''
-		.icon-star span {
-			float: left;
-		}
-	'''
-
 test 'not allow interpolating function', ->
 	assert.failAt '''
 		$name = @function {

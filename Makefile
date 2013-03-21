@@ -34,11 +34,12 @@ TEST_FILES = \
 	test/unit/if.coffee \
 	test/unit/for.coffee \
 	test/unit/mixin.coffee \
-	test/unit/scope.coffee \
-	test/unit/prefix.coffee \
 	test/unit/keyframes.coffee \
 	test/unit/fontFace.coffee \
-	test/unit/charset.coffee
+	test/unit/module.coffee \
+	test/unit/charset.coffee \
+	test/unit/scope.coffee \
+	test/unit/prefix.coffee
 
 method-files = $(patsubst %,lib/$(1)/%.js,$(shell grep -oE "\./node/\w+" lib/$(1)/$(1).js))
 

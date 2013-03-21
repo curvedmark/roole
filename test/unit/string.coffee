@@ -93,18 +93,6 @@ test 'interpolate double-quoted string', ->
 		}
 	'''
 
-test 'interpolate list', ->
-	assert.compileTo '''
-		$name = john doe;
-		a {
-			content: "hello $name";
-		}
-	''', '''
-		a {
-			content: "hello john doe";
-		}
-	'''
-
 test 'not allow interpolating function', ->
 	assert.failAt '''
 		$name = @function {
