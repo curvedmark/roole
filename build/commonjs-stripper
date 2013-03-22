@@ -1,18 +1,15 @@
 #!/usr/bin/env node
-'use strict'
+'use strict';
 
-var fs = require('fs')
-var inputPaths = process.argv.slice(2)
-inputPaths.forEach(function(inputPath, i) {
+var fs = require('fs');
+var inputPaths = process.argv.slice(2);
+var contents = inputPaths.map(function(inputPath) {
 	var content = fs.readFileSync(inputPath, 'utf8')
-
-	content = content
 		.replace(/[^\n]*\brequire[( ][^\n]+(?:\s*\n)?/g, '')
-		.replace(/(\w+) = exports;/g, '$1 = {};\n')
-		.replace(/= module\.exports =/g, '=')
-		.trim()
+		.replace(/(\w+) = exports;/g, '$1 = {};')
+		.replace(/= module\.exports =/g, '=');
 
-	if (i > 0)
-		content = '\n' + content.replace(/'use strict'\s*/, '')
-	process.stdout.write(content + '\n')
-})
+	return content.replace(/'use strict';\s*/, '');
+});
+
+console.log(contents.join('\n\n'));

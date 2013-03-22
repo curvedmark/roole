@@ -173,7 +173,7 @@ node_modules/%:
 
 JS_FILES = $(shell find lib -type f \( -name '*.js' ! -name 'generatedParser.js' \))
 lint: node_modules/.bin/jshint
-	@$< bin/roole test/assert.js $(JS_FILES)
+	@$< bin/roole test/assert.js build/* $(JS_FILES)
 
 publish: lib/parser/generatedParser.js
 	npm publish
