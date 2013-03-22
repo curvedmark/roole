@@ -75,18 +75,18 @@ test 'nest & selector followed by identifier under selector', ->
 		}
 	'''
 
-# test 'nest & selector followed by identifier prepended with dash under selector', ->
-# 	assert.compileTo '''
-# 		.menu {
-# 			&--item {
-# 				width: auto;
-# 			}
-# 		}
-# 	''', '''
-# 		.menu--item {
-# 			width: auto;
-# 		}
-# 	'''
+test 'nest & selector followed by identifier prepended with dash under selector', ->
+	assert.compileTo '''
+		.menu {
+			&--item {
+				width: auto;
+			}
+		}
+	''', '''
+		.menu--item {
+			width: auto;
+		}
+	'''
 
 test 'not allow nesting & selector followed by identifier to result in invalid selector', ->
 	assert.failAt '''

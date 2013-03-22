@@ -119,6 +119,19 @@ test 'contain dangling dash', ->
 		}
 	'''
 
+test 'contain double dangling dashes', ->
+	assert.compileTo '''
+		$module = icon;
+		$name = star;
+		.{$module}--{$name} {
+			display: inline-block;
+		}
+	''', '''
+		.icon--star {
+			display: inline-block;
+		}
+	'''
+
 test 'start with dangling dash', ->
 	assert.compileTo '''
 		$prefix = moz;

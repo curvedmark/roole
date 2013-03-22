@@ -74,3 +74,27 @@ test '-dimension', ->
 			-foo: -1px;
 		}
 	'''
+
+test '-variable, value is number', ->
+	assert.compileTo '''
+		$foo = 1px;
+		body {
+			-foo: -$foo;
+		}
+	''', '''
+		body {
+			-foo: -1px;
+		}
+	'''
+
+test '-variable, value is identifier', ->
+	assert.compileTo '''
+		$foo = foo;
+		body {
+			-foo: -$foo;
+		}
+	''', '''
+		body {
+			-foo: -foo;
+		}
+	'''
