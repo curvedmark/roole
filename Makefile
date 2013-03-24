@@ -100,6 +100,13 @@ test: node_modules/.bin/mocha parser
 	$< -bu qunit $(TEST_FILES)
 	$(MAKE) lint
 
+cli-test: node_modules/.bin/mocha parser
+	$< -bu qunit test/cli.js
+
+all-test:
+	$(MAKE) test
+	$(MAKE) cli-test
+
 coverage: coverage/index.html
 
 COV_LIB_FILES = $(addprefix coverage/,$(LIB_FILES))
@@ -187,4 +194,4 @@ clean:
 		dist/roole.min.js \
 		test/test.js
 
-.PHONY: parser test coverage roole min browser-test clean
+.PHONY: parser test cli-test all-test browser-test coverage roole min  clean

@@ -20,14 +20,14 @@ program
 	.option('    --skip-prefixed', 'Not generate prefixed rule that already exists')
 	.parse(process.argv);
 
-var rooleOptions = {
+var options = {
 	prettyError: true
 };
 
-if (program.prefix != null) { rooleOptions.prefix = program.prefix; }
-if (program.indent != null) { rooleOptions.indent = program.indent; }
-if (program.precision != null) { rooleOptions.precision = program.precision; }
-if (program.skipPrefixed != null) { rooleOptions.skipPrefixed = program.skipPrefixed; }
+if (program.prefix != null) { options.prefix = program.prefix; }
+if (program.indent != null) { options.indent = program.indent; }
+if (program.precision != null) { options.precision = program.precision; }
+if (program.skipPrefixed != null) { options.skipPrefixed = program.skipPrefixed; }
 
 if (!program.args.length) {
 	compileStdin(function(content) {
@@ -57,7 +57,7 @@ function compileStdin(callback) {
 	process.stdin.setEncoding('utf8');
 	process.stdin.on('data', function(chunk) { stdin += chunk; });
 	process.stdin.on('end', function(){
-		roole.compile(stdin, rooleOptions, function(error, css) {
+		roole.compile(stdin, options, function(error, css) {
 			if (error) {
 				throw error;
 			}
@@ -125,8 +125,8 @@ function compileFiles(files, callback) {
 }
 
 function compileFile(file, callback) {
-	rooleOptions.filePath = file.path;
-	roole.compile(file.content, rooleOptions, function(error, css) {
+	options.filePath = file.path;
+	roole.compile(file.content, options, function(error, css) {
 		if (error) {
 			throw error;
 		}
@@ -144,18 +144,20 @@ function writeFiles(files) {
 }
 
 function writeFile(file, watching) {
-	var dir = path.dirname(file.outputPath);
-	if (!fs.existsSync(dir)) { mkdirp.sync(dir); }
-	fs.writeFileSync(file.outputPath, file.compiledContent);
-
-	if (!program.force && !file.compiledContent) {
+	if (!file.compiledContent && !program.force) {
 		if (!program.watch) {
 			console.log('INFO:', file.path, 'compiles to empty string, not writing to file');
 		} else if (watching) {
 			console.log('  compiled', file.path, 'to empty string, not writing to file');
 		}
-	} else if (program.watch && watching) {
-		console.log('  compiled', file.path, 'to', file.outputPath);
+	} else {
+		var dir = path.dirname(file.outputPath);
+		if (!fs.existsSync(dir)) { mkdirp.sync(dir); }
+		fs.writeFileSync(file.outputPath, file.compiledContent);
+
+		if (program.watch && watching) {
+			console.log('  compiled', file.path, 'to', file.outputPath);
+		}
 	}
 }
 

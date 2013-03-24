@@ -19,7 +19,7 @@
     "url": "git://github.com/curvedmark/roole.git"
   },
   "scripts": {
-    "test": "make test"
+    "test": "make all-test"
   },
   "dependencies": {
     "mkdirp": "0.3.x",
