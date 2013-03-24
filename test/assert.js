@@ -3,6 +3,7 @@
 var fs = require('fs');
 var path = require('path');
 var exec = require('child_process').exec;
+var existsSync = fs.existsSync || path.existsSync;
 var mkdirp = require('mkdirp');
 var roole = require('../lib/roole');
 var assert = exports;
@@ -106,7 +107,7 @@ assert.failAt = function(options, input, loc) {
 
 assert.run = function(cmd, input, output) {
 	var dir = 'test-dir';
-	if (!fs.existsSync(dir)) {
+	if (!existsSync(dir)) {
 		mkdirp.sync(dir);
 	}
 
@@ -126,12 +127,12 @@ assert.run = function(cmd, input, output) {
 			var fileContent = input.files[fileName];
 			fileName = path.join(dir, fileName);
 
-			if (fs.existsSync(fileName)) {
+			if (existsSync(fileName)) {
 				return callback(new Error("'" + fileName + "' already exists"));
 			}
 
 			var fileDir = path.dirname(fileName);
-			if (!fs.existsSync(fileDir)) {
+			if (!existsSync(fileDir)) {
 				mkdirp.sync(fileDir);
 			}
 
@@ -164,7 +165,7 @@ assert.run = function(cmd, input, output) {
 				fileName = path.join(dir, fileName);
 
 				if (fileContent === null) {
-					if (fs.existsSync(fileName)) {
+					if (existsSync(fileName)) {
 						return callback(new Error('"' + fileName + '" is created, which is not supposed to be'));
 					}
 
