@@ -172,7 +172,9 @@ test/test.js: \
 	test/assert.js \
 	$(TEST_FILES)
 
-	$< $(word 2,$^) >$@
+	echo "'use strict';" >$@
+	echo >> $@
+	$< $(word 2,$^) >>$@
 	echo >> $@
 	$< $(TEST_FILES) >>$@
 
@@ -182,7 +184,7 @@ node_modules/%:
 JS_FILES = $(shell find lib -type f \( -name '*.js' ! -name 'generatedParser.js' \))
 lint: node_modules/.bin/jshint
 	@$< bin/roole test/assert.js build/* $(JS_FILES)
-	@$< --config test/unit/.jshintrc test/unit
+	@$< --config test/.jshintrc test/unit test/cli.js
 
 publish: lib/parser/generatedParser.js
 	npm publish
