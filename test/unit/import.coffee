@@ -213,4 +213,4 @@ test 'not allow importing file has syntax error', ->
 			'''
 	}, '''
 		@import 'base';
-	''', {line: 1, column: 7, filePath: 'base.roo'}
+	''', {line: 1, column: 7, fileName: 'base.roo'}

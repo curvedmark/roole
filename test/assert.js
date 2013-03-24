@@ -48,7 +48,7 @@ assert.failAt = function(options, input, loc) {
 	}
 
 	options.prettyError = true;
-	if (!loc.filePath) { loc.filePath = ''; }
+	if (!loc.fileName) { loc.fileName = ''; }
 
 	var called = false;
 
@@ -75,8 +75,8 @@ assert.failAt = function(options, input, loc) {
 			throw error;
 		}
 
-		if (error.filePath !== loc.filePath) {
-			var message = 'error has file path ' + error.filePath + ' instead of ' + loc.filePath;
+		if (error.fileName !== loc.fileName) {
+			var message = 'error has file path ' + error.fileName + ' instead of ' + loc.fileName;
 			error.message = message + ':\n\n' + error.message;
 			throw error;
 		}
