@@ -26,7 +26,7 @@
     "commander": "1.x"
   },
   "devDependencies": {
-    "pegjs": "git://github.com/curvedmark/pegjs.git#dfe457d27d2a6e75868283c227ecad84f1b25119",
+    "pegjs": "git://github.com/dmajda/pegjs.git#798ed6a8a4fbfc36b312ba09d428a5832808d9d6",
     "mustache": "0.7.x",
     "mocha": "1.x",
     "coffee-script": "1.x",
