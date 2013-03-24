@@ -1,45 +1,45 @@
 TEST_FILES = \
-	test/unit/comment.coffee \
-	test/unit/selector.coffee \
-	test/unit/property.coffee \
-	test/unit/ruleset.coffee \
-	test/unit/assignment.coffee \
-	test/unit/identifier.coffee \
-	test/unit/string.coffee \
-	test/unit/number.coffee \
-	test/unit/percentage.coffee \
-	test/unit/dimension.coffee \
-	test/unit/url.coffee \
-	test/unit/color.coffee \
-	test/unit/call.coffee \
-	test/unit/function.coffee \
-	test/unit/list.coffee \
-	test/unit/addition.coffee \
-	test/unit/subtraction.coffee \
-	test/unit/multiplication.coffee \
-	test/unit/division.coffee \
-	test/unit/modulus.coffee \
-	test/unit/relational.coffee \
-	test/unit/equality.coffee \
-	test/unit/logical.coffee \
-	test/unit/range.coffee \
-	test/unit/unary.coffee \
-	test/unit/expression.coffee \
-	test/unit/mediaQuery.coffee \
-	test/unit/media.coffee \
-	test/unit/import.coffee \
-	test/unit/extend.coffee \
-	test/unit/void.coffee \
-	test/unit/if.coffee \
-	test/unit/for.coffee \
-	test/unit/mixin.coffee \
-	test/unit/keyframes.coffee \
-	test/unit/fontFace.coffee \
-	test/unit/module.coffee \
-	test/unit/page.coffee \
-	test/unit/charset.coffee \
-	test/unit/scope.coffee \
-	test/unit/prefix.coffee
+	test/unit/comment.js \
+	test/unit/selector.js \
+	test/unit/property.js \
+	test/unit/ruleset.js \
+	test/unit/assignment.js \
+	test/unit/identifier.js \
+	test/unit/string.js \
+	test/unit/number.js \
+	test/unit/percentage.js \
+	test/unit/dimension.js \
+	test/unit/url.js \
+	test/unit/color.js \
+	test/unit/call.js \
+	test/unit/function.js \
+	test/unit/list.js \
+	test/unit/addition.js \
+	test/unit/subtraction.js \
+	test/unit/multiplication.js \
+	test/unit/division.js \
+	test/unit/modulus.js \
+	test/unit/relational.js \
+	test/unit/equality.js \
+	test/unit/logical.js \
+	test/unit/range.js \
+	test/unit/unary.js \
+	test/unit/expression.js \
+	test/unit/mediaQuery.js \
+	test/unit/media.js \
+	test/unit/import.js \
+	test/unit/extend.js \
+	test/unit/void.js \
+	test/unit/if.js \
+	test/unit/for.js \
+	test/unit/mixin.js \
+	test/unit/keyframes.js \
+	test/unit/fontFace.js \
+	test/unit/module.js \
+	test/unit/page.js \
+	test/unit/charset.js \
+	test/unit/scope.js \
+	test/unit/prefix.js
 
 method-files = $(patsubst %,lib/$(1)/%.js,$(shell grep -oE "\./node/\w+" lib/$(1)/$(1).js))
 
@@ -97,7 +97,7 @@ lib/parser/generatedParser.js: \
 		$(word 4,$^) $(word 5,$^) >$@
 
 test: node_modules/.bin/mocha parser
-	$< -bu qunit --compilers coffee:coffee-script $(TEST_FILES)
+	$< -bu qunit $(TEST_FILES)
 	$(MAKE) lint
 
 coverage: coverage/index.html
@@ -163,11 +163,11 @@ browser-test: parser roole test/test.js
 test/test.js: \
 	build/commonjs-stripper \
 	test/assert.js \
-	node_modules/.bin/coffee \
 	$(TEST_FILES)
 
 	$< $(word 2,$^) >$@
-	$< $(TEST_FILES) | $(word 3,$^) -sbp >>$@
+	echo >> $@
+	$< $(TEST_FILES) >>$@
 
 node_modules/%:
 	npm install
@@ -175,6 +175,7 @@ node_modules/%:
 JS_FILES = $(shell find lib -type f \( -name '*.js' ! -name 'generatedParser.js' \))
 lint: node_modules/.bin/jshint
 	@$< bin/roole test/assert.js build/* $(JS_FILES)
+	@$< --config test/unit/.jshintrc test/unit
 
 publish: lib/parser/generatedParser.js
 	npm publish

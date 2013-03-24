@@ -1,7 +1,6 @@
 'use strict';
 
 var roole = require('../lib/roole');
-
 var assert = exports;
 
 assert.compileTo = function(options, input, css) {
@@ -11,10 +10,17 @@ assert.compileTo = function(options, input, css) {
 		options = {};
 	}
 
+	input = input.join('\n');
+	css = css.join('\n');
+
 	options.prettyError = true;
+	if (options.imports) {
+		for (var file in options.imports) {
+			options.imports[file] = options.imports[file].join('\n');
+		}
+	}
 
 	var called = false;
-
 	roole.compile(input, options, function(error, output) {
 		called = true;
 
@@ -47,11 +53,18 @@ assert.failAt = function(options, input, loc) {
 		options = {};
 	}
 
+	input = input.join('\n');
+
 	options.prettyError = true;
+	if (options.imports) {
+		for (var file in options.imports) {
+			options.imports[file] = options.imports[file].join('\n');
+		}
+	}
+
 	if (!loc.fileName) { loc.fileName = ''; }
 
 	var called = false;
-
 	roole.compile(input, options, function(error) {
 		if (!error) {
 			throw new Error('no error is thrown');

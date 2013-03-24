@@ -29,7 +29,6 @@
     "pegjs": "git://github.com/dmajda/pegjs.git#798ed6a8a4fbfc36b312ba09d428a5832808d9d6",
     "mustache": "0.7.x",
     "mocha": "1.x",
-    "coffee-script": "1.x",
     "uglify-js": "2.x",
     "jscoverage": "0.3.x",
     "jshint": "1.x"
