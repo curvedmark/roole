@@ -36,6 +36,7 @@ TEST_FILES = \
 	test/unit/keyframes.coffee \
 	test/unit/fontFace.coffee \
 	test/unit/module.coffee \
+	test/unit/page.coffee \
 	test/unit/charset.coffee \
 	test/unit/scope.coffee \
 	test/unit/prefix.coffee
