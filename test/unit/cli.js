@@ -1,6 +1,6 @@
 'use strict';
 
-var assert = require('./assert');
+var assert = require('../assert');
 
 suite('Command Line');
 
