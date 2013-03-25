@@ -112,7 +112,7 @@ test('roole nested-importing-file', function(done) {
 	assert.run('roole foo/bar.roo', {
 		files: {
 			'foo/foo.roo': 'body {margin: 1px}',
-			'foo/bar.roo': '@import "foo/foo.roo";',
+			'foo/bar.roo': '@import "foo.roo";',
 		},
 	}, {
 		files: {

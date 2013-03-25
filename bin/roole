@@ -125,7 +125,7 @@ function compileFiles(files, callback) {
 }
 
 function compileFile(file, callback) {
-	options.filePath = file.path;
+	options.fileName = file.path;
 	roole.compile(file.content, options, function(error, css) {
 		if (error) {
 			throw error;
