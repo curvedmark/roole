@@ -67,45 +67,45 @@ function compileStdin(callback) {
 	});
 }
 
-function resolveFiles(filePaths, dirPath) {
+function resolveFiles(filenames, dirname) {
 	var files = [];
-	filePaths.forEach(function(filePath) {
-		var stat = fs.statSync(filePath);
+	filenames.forEach(function(filename) {
+		var stat = fs.statSync(filename);
 		if (stat.isFile()) {
 			var file = {
-				path: filePath,
-				content: fs.readFileSync(filePath, 'utf8')
+				name: filename,
+				content: fs.readFileSync(filename, 'utf8')
 			};
 
 			if (!program.out) {
-				file.outputPath = file.path;
+				file.outputName = file.name;
 			} else {
-				if (!dirPath) {
-					var base = path.basename(file.path);
-					file.outputPath = path.join(program.out, base);
+				if (!dirname) {
+					var base = path.basename(file.name);
+					file.outputName = path.join(program.out, base);
 				} else {
-					var subpath = path.relative(dirPath, file.path);
-					file.outputPath = path.join(program.out, subpath);
+					var relpath = path.relative(dirname, file.name);
+					file.outputName = path.join(program.out, relpath);
 				}
 			}
-			file.outputPath = file.outputPath.replace(/\.roo$|$/, '.css');
+			file.outputName = file.outputName.replace(/\.roo$|$/, '.css');
 
 			files.push(file);
 		} else if (stat.isDirectory()) {
-			var dir = filePath;
-			var filePaths = fs.readdirSync(dir);
-			filePaths = filePaths.map(function(filePath) {
-				return path.join(dir, filePath);
-			}).filter(function(filePath) {
-				var stat = fs.statSync(filePath);
+			var dir = filename;
+			var filenames = fs.readdirSync(dir);
+			filenames = filenames.map(function(filename) {
+				return path.join(dir, filename);
+			}).filter(function(filename) {
+				var stat = fs.statSync(filename);
 				if (stat.isFile()) {
-					var hasExt = /\.roo$/.test(filePath);
+					var hasExt = /\.roo$/.test(filename);
 					return hasExt;
 				}
 
 				return stat.isDirectory();
 			});
-			files = files.concat(resolveFiles(filePaths, dirPath || filePath));
+			files = files.concat(resolveFiles(filenames, dirname || filename));
 		}
 	});
 	return files;
@@ -125,7 +125,7 @@ function compileFiles(files, callback) {
 }
 
 function compileFile(file, callback) {
-	options.fileName = file.path;
+	options.filename = file.name;
 	roole.compile(file.content, options, function(error, css) {
 		if (error) {
 			throw error;
@@ -146,29 +146,29 @@ function writeFiles(files) {
 function writeFile(file, watching) {
 	if (!file.compiledContent && !program.force) {
 		if (!program.watch) {
-			console.log('INFO:', file.path, 'compiles to empty string, not writing to file');
+			console.log('INFO:', file.name, 'compiles to empty string, not writing to file');
 		} else if (watching) {
-			console.log('  compiled', file.path, 'to empty string, not writing to file');
+			console.log('  compiled', file.name, 'to empty string, not writing to file');
 		}
 	} else {
-		var dir = path.dirname(file.outputPath);
+		var dir = path.dirname(file.outputName);
 		if (!existsSync(dir)) { mkdirp.sync(dir); }
-		fs.writeFileSync(file.outputPath, file.compiledContent);
+		fs.writeFileSync(file.outputName, file.compiledContent);
 
 		if (program.watch && watching) {
-			console.log('  compiled', file.path, 'to', file.outputPath);
+			console.log('  compiled', file.name, 'to', file.outputName);
 		}
 	}
 }
 
 function watchFiles(files) {
-	program.args.forEach(function(filePath) {
-		var stat = fs.statSync(filePath);
-		if (stat.isDirectory() && filePath.slice(-1) !== '/') {
-			filePath += '/';
+	program.args.forEach(function(filename) {
+		var stat = fs.statSync(filename);
+		if (stat.isDirectory() && filename.slice(-1) !== '/') {
+			filename += '/';
 		}
 
-		console.log('  watching', filePath);
+		console.log('  watching', filename);
 	});
 
 	files.forEach(function(file) {
@@ -177,7 +177,7 @@ function watchFiles(files) {
 }
 
 function watchFile(file) {
-	fs.watchFile(file.path, {interval: 100}, function(curr, prev) {
+	fs.watchFile(file.name, {interval: 100}, function(curr, prev) {
 		if (curr.mtime <= prev.mtime) {
 			return;
 		}

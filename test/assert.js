@@ -67,7 +67,7 @@ assert.failAt = function(options, input, loc) {
 		}
 	}
 
-	if (!loc.fileName) { loc.fileName = ''; }
+	if (!loc.filename) { loc.filename = ''; }
 
 	var called = false;
 	roole.compile(input, options, function(error) {
@@ -93,8 +93,8 @@ assert.failAt = function(options, input, loc) {
 			throw error;
 		}
 
-		if (error.fileName !== loc.fileName) {
-			var message = 'error has file path ' + error.fileName + ' instead of ' + loc.fileName;
+		if (error.filename !== loc.filename) {
+			var message = 'error has file path ' + error.filename + ' instead of ' + loc.filename;
 			error.message = message + ':\n\n' + error.message;
 			throw error;
 		}
@@ -123,15 +123,15 @@ assert.run = function(cmd, input, output) {
 	};
 
 	if (input.files) {
-		for (var fileName in input.files) {
-			var fileContent = input.files[fileName];
-			fileName = path.join(dir, fileName);
+		for (var filename in input.files) {
+			var fileContent = input.files[filename];
+			filename = path.join(dir, filename);
 
-			if (existsSync(fileName)) {
-				return callback(new Error("'" + fileName + "' already exists"));
+			if (existsSync(filename)) {
+				return callback(new Error("'" + filename + "' already exists"));
 			}
 
-			var fileDir = path.dirname(fileName);
+			var fileDir = path.dirname(filename);
 			if (!existsSync(fileDir)) {
 				mkdirp.sync(fileDir);
 			}
@@ -140,7 +140,7 @@ assert.run = function(cmd, input, output) {
 				fileContent = fileContent.join('\n');
 			}
 
-			fs.writeFileSync(fileName, fileContent);
+			fs.writeFileSync(filename, fileContent);
 		}
 	}
 
@@ -160,26 +160,26 @@ assert.run = function(cmd, input, output) {
 				return callback(new Error('stdout is\n"""\n' + stdout + '\n"""\n\ninstead of\n\n"""\n' + output.stdout + '\n"""'));
 			}
 		} else if (output.files) {
-			for (var fileName in output.files) {
-				var fileContent = output.files[fileName];
-				fileName = path.join(dir, fileName);
+			for (var filename in output.files) {
+				var fileContent = output.files[filename];
+				filename = path.join(dir, filename);
 
 				if (fileContent === null) {
-					if (existsSync(fileName)) {
-						return callback(new Error('"' + fileName + '" is created, which is not supposed to be'));
+					if (existsSync(filename)) {
+						return callback(new Error('"' + filename + '" is created, which is not supposed to be'));
 					}
 
 					continue;
 				}
 
-				var realContent = fs.readFileSync(fileName, 'utf8');
+				var realContent = fs.readFileSync(filename, 'utf8');
 
 				if (Array.isArray(fileContent)) {
 					fileContent = fileContent.join('\n');
 				}
 
 				if (realContent !== fileContent) {
-					return callback(new Error('"' + fileName + '" is\n"""\n' + realContent + '\n"""\n\ninstead of\n\n"""\n' + fileContent + '\n"""'));
+					return callback(new Error('"' + filename + '" is\n"""\n' + realContent + '\n"""\n\ninstead of\n\n"""\n' + fileContent + '\n"""'));
 				}
 			}
 		}

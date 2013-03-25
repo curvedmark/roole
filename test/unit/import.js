@@ -218,5 +218,5 @@ test('not allow importing file has syntax error', function() {
 		]
 	}}, [
 		'@import "base";',
-	], {line: 1, column: 7, fileName: 'base.roo'});
+	], {line: 1, column: 7, filename: 'base.roo'});
 });
