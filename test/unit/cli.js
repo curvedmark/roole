@@ -97,7 +97,27 @@ test('roole importing-file', function(done) {
 		},
 	}, {
 		files: {
+			'foo.css': null,
 			'bar.css': [
+				'body {',
+				'	margin: 1px;',
+				'}',
+			],
+		},
+		done: done,
+	});
+});
+
+test('roole nested-importing-file', function(done) {
+	assert.run('roole foo/bar.roo', {
+		files: {
+			'foo/foo.roo': 'body {margin: 1px}',
+			'foo/bar.roo': '@import "foo/foo.roo";',
+		},
+	}, {
+		files: {
+			'foo/foo.css': null,
+			'foo/bar.css': [
 				'body {',
 				'	margin: 1px;',
 				'}',
