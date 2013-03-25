@@ -34,23 +34,22 @@ if (!program.args.length) {
 	compileStdin(function(content) {
 		console.log(content);
 	});
-	return;
+} else {
+	compileFiles(resolveFiles(program.args), function(files) {
+		if (program.print) {
+			var content = files
+				.filter(function(file) { return file.compiledContent; })
+				.map(function(file) { return file.compiledContent; })
+				.join('\n\n');
+
+			console.log(content);
+			return;
+		}
+
+		writeFiles(files);
+		if (program.watch) { watchFiles(files); }
+	});
 }
-
-compileFiles(resolveFiles(program.args), function(files) {
-	if (program.print) {
-		var content = files
-			.filter(function(file) { return file.compiledContent; })
-			.map(function(file) { return file.compiledContent; })
-			.join('\n\n');
-
-		console.log(content);
-		return;
-	}
-
-	writeFiles(files);
-	if (program.watch) { watchFiles(files); }
-});
 
 function compileStdin(callback) {
 	var stdin = '';
