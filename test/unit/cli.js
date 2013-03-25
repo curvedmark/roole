@@ -89,6 +89,24 @@ test('roole empty-files...', function(done) {
 	});
 });
 
+test('roole importing-file', function(done) {
+	assert.run('roole bar.roo', {
+		files: {
+			'foo.roo': 'body {margin: 1px}',
+			'bar.roo': '@import "foo.roo";',
+		},
+	}, {
+		files: {
+			'bar.css': [
+				'body {',
+				'	margin: 1px;',
+				'}',
+			],
+		},
+		done: done,
+	});
+});
+
 test('roole -f empty-file', function(done) {
 	assert.run('roole -f foo.roo', {
 		files: {
