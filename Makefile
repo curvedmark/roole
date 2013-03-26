@@ -203,6 +203,10 @@ clean:
 		coverage \
 		dist/roole.js \
 		dist/roole.min.js \
-		test/test.js
+		dist/roole.min.js.map \
+		test/vendor \
+		test/test.js \
+		test/test.min.js \
+		test/test.min.js.map
 
 .PHONY: parser test cli-test all-test browser-test coverage roole min  clean
