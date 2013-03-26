@@ -3,7 +3,6 @@
 
 var fs = require('fs');
 var path = require('path');
-var existsSync = fs.existsSync || path.existsSync;
 var mkdirp = require('mkdirp');
 var program = require('commander');
 var roole = require('../lib/roole');
@@ -152,7 +151,7 @@ function writeFile(file, watching) {
 		}
 	} else {
 		var dir = path.dirname(file.outputName);
-		if (!existsSync(dir)) { mkdirp.sync(dir); }
+		mkdirp.sync(dir);
 		fs.writeFileSync(file.outputName, file.compiledContent);
 
 		if (program.watch && watching) {

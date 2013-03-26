@@ -3,7 +3,6 @@
 var fs = require('fs');
 var path = require('path');
 var exec = require('child_process').exec;
-var existsSync = fs.existsSync || path.existsSync;
 var mkdirp = require('mkdirp');
 var roole = require('../lib/roole');
 var assert = exports;
@@ -106,10 +105,10 @@ assert.failAt = function(options, input, loc) {
 };
 
 assert.run = function(cmd, input, output) {
+	var existsSync = fs.existsSync || path.existsSync;
+
 	var dir = 'test-dir';
-	if (!existsSync(dir)) {
-		mkdirp.sync(dir);
-	}
+	mkdirp.sync(dir);
 
 	if (Array.isArray(input.stdin)) {
 		input.stdin = input.stdin.join('\n');
@@ -132,9 +131,7 @@ assert.run = function(cmd, input, output) {
 			}
 
 			var fileDir = path.dirname(filename);
-			if (!existsSync(fileDir)) {
-				mkdirp.sync(fileDir);
-			}
+			mkdirp.sync(fileDir);
 
 			if (Array.isArray(fileContent)) {
 				fileContent = fileContent.join('\n');
