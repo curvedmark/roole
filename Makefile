@@ -163,7 +163,7 @@ dist/roole.min.js: \
 	 	../build/json version=$(VERSION) content=- | \
 		../build/mustache roole.min.js.mustache >roole.min.js
 
-browser-test: parser roole test/test.min.js test/vendor/mocha.js test/vendor/mocha.css
+browser-test: parser min test/test.min.js test/vendor/mocha.js test/vendor/mocha.css
 
 test/test.min.js: node_modules/.bin/uglifyjs test/test.js
 	cd test && \
