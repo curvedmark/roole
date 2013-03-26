@@ -1,8 +1,8 @@
-## 0.4.0 - 2013-03-25
+## 0.4.0 - 2013-03-26
 
 - Rename @mixin to @function
 - Allow @function call to return value
-- Support $argument inside @function
+- Support $arguments inside @function
 - Add rest parameter syntax
 - Remove @extend-all syntax
 - Add @module syntax
