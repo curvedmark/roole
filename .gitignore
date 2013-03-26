@@ -3,4 +3,5 @@ components
 /coverage
 /dist/roole.js
 /dist/roole.min.js
+/dist/roole.min.js.map
 /test/test.js

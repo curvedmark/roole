@@ -161,9 +161,10 @@ dist/roole.min.js: \
 	dist/roole.min.js.mustache \
 	package.json
 
-	$< $(word 2,$^) -cm | \
-	 	$(word 3,$^) version=$(VERSION) content=- | \
-		$(word 4,$^) $(word 5,$^) >$@
+	cd dist && \
+		../$< roole.js -cm --source-map roole.min.js.map | \
+	 	../build/json version=$(VERSION) content=- | \
+		../build/mustache roole.min.js.mustache >roole.min.js
 
 browser-test: parser roole test/test.js
 
