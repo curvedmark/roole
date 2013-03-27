@@ -244,3 +244,23 @@ test('not modify arguments by direct assignment', function() {
 		'}',
 	]);
 });
+
+test('function called within a mixin', function() {
+	assert.compileTo([
+		'$foo = @function {',
+		'	width: $bar();',
+		'};',
+		'',
+		'$bar = @function {',
+		'	@return 80px;',
+		'};',
+		'',
+		'body {',
+		'	@mixin $foo();',
+		'}',
+	], [
+		'body {',
+		'	width: 80px;',
+		'}',
+	]);
+});
