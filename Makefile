@@ -32,7 +32,6 @@ TEST_FILES = \
 	test/unit/void.js \
 	test/unit/if.js \
 	test/unit/for.js \
-	test/unit/mixin.js \
 	test/unit/keyframes.js \
 	test/unit/fontFace.js \
 	test/unit/module.js \
