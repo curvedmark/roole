@@ -181,6 +181,8 @@ function watchFile(file) {
 			return;
 		}
 
+		file.content = fs.readFileSync(file.name, 'utf8');
+
 		compileFile(file, function() {
 			writeFile(file, true);
 		});
