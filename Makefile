@@ -38,9 +38,11 @@ TEST_FILES = \
 	test/unit/page.js \
 	test/unit/charset.js \
 	test/unit/scope.js \
+	test/unit/bif.js \
 	test/unit/prefix.js
 
-method-files = $(patsubst %,lib/$(1)/%.js,$(shell grep -oE "\./node/\w+" lib/$(1)/$(1).js))
+node-files = $(patsubst %,lib/$(1)/%.js,$(shell grep -oE "\./node/\w+" lib/$(1)/$(1).js))
+function-files = $(patsubst %,lib/$(1)/%.js,$(shell grep -oE "\./function/\w+" lib/$(1)/index.js))
 
 LIB_FILES = \
 	lib/defaults.js \
@@ -55,24 +57,26 @@ LIB_FILES = \
 	lib/importer/index.js \
 	lib/evaluator/scope.js \
 	lib/evaluator/evaluator.js \
-	$(call method-files,evaluator) \
+	$(call node-files,evaluator) \
 	lib/evaluator/index.js \
+	$(call function-files,bif) \
+	lib/bif/index.js \
 	lib/extender/extender.js \
-	$(call method-files,extender) \
+	$(call node-files,extender) \
 	lib/extender/mediaFilter.js \
 	lib/extender/rulesetFilter.js \
 	lib/extender/selectorExtender.js \
 	lib/extender/index.js \
 	lib/normalizer/normalizer.js \
-	$(call method-files,normalizer) \
+	$(call node-files,normalizer) \
 	lib/normalizer/index.js \
 	lib/prefixer/prefixer.js \
 	lib/prefixer/propertyNamePrefixer.js \
 	lib/prefixer/linearGradientPrefixer.js \
-	$(call method-files,prefixer) \
+	$(call node-files,prefixer) \
 	lib/prefixer/index.js \
 	lib/compiler/compiler.js \
-	$(call method-files,compiler) \
+	$(call node-files,compiler) \
 	lib/compiler/index.js \
 	lib/formatter.js \
 	lib/roole.js \
