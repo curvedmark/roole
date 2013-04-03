@@ -167,3 +167,39 @@ test('$unit(number, null), not allowed', function() {
 		'}',
 	], {line: 2, column: 17});
 });
+
+test('$opposite_position(left), return right', function() {
+	assert.compileTo([
+		'body {',
+		'	-foo: $opposite_position(left);',
+		'}',
+	], [
+		'body {',
+		'	-foo: right;',
+		'}',
+	]);
+});
+
+test('$opposite_position(top), return bottom', function() {
+	assert.compileTo([
+		'body {',
+		'	-foo: $opposite_position(top);',
+		'}',
+	], [
+		'body {',
+		'	-foo: bottom;',
+		'}',
+	]);
+});
+
+test('$opposite_position(center), return center', function() {
+	assert.compileTo([
+		'body {',
+		'	-foo: $opposite_position(center);',
+		'}',
+	], [
+		'body {',
+		'	-foo: center;',
+		'}',
+	]);
+});
