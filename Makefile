@@ -59,8 +59,8 @@ LIB_FILES = \
 	lib/evaluator/evaluator.js \
 	$(call node-files,evaluator) \
 	lib/evaluator/index.js \
-	$(call function-files,bif) \
 	lib/bif/index.js \
+	$(call function-files,bif) \
 	lib/extender/extender.js \
 	$(call node-files,extender) \
 	lib/extender/mediaFilter.js \
