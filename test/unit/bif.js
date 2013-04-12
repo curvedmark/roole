@@ -168,10 +168,10 @@ test('$unit(number, null), not allowed', function() {
 	], {line: 2, column: 17});
 });
 
-test('$opposite_position(left), return right', function() {
+test('$oppositePosition(left), return right', function() {
 	assert.compileTo([
 		'body {',
-		'	-foo: $opposite_position(left);',
+		'	-foo: $oppositePosition(left);',
 		'}',
 	], [
 		'body {',
@@ -180,10 +180,10 @@ test('$opposite_position(left), return right', function() {
 	]);
 });
 
-test('$opposite_position(top), return bottom', function() {
+test('$oppositePosition(top), return bottom', function() {
 	assert.compileTo([
 		'body {',
-		'	-foo: $opposite_position(top);',
+		'	-foo: $oppositePosition(top);',
 		'}',
 	], [
 		'body {',
@@ -192,10 +192,10 @@ test('$opposite_position(top), return bottom', function() {
 	]);
 });
 
-test('$opposite_position(center), return center', function() {
+test('$oppositePosition(center), return center', function() {
 	assert.compileTo([
 		'body {',
-		'	-foo: $opposite_position(center);',
+		'	-foo: $oppositePosition(center);',
 		'}',
 	], [
 		'body {',
@@ -204,10 +204,10 @@ test('$opposite_position(center), return center', function() {
 	]);
 });
 
-test('$opposite_position(top right), return bottom left', function() {
+test('$oppositePosition(top right), return bottom left', function() {
 	assert.compileTo([
 		'body {',
-		'	-foo: $opposite_position(top right);',
+		'	-foo: $oppositePosition(top right);',
 		'}',
 	], [
 		'body {',
