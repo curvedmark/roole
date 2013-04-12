@@ -203,3 +203,15 @@ test('$opposite_position(center), return center', function() {
 		'}',
 	]);
 });
+
+test('$opposite_position(top right), return bottom left', function() {
+	assert.compileTo([
+		'body {',
+		'	-foo: $opposite_position(top right);',
+		'}',
+	], [
+		'body {',
+		'	-foo: bottom left;',
+		'}',
+	]);
+});
