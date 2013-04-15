@@ -46,28 +46,6 @@ test('not allow using @return outside @function', function() {
 	], {line: 2, column: 2});
 });
 
-test('call function multiple times', function() {
-	assert.compileTo([
-		'$get-value = @function {',
-		'	@return $value;',
-		'};',
-		'',
-		'body {',
-		'	$value = 960px;',
-		'	width: $get-value();',
-		'',
-		'	$value = 400px;',
-		'	height: $get-value();',
-		'}',
-		'',
-	], [
-		'body {',
-		'	width: 960px;',
-		'	height: 400px;',
-		'}',
-	]);
-});
-
 test('specify parameter', function() {
 	assert.compileTo([
 		'$width = @function $width {',
@@ -247,12 +225,12 @@ test('not modify arguments by direct assignment', function() {
 
 test('function called within a mixin', function() {
 	assert.compileTo([
-		'$foo = @function {',
-		'	width: $bar();',
-		'};',
-		'',
 		'$bar = @function {',
 		'	@return 80px;',
+		'};',
+		'',
+		'$foo = @function {',
+		'	width: $bar();',
 		'};',
 		'',
 		'body {',
@@ -261,6 +239,24 @@ test('function called within a mixin', function() {
 	], [
 		'body {',
 		'	width: 80px;',
+		'}',
+	]);
+});
+
+test('lexical scope', function() {
+	assert.compileTo([
+		'$var = 1;',
+		'$func = @function {',
+		'	@return $var;',
+		'};',
+		'',
+		'body {',
+		'	$var = 2;',
+		'	-foo: $func();',
+		'}',
+	], [
+		'body {',
+		'	-foo: 1;',
 		'}',
 	]);
 });
