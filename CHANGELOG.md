@@ -1,6 +1,6 @@
 ## 0.4.1 - 2013-03-28
 
-- Fix function called within mixin retuning incorrect value
+- Fix function called within mixin returning incorrect value
 
 ## 0.4.0 - 2013-03-26
 
