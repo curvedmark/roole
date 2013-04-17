@@ -46,6 +46,27 @@ test('not allow using @return outside @function', function() {
 	], {line: 2, column: 2});
 });
 
+test('call function multiple times', function() {
+	assert.compileTo([
+		'body {',
+		'	$value = 960px;',
+		'	$get-value = @function {',
+		'		@return $value;',
+		'	};',
+		'	width: $get-value();',
+		'',
+		'	$value = 400px;',
+		'	height: $get-value();',
+		'}',
+		'',
+	], [
+		'body {',
+		'	width: 960px;',
+		'	height: 400px;',
+		'}',
+	]);
+});
+
 test('specify parameter', function() {
 	assert.compileTo([
 		'$width = @function $width {',
