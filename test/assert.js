@@ -14,15 +14,7 @@ assert.compileTo = function(options, input, css) {
 		options = {};
 	}
 
-	input = input.join('\n');
-	css = css.join('\n');
-
 	options.prettyError = true;
-	if (options.imports) {
-		for (var file in options.imports) {
-			options.imports[file] = options.imports[file].join('\n');
-		}
-	}
 
 	var called = false;
 	roole.compile(input, options, function(error, output) {
@@ -57,14 +49,7 @@ assert.failAt = function(options, input, loc) {
 		options = {};
 	}
 
-	input = input.join('\n');
-
 	options.prettyError = true;
-	if (options.imports) {
-		for (var file in options.imports) {
-			options.imports[file] = options.imports[file].join('\n');
-		}
-	}
 
 	if (!loc.filename) { loc.filename = ''; }
 
