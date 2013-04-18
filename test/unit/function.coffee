@@ -2,6 +2,28 @@ assert = require '../assert'
 
 suite 'function'
 
+test 'css function, single argument', ->
+	assert.compileTo '''
+		a {
+			content: attr(href);
+		}
+	''', '''
+		a {
+			content: attr(href);
+		}
+	'''
+
+test 'css function, multiple arguments', ->
+	assert.compileTo '''
+		a {
+			content: counters(item, '.');
+		}
+	''', '''
+		a {
+			content: counters(item, '.');
+		}
+	'''
+
 test 'no params', ->
 	assert.compileTo '''
 		$width = @function {
