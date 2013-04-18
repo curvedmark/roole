@@ -150,3 +150,47 @@ test '$unit(number, null) not allowed', ->
 			-foo: $unit(1, null);
 		}
 	''', {line: 2, column: 17}
+
+test '$opp(left)', ->
+	assert.compileTo '''
+		body {
+			-foo: $opp(left);
+		}
+	''', '''
+		body {
+			-foo: right;
+		}
+	'''
+
+test '$opp(top)', ->
+	assert.compileTo '''
+		body {
+			-foo: $opp(top);
+		}
+	''', '''
+		body {
+			-foo: bottom;
+		}
+	'''
+
+test "$opp('center')", ->
+	assert.compileTo '''
+		body {
+			-foo: $opp('center');
+		}
+	''', '''
+		body {
+			-foo: 'center';
+		}
+	'''
+
+test '$opp(top right)', ->
+	assert.compileTo '''
+		body {
+			-foo: $opp(top right);
+		}
+	''', '''
+		body {
+			-foo: bottom left;
+		}
+	'''
