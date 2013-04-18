@@ -95,10 +95,6 @@ assert.run = function(cmd, input, output) {
 	var dir = 'test-dir';
 	mkdirp.sync(dir);
 
-	if (Array.isArray(input.stdin)) {
-		input.stdin = input.stdin.join('\n');
-	}
-
 	var done = output.done;
 	var callback = function(error) {
 		exec('rm -rf ' + dir, function() {
@@ -118,10 +114,6 @@ assert.run = function(cmd, input, output) {
 			var fileDir = path.dirname(filename);
 			mkdirp.sync(fileDir);
 
-			if (Array.isArray(fileContent)) {
-				fileContent = fileContent.join('\n');
-			}
-
 			fs.writeFileSync(filename, fileContent);
 		}
 	}
@@ -129,10 +121,6 @@ assert.run = function(cmd, input, output) {
 	var child = exec('../bin/' + cmd, {cwd: dir}, function(error, stdout) {
 		if (error) {
 			return callback(error);
-		}
-
-		if (Array.isArray(output.stdout)) {
-			output.stdout = output.stdout.join('\n');
 		}
 
 		if (output.stdout) {
@@ -155,10 +143,6 @@ assert.run = function(cmd, input, output) {
 				}
 
 				var realContent = fs.readFileSync(filename, 'utf8');
-
-				if (Array.isArray(fileContent)) {
-					fileContent = fileContent.join('\n');
-				}
 
 				if (realContent !== fileContent) {
 					return callback(new Error('"' + filename + '" is\n"""\n' + realContent + '\n"""\n\ninstead of\n\n"""\n' + fileContent + '\n"""'));
