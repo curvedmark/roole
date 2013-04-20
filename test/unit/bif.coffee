@@ -162,25 +162,25 @@ test '$opp(left)', ->
 		}
 	'''
 
-test '$opp(top)', ->
+test "$opp('top')", ->
 	assert.compileTo '''
 		body {
-			-foo: $opp(top);
+			-foo: $opp('top');
 		}
 	''', '''
 		body {
-			-foo: bottom;
+			-foo: 'bottom';
 		}
 	'''
 
-test "$opp('center')", ->
+test '$opp(center)', ->
 	assert.compileTo '''
 		body {
-			-foo: $opp('center');
+			-foo: $opp(center);
 		}
 	''', '''
 		body {
-			-foo: 'center';
+			-foo: center;
 		}
 	'''
 
@@ -194,3 +194,10 @@ test '$opp(top right)', ->
 			-foo: bottom left;
 		}
 	'''
+
+test '$opp(top 1px), not allowed', ->
+	assert.failAt '''
+		body {
+			-foo: $opp(top 1px);
+		}
+	''', {line: 2, column: 17}
