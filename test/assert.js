@@ -59,25 +59,25 @@ assert.failAt = function(options, input, loc) {
 			throw new Error('no error is thrown');
 		}
 
-		if (!error.line) {
+		if (!error.loc) {
 			throw error;
 		}
 
 		called = true;
 
-		if (error.line !== loc.line) {
+		if (error.loc.line !== loc.line) {
 			var message = 'error has line number ' + error.line + ' instead of ' + loc.line;
 			error.message = message + ':\n\n' + error.message;
 			throw error;
 		}
 
-		if (error.column !== loc.column) {
+		if (error.loc.column !== loc.column) {
 			var message = 'error has column number ' + error.column + ' instead of ' + loc.column;
 			error.message = message + ':\n\n' + error.message;
 			throw error;
 		}
 
-		if (error.filename !== loc.filename) {
+		if (error.loc.filename !== loc.filename) {
 			var message = 'error has file path ' + error.filename + ' instead of ' + loc.filename;
 			error.message = message + ':\n\n' + error.message;
 			throw error;
