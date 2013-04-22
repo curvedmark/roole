@@ -89,22 +89,21 @@ assert.failAt = function(options, input, loc) {
 	}
 };
 
-assert.run = function(cmd, input, output) {
+assert.compileToWithCmd = function(cmd, input, output, done) {
 	var existsSync = fs.existsSync || path.existsSync;
 
 	var dir = 'test-dir';
 	mkdirp.sync(dir);
 
-	var done = output.done;
 	var callback = function(error) {
 		exec('rm -rf ' + dir, function() {
 			done(error);
 		});
 	};
 
-	if (input.files) {
-		for (var filename in input.files) {
-			var fileContent = input.files[filename];
+	if (typeof input !== 'string') {
+		for (var filename in input) {
+			var fileContent = input[filename];
 			filename = path.join(dir, filename);
 
 			if (existsSync(filename)) {
@@ -123,15 +122,15 @@ assert.run = function(cmd, input, output) {
 			return callback(error);
 		}
 
-		if (output.stdout) {
-			output.stdout += '\n';
+		if (typeof output === 'string') {
+			output += '\n';
 			stdout = stdout.toString();
-			if (stdout !== output.stdout) {
-				return callback(new Error('stdout is\n"""\n' + stdout + '\n"""\n\ninstead of\n\n"""\n' + output.stdout + '\n"""'));
+			if (stdout !== output) {
+				return callback(new Error('stdout is\n"""\n' + stdout + '\n"""\n\ninstead of\n\n"""\n' + output + '\n"""'));
 			}
-		} else if (output.files) {
-			for (var filename in output.files) {
-				var fileContent = output.files[filename];
+		} else {
+			for (var filename in output) {
+				var fileContent = output[filename];
 				filename = path.join(dir, filename);
 
 				if (fileContent === null) {
@@ -153,7 +152,7 @@ assert.run = function(cmd, input, output) {
 		callback();
 	});
 
-	if (input.stdin) {
-		child.stdin.end(input.stdin);
+	if (typeof input === 'string') {
+		child.stdin.end(input);
 	}
 };

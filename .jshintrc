@@ -13,7 +13,7 @@
 	"unused": true,
 	"trailing": true,
 	"maxdepth": 4,
-	"maxparams": 3,
+	"maxparams": 4,
 	"eqnull": true,
 	"globalstrict": true,
 	"smarttabs": true,
