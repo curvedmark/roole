@@ -44,7 +44,6 @@ node-files = $(patsubst %,lib/$(1)/%.js,$(shell grep -oE "\./node/\w+" lib/$(1)/
 function-files = $(patsubst %,lib/$(1)/%.js,$(shell grep -oE "\./function/\w+" lib/$(1)/index.js))
 
 LIB_FILES = \
-	lib/defaults.js \
 	lib/helper.js \
 	lib/err.js \
 	lib/node.js \
