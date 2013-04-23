@@ -133,18 +133,18 @@ assert.compileToWithCmd = function(cmd, input, output, done) {
 				var fileContent = output[filename];
 				filename = path.join(dir, filename);
 
-				if (fileContent === null) {
-					if (existsSync(filename)) {
+				if (existsSync(filename)) {
+					if (fileContent === null) {
 						return callback(new Error('"' + filename + '" is created, which is not supposed to be'));
 					}
 
-					continue;
-				}
+					var realContent = fs.readFileSync(filename, 'utf8');
 
-				var realContent = fs.readFileSync(filename, 'utf8');
-
-				if (realContent !== fileContent) {
-					return callback(new Error('"' + filename + '" is\n"""\n' + realContent + '\n"""\n\ninstead of\n\n"""\n' + fileContent + '\n"""'));
+					if (realContent !== fileContent) {
+						return callback(new Error('"' + filename + '" is\n"""\n' + realContent + '\n"""\n\ninstead of\n\n"""\n' + fileContent + '\n"""'));
+					}
+				} else if (fileContent !== null) {
+					return callback(new Error('"' + filename + '" is not created'));
 				}
 			}
 		}

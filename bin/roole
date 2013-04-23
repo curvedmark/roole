@@ -5,6 +5,7 @@ var fs = require('fs');
 var path = require('path');
 var mkdirp = require('mkdirp');
 var program = require('commander');
+var _ = require('../lib/helper');
 var roole = require('../lib/roole');
 
 program
@@ -20,34 +21,14 @@ program
 	.option('    --skip-prefixed', 'Not generate prefixed rule that already exists')
 	.parse(process.argv);
 
-var options = {
-	prettyError: true
-};
-
-if (program.prefix != null) { options.prefix = program.prefix; }
-if (program.indent != null) { options.indent = program.indent; }
-if (program.precision != null) { options.precision = program.precision; }
-if (program.skipPrefixed != null) { options.skipPrefixed = program.skipPrefixed; }
+var options = _.mixin({}, program);
+options.prettyError = true;
 
 if (!program.args.length) {
-	compileStdin(function(content) {
-		console.log(content);
-	});
+	compileStdin(console.log);
 } else {
-	compileFiles(resolveFiles(program.args), function(files) {
-		if (program.print) {
-			var content = files
-				.filter(function(file) { return file.compiledContent; })
-				.map(function(file) { return file.compiledContent; })
-				.join('\n\n');
-
-			console.log(content);
-			return;
-		}
-
-		writeFiles(files);
-		if (program.watch) { watchFiles(files); }
-	});
+	var files = resolveFiles(program.args);
+	compileFiles(files, outputFiles);
 }
 
 function compileStdin(callback) {
@@ -56,67 +37,104 @@ function compileStdin(callback) {
 	process.stdin.setEncoding('utf8');
 	process.stdin.on('data', function(chunk) { stdin += chunk; });
 	process.stdin.on('end', function(){
-		roole.compile(stdin, options, function(error, css) {
-			if (error) {
-				throw error;
-			}
-
-			callback(css);
-		});
+		compile(stdin, options, callback);
 	});
 }
 
-function resolveFiles(filenames, dirname) {
+function compile(input, options, callback) {
+	roole.compile(input, options, function(error, css) {
+		if (!error) {
+			return callback(css);
+		}
+		if (!program.watch) {
+			throw error;
+		}
+		console.error(error.message);
+		// FIXME: should not display compile to empty file warning
+		callback('');
+	});
+}
+
+function resolveFiles(filenames) {
 	var files = [];
 	filenames.forEach(function(filename) {
 		var stat = fs.statSync(filename);
 		if (stat.isFile()) {
-			var file = {
-				name: filename,
-				content: fs.readFileSync(filename, 'utf8')
-			};
-
-			if (!program.out) {
-				file.outputName = file.name;
-			} else {
-				if (!dirname) {
-					var base = path.basename(file.name);
-					file.outputName = path.join(program.out, base);
-				} else {
-					var relpath = path.relative(dirname, file.name);
-					file.outputName = path.join(program.out, relpath);
-				}
-			}
-			file.outputName = file.outputName.replace(/\.roo$|$/, '.css');
-
+			var file = resolveFile(filename);
 			files.push(file);
 		} else if (stat.isDirectory()) {
-			var dir = filename;
-			var filenames = fs.readdirSync(dir);
-			filenames = filenames.map(function(filename) {
-				return path.join(dir, filename);
-			}).filter(function(filename) {
-				var stat = fs.statSync(filename);
-				if (stat.isFile()) {
-					var hasExt = /\.roo$/.test(filename);
-					return hasExt;
-				}
-
-				return stat.isDirectory();
-			});
-			files = files.concat(resolveFiles(filenames, dirname || filename));
+			var _files = resolveDir(filename);
+			files = files.concat(_files);
 		}
 	});
 	return files;
 }
 
-function compileFiles(files, callback) {
-	var i = 0;
-	var length = files.length;
+function resolveFile(filename) {
+	var outputName = filename.replace(/\.roo$|$/, '.css');
+	if (program.out) {
+		var base = path.basename(outputName);
+		outputName = path.join(program.out, base);
+	}
+	return {
+		name: filename,
+		outputName: outputName,
+		content: fs.readFileSync(filename, 'utf8')
+	};
+}
 
+function resolveDir(dirname, root) {
+	if (!root) {
+		root = dirname;
+	}
+	var files = [];
+	var filenames = fs.readdirSync(dirname);
+	filenames.map(function (filename) {
+		return path.join(dirname, filename);
+	}).forEach(function(filename) {
+		var stat = fs.statSync(filename);
+		if (stat.isFile() && path.extname(filename) === '.roo') {
+			var file = resolveDirFile(filename, root);
+			files.push(file);
+		} else if (stat.isDirectory()) {
+			var _files = resolveDir(filename, root);
+			files = files.concat(_files);
+		}
+	});
+	return files;
+}
+
+function resolveDirFile(filename, root) {
+	var file = resolveFile(filename);
+	if (program.out) {
+		var outputName = filename.replace(/\.roo$|$/, '.css');
+		outputName = path.relative(root, outputName);
+		file.outputName = path.join(program.out, outputName);
+	}
+	return file;
+}
+
+function outputFiles(files) {
+	if (program.print) {
+		var content = files.filter(function(file) {
+			return file.compiledContent;
+		}).map(function(file) {
+			return file.compiledContent;
+		}).join('\n\n');
+		return console.log(content);
+	}
+
+	writeFiles(files);
+	if (program.watch) {
+		watchFiles(files);
+	}
+}
+
+function compileFiles(files, callback) {
+	var length = files.length;
 	files.forEach(function(file) {
 		compileFile(file, function() {
-			if (++i === length) {
+			if (!--length) {
 				callback(files);
 			}
 		});
@@ -125,13 +143,8 @@ function compileFiles(files, callback) {
 
 function compileFile(file, callback) {
 	options.filename = file.name;
-	roole.compile(file.content, options, function(error, css) {
-		if (error) {
-			throw error;
-		}
-
+	compile(file.content, options, function (css) {
 		file.compiledContent = css;
-
 		callback(file);
 	});
 }
@@ -166,10 +179,8 @@ function watchFiles(files) {
 		if (stat.isDirectory() && filename.slice(-1) !== '/') {
 			filename += '/';
 		}
-
 		console.log('  watching', filename);
 	});
-
 	files.forEach(function(file) {
 		watchFile(file);
 	});
@@ -180,9 +191,7 @@ function watchFile(file) {
 		if (curr.mtime <= prev.mtime) {
 			return;
 		}
-
 		file.content = fs.readFileSync(file.name, 'utf8');
-
 		compileFile(file, function() {
 			writeFile(file, true);
 		});

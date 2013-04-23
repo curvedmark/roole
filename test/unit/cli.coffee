@@ -23,7 +23,7 @@ test 'roole file', (done) ->
 		'''
 	}, done
 
-test 'roole files...', (done) ->
+test 'roole file file', (done) ->
 	assert.compileToWithCmd 'roole foo.roo bar.roo', {
 		'foo.roo': 'body {margin: 1px}'
 		'bar.roo': 'body {margin: 2px}'
@@ -40,14 +40,14 @@ test 'roole files...', (done) ->
 		'''
 	}, done
 
-test 'roole empty file', (done) ->
+test 'roole empty-file', (done) ->
 	assert.compileToWithCmd 'roole foo.roo', {
 		'foo.roo': ''
 	}, {
 		'foo.css': null
 	}, done
 
-test 'roole empty files...', (done) ->
+test 'roole file empty-files', (done) ->
 	assert.compileToWithCmd 'roole foo.roo bar.roo', {
 		'foo.roo': 'body {margin: 1px}'
 		'bar.roo': ''
@@ -60,7 +60,7 @@ test 'roole empty files...', (done) ->
 		'bar.css': null
 	}, done
 
-test 'roole importing files', (done) ->
+test 'roole importing-files', (done) ->
 	assert.compileToWithCmd 'roole bar.roo', {
 		'foo.roo': 'body {margin: 1px}'
 		'bar.roo': '@import "foo.roo";'
@@ -73,7 +73,7 @@ test 'roole importing files', (done) ->
 		'''
 	}, done
 
-test 'roole nesting importing file', (done) ->
+test 'roole dir/importing-file', (done) ->
 	assert.compileToWithCmd 'roole foo/bar.roo', {
 		'foo/foo.roo': 'body {margin: 1px}'
 		'foo/bar.roo': '@import "foo.roo";'
@@ -86,14 +86,14 @@ test 'roole nesting importing file', (done) ->
 		'''
 	}, done
 
-test 'roole -f empty file', (done) ->
+test 'roole -f empty-file', (done) ->
 	assert.compileToWithCmd 'roole -f foo.roo', {
 		'foo.roo': ''
 	}, {
 		'foo.css': ''
 	}, done
 
-test 'roole directory', (done) ->
+test 'roole dir', (done) ->
 	assert.compileToWithCmd 'roole foo', {
 		'foo/foo.roo': 'body {margin: 1px}'
 		'foo/bar.roo': 'body {margin: 2px}'
@@ -110,24 +110,29 @@ test 'roole directory', (done) ->
 		'''
 	}, done
 
-test 'roole -o directory files...', (done) ->
-	assert.compileToWithCmd 'roole -o foo foo.roo bar.roo', {
+test 'roole -o dir file', (done) ->
+	assert.compileToWithCmd 'roole -o foo foo.roo', {
 		'foo.roo': 'body {margin: 1px}'
-		'bar.roo': 'body {margin: 2px}'
 	}, {
 		'foo/foo.css': '''
 			body {
 				margin: 1px;
 			}
 		'''
+	}, done
+
+test 'roole -o dir dir/file', (done) ->
+	assert.compileToWithCmd 'roole -o foo bar/bar.roo', {
+		'bar/bar.roo': 'body {margin: 1px}'
+	}, {
 		'foo/bar.css': '''
 			body {
-				margin: 2px;
+				margin: 1px;
 			}
 		'''
 	}, done
 
-test 'roole -o directory files...', (done) ->
+test 'roole -o dir file empty-file', (done) ->
 	assert.compileToWithCmd 'roole -o foo foo.roo bar.roo', {
 		'foo.roo': 'body {margin: 1px}'
 		'bar.roo': ''
@@ -140,7 +145,7 @@ test 'roole -o directory files...', (done) ->
 		'foo/bar.css': null
 	}, done
 
-test 'roole -o directory directory', (done) ->
+test 'roole -o dir dir', (done) ->
 	assert.compileToWithCmd 'roole -o foo bar', {
 		'bar/foo.roo': 'body {margin: 1px}'
 		'bar/baz/baz.roo': 'body {margin: 2px}'
@@ -157,7 +162,7 @@ test 'roole -o directory directory', (done) ->
 		'''
 	}, done
 
-test 'roole -p files', (done) ->
+test 'roole -p file file', (done) ->
 	assert.compileToWithCmd 'roole -p foo.roo bar.roo', {
 		'foo.roo': 'body {margin: 1px}'
 		'bar.roo': 'body {margin: 2px}'
@@ -218,21 +223,6 @@ test 'roole --skip-prefixed', (done) ->
 		body {
 			-moz-box-sizing: padding-box;
 			-webkit-box-sizing: padding-box;
-			box-sizing: padding-box;
-		}
-	''', done
-
-test 'roole without --skip-prefixed', (done) ->
-	assert.compileToWithCmd 'roole', '''
-		body {
-			-moz-box-sizing: padding-box;
-			box-sizing: padding-box;
-		}
-	''', '''
-		body {
-			-moz-box-sizing: padding-box;
-			-webkit-box-sizing: padding-box;
-			-moz-box-sizing: padding-box;
 			box-sizing: padding-box;
 		}
 	''', done
