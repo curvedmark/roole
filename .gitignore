@@ -1,9 +1,6 @@
 node_modules
 components
 /coverage
-/dist/roole.js
-/dist/roole.min.js
-/dist/roole.min.js.map
 /test/vendor
 /test/test.js
 /test/test.min.js
