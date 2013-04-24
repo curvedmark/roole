@@ -93,66 +93,69 @@ assert.compileToWithCmd = function(cmd, input, output, done) {
 	var existsSync = fs.existsSync || path.existsSync;
 
 	var dir = 'test-dir';
-	mkdirp.sync(dir);
 
 	var callback = function(error) {
+		if (error) {
+			return done(error);
+		}
 		exec('rm -rf ' + dir, function() {
-			done(error);
+			done();
 		});
 	};
 
-	if (typeof input !== 'string') {
-		for (var filename in input) {
-			var fileContent = input[filename];
-			filename = path.join(dir, filename);
+	exec('rm -rf ' + dir, function() {
+		mkdirp.sync(dir);
 
-			if (existsSync(filename)) {
-				return callback(new Error("'" + filename + "' already exists"));
-			}
-
-			var fileDir = path.dirname(filename);
-			mkdirp.sync(fileDir);
-
-			fs.writeFileSync(filename, fileContent);
-		}
-	}
-
-	var child = exec('../bin/' + cmd, {cwd: dir}, function(error, stdout) {
-		if (error) {
-			return callback(error);
-		}
-
-		if (typeof output === 'string') {
-			output += '\n';
-			stdout = stdout.toString();
-			if (stdout !== output) {
-				return callback(new Error('stdout is\n"""\n' + stdout + '\n"""\n\ninstead of\n\n"""\n' + output + '\n"""'));
-			}
-		} else {
-			for (var filename in output) {
-				var fileContent = output[filename];
+		if (typeof input !== 'string') {
+			for (var filename in input) {
+				var fileContent = input[filename];
 				filename = path.join(dir, filename);
 
-				if (existsSync(filename)) {
-					if (fileContent === null) {
-						return callback(new Error('"' + filename + '" is created, which is not supposed to be'));
-					}
+				var fileDir = path.dirname(filename);
+				mkdirp.sync(fileDir);
 
-					var realContent = fs.readFileSync(filename, 'utf8');
-
-					if (realContent !== fileContent) {
-						return callback(new Error('"' + filename + '" is\n"""\n' + realContent + '\n"""\n\ninstead of\n\n"""\n' + fileContent + '\n"""'));
-					}
-				} else if (fileContent !== null) {
-					return callback(new Error('"' + filename + '" is not created'));
-				}
+				fs.writeFileSync(filename, fileContent);
 			}
 		}
 
-		callback();
-	});
+		var child = exec('../bin/' + cmd, {cwd: dir}, function(error, stdout) {
+			if (error) {
+				return callback(error);
+			}
 
-	if (typeof input === 'string') {
-		child.stdin.end(input);
-	}
+			if (typeof output === 'string') {
+				output += '\n';
+				stdout = stdout.toString();
+				if (stdout !== output) {
+					return callback(new Error('stdout is\n"""\n' + stdout + '\n"""\n\ninstead of\n\n"""\n' + output + '\n"""'));
+				}
+			} else {
+				for (var filename in output) {
+					var fileContent = output[filename];
+					filename = path.join(dir, filename);
+					var name = filename.substr(dir.length + 1);
+
+					if (existsSync(filename)) {
+						if (fileContent === null) {
+							return callback(new Error('"' + name + '" is created, which is not supposed to be'));
+						}
+
+						var realContent = fs.readFileSync(filename, 'utf8');
+
+						if (realContent !== fileContent) {
+							return callback(new Error('"' + name + '" compiled to\n"""\n' + realContent + '\n"""\n\ninstead of\n\n"""\n' + fileContent + '\n"""'));
+						}
+					} else if (fileContent !== null) {
+						return callback(new Error('"' + name + '" is not created'));
+					}
+				}
+			}
+
+			callback();
+		});
+
+		if (typeof input === 'string') {
+			child.stdin.end(input);
+		}
+	});
 };

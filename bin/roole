@@ -1,10 +1,20 @@
 #!/usr/bin/env node
 'use strict';
 
+var Q = require('q');
 var fs = require('fs');
+var qfs = {
+	stat: Q.denodeify(fs.stat),
+	readFile: Q.denodeify(fs.readFile),
+	readdir: Q.denodeify(fs.readdir),
+	writeFile: Q.denodeify(fs.writeFile)
+};
 var path = require('path');
+var format = require('util').format;
 var mkdirp = require('mkdirp');
+var qmkdirp = Q.denodeify(mkdirp);
 var program = require('commander');
+var _ = require('../lib/helper');
 var roole = require('../lib/roole');
 
 program
@@ -20,179 +30,181 @@ program
 	.option('    --skip-prefixed', 'Not generate prefixed rule that already exists')
 	.parse(process.argv);
 
-var options = program;
-options.prettyError = true;
+var options = _.mixin({}, program, {prettyError: true});
 
 if (!program.args.length) {
-	compileStdin(console.log);
+	readStdin().then(compile).done(console.log);
+} else if (!program.watch) {
+	resolveFiles(program.args).then(compileFiles).done(outputFiles);
 } else {
-	var files = resolveFiles(program.args);
-	compileFiles(files, outputFiles);
+	var files;
+	resolveFiles(program.args).then(function (f) {
+		files = f;
+		return files;
+	}).then(compileFiles).then(outputFiles).catch(function (error) {
+		printError(error);
+		return files;
+	}).done(watchFiles);
 }
 
-function compileStdin(callback) {
+function readStdin() {
+	var deferred = Q.defer();
 	var stdin = '';
 	process.stdin.resume();
 	process.stdin.setEncoding('utf8');
 	process.stdin.on('data', function(chunk) { stdin += chunk; });
 	process.stdin.on('end', function(){
-		compile(stdin, options, callback);
+		deferred.resolve(stdin);
+	});
+	process.stdin.on('error', function (error) {
+		deferred.reject(error);
+	});
+	return deferred.promise;
+}
+
+function compile(input, opts) {
+	var deferred = Q.defer();
+	var resolver = deferred.makeNodeResolver();
+	roole.compile(input, opts || options, resolver);
+	return deferred.promise;
+}
+
+function resolveFiles(filenames, root, rooOnly) {
+	var stats = filenames.map(function (filename) {
+		return qfs.stat(filename);
+	});
+	return Q.all(stats).then(function (stats) {
+		var files = filenames.map(function (filename, i) {
+			if (stats[i].isFile() && (!rooOnly || /\.roo$/.test(filename))) {
+				return resolveFile(filename, root);
+			} else if (stats[i].isDirectory()) {
+				return resolveDir(filename, root);
+			}
+		}).filter(function (file) {
+			return file;
+		});
+		return Q.all(files).then(function (files) {
+			return _.flatten(files);
+		});
 	});
 }
 
-function compile(input, options, callback) {
-	roole.compile(input, options, function(error, css) {
-		if (!error) {
-			return callback(css);
-		}
-		if (!program.watch) {
-			throw error;
-		}
-		console.error(error.message);
-		// FIXME: should not display compile to empty file warning
-		callback('');
-	});
-}
-
-function resolveFiles(filenames) {
-	var files = [];
-	filenames.forEach(function(filename) {
-		var stat = fs.statSync(filename);
-		if (stat.isFile()) {
-			var file = resolveFile(filename);
-			files.push(file);
-		} else if (stat.isDirectory()) {
-			var _files = resolveDir(filename);
-			files = files.concat(_files);
-		}
-	});
-	return files;
-}
-
-function resolveFile(filename) {
-	var outputName = filename.replace(/\.roo$|$/, '.css');
+function resolveFile(filename, root) {
+	var out = filename.replace(/\.roo$|$/, '.css');
 	if (program.out) {
-		var base = path.basename(outputName);
-		outputName = path.join(program.out, base);
+		out = root ? path.relative(root, out) : path.basename(out);
+		out = path.join(program.out, out);
 	}
-	return {
-		name: filename,
-		outputName: outputName,
-		content: fs.readFileSync(filename, 'utf8')
-	};
+	return qfs.readFile(filename, 'utf8').then(function (content) {
+		return {
+			input: {name: filename, content: content},
+			output: {name: out}
+		};
+	});
 }
 
 function resolveDir(dirname, root) {
-	if (!root) {
-		root = dirname;
-	}
-	var files = [];
-	var filenames = fs.readdirSync(dirname);
-	filenames.map(function (filename) {
-		return path.join(dirname, filename);
-	}).forEach(function(filename) {
-		var stat = fs.statSync(filename);
-		if (stat.isFile() && path.extname(filename) === '.roo') {
-			var file = resolveDirFile(filename, root);
-			files.push(file);
-		} else if (stat.isDirectory()) {
-			var _files = resolveDir(filename, root);
-			files = files.concat(_files);
-		}
+	return qfs.readdir(dirname).then(function (filenames) {
+		return filenames.map(function (filename) {
+			return path.join(dirname, filename);
+		});
+	}).then(function (filenames) {
+		return resolveFiles(filenames, root || dirname, true);
 	});
-	return files;
 }
 
-function resolveDirFile(filename, root) {
-	var file = resolveFile(filename);
-	if (program.out) {
-		var outputName = filename.replace(/\.roo$|$/, '.css');
-		outputName = path.relative(root, outputName);
-		file.outputName = path.join(program.out, outputName);
-	}
-	return file;
+function compileFiles(files) {
+	files = files.map(compileFile);
+	return Q.all(files);
+}
+
+function compileFile(file) {
+	var opts = _.mixin({}, options, {filename: file.input.name});
+	return compile(file.input.content, opts).then(function (output) {
+		file.output.content = output;
+		return file;
+	});
 }
 
 function outputFiles(files) {
 	if (program.print) {
 		var content = files.filter(function(file) {
-			return file.compiledContent;
+			return file.output.content;
 		}).map(function(file) {
-			return file.compiledContent;
+			return file.output.content;
 		}).join('\n\n');
-		return console.log(content);
+		console.log(content);
+		return files;
 	}
-
-	writeFiles(files);
-	if (program.watch) {
-		watchFiles(files);
-	}
+	return writeFiles(files);
 }
 
-function compileFiles(files, callback) {
-	var length = files.length;
-	files.forEach(function(file) {
-		compileFile(file, function() {
-			if (!--length) {
-				callback(files);
-			}
-		});
-	});
-}
-
-function compileFile(file, callback) {
-	options.filename = file.name;
-	compile(file.content, options, function (css) {
-		file.compiledContent = css;
-		callback(file);
-	});
+function printError(error) {
+	console.error();
+	console.error(error.name + ':', error.message);
 }
 
 function writeFiles(files) {
-	files.forEach(function(file) {
-		writeFile(file);
+	files = files.map(writeFile);
+	return Q.all(files);
+}
+
+function writeFile(file) {
+	if (!file.output.content && !program.force) {
+		printEmptyFileInfo(file);
+		return file;
+	}
+
+	var dir = path.dirname(file.output.name);
+	return qmkdirp(dir).then(function () {
+		return qfs.writeFile(file.output.name, file.output.content);
+	}).then(function () {
+		printWriteInfo(file);
+		return file;
 	});
 }
 
-function writeFile(file, watching) {
-	if (!file.compiledContent && !program.force) {
-		if (!program.watch) {
-			console.log('INFO:', file.name, 'compiles to empty string, not writing to file');
-		} else if (watching) {
-			console.log('  compiled', file.name, 'to empty string, not writing to file');
-		}
-	} else {
-		var dir = path.dirname(file.outputName);
-		mkdirp.sync(dir);
-		fs.writeFileSync(file.outputName, file.compiledContent);
+function printEmptyFileInfo(file) {
+	var msg = '%d compiled to empty string, not writing to file';
+	msg = format(msg, file.input.name);
+	console.log((program.watch ? '  ' : 'INFO: ') + msg);
+}
 
-		if (program.watch && watching) {
-			console.log('  compiled', file.name, 'to', file.outputName);
-		}
+function printWriteInfo(file) {
+	if (!program.watch) {
+		return;
 	}
+	var msg = 'compiled %s to %s';
+	msg = format(msg, file.input.name, file.output.name);
+	console.log('  ' + msg);
 }
 
 function watchFiles(files) {
-	program.args.forEach(function(filename) {
-		var stat = fs.statSync(filename);
-		if (stat.isDirectory() && filename.slice(-1) !== '/') {
-			filename += '/';
-		}
-		console.log('  watching', filename);
-	});
-	files.forEach(function(file) {
-		watchFile(file);
-	});
+	printWatchedFiles(program.args);
+	files.forEach(watchFile);
 }
 
 function watchFile(file) {
-	fs.watchFile(file.name, {interval: 100}, function(curr, prev) {
+	fs.watchFile(file.input.name, {interval: 100}, function(curr, prev) {
 		if (curr.mtime <= prev.mtime) {
 			return;
 		}
-		file.content = fs.readFileSync(file.name, 'utf8');
-		compileFile(file, function() {
-			writeFile(file, true);
+		var content = fs.readFileSync(file.input.name, 'utf8');
+		file.input.content = content;
+		compileFile(file).then(writeFile).catch(function (error) {
+			printError(error);
 		});
+	});
+}
+
+function printWatchedFiles(filenames) {
+	filenames.map(function(filename) {
+		var stats = fs.statSync(filename);
+		if (stats.isDirectory() && filename.slice(-1) !== '/') {
+			filename += '/';
+		}
+		return filename;
+	}).map(function (filename) {
+		console.log('  watching', filename);
 	});
 }

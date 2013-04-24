@@ -15,6 +15,7 @@
 	"maxdepth": 4,
 	"maxparams": 4,
 	"eqnull": true,
+	"es5": true,
 	"globalstrict": true,
 	"smarttabs": true,
 	"shadow": true

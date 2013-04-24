@@ -23,6 +23,68 @@ test 'roole file', (done) ->
 		'''
 	}, done
 
+test 'roole empty-file', (done) ->
+	assert.compileToWithCmd 'roole foo.roo', {
+		'foo.roo': ''
+	}, {
+		'foo.css': null
+	}, done
+
+test 'roole non-roo-file', (done) ->
+	assert.compileToWithCmd 'roole foo', {
+		'foo': 'body {margin: 1px}'
+	}, {
+		'foo.css': '''
+			body {
+				margin: 1px;
+			}
+		'''
+	}, done
+
+test 'roole importing-files', (done) ->
+	assert.compileToWithCmd 'roole bar.roo', {
+		'foo.roo': 'body {margin: 1px}'
+		'bar.roo': '@import "foo.roo";'
+	}, {
+		'foo.css': null
+		'bar.css': '''
+			body {
+				margin: 1px;
+			}
+		'''
+	}, done
+
+test 'roole dir', (done) ->
+	assert.compileToWithCmd 'roole foo', {
+		'foo/foo.roo': 'body {margin: 1px}'
+	}, {
+		'foo/foo.css': '''
+			body {
+				margin: 1px;
+			}
+		'''
+	}, done
+
+test 'roole dir-containing-non-roo-file', (done) ->
+	assert.compileToWithCmd 'roole foo', {
+		'foo/foo': 'body {margin: 1px}'
+	}, {
+		'foo/foo.css': null
+	}, done
+
+test 'roole dir/importing-file', (done) ->
+	assert.compileToWithCmd 'roole foo/bar.roo', {
+		'foo/foo.roo': 'body {margin: 1px}'
+		'foo/bar.roo': '@import "foo.roo";'
+	}, {
+		'foo/foo.css': null
+		'foo/bar.css': '''
+			body {
+				margin: 1px;
+			}
+		'''
+	}, done
+
 test 'roole file file', (done) ->
 	assert.compileToWithCmd 'roole foo.roo bar.roo', {
 		'foo.roo': 'body {margin: 1px}'
@@ -40,74 +102,11 @@ test 'roole file file', (done) ->
 		'''
 	}, done
 
-test 'roole empty-file', (done) ->
-	assert.compileToWithCmd 'roole foo.roo', {
-		'foo.roo': ''
-	}, {
-		'foo.css': null
-	}, done
-
-test 'roole file empty-files', (done) ->
-	assert.compileToWithCmd 'roole foo.roo bar.roo', {
-		'foo.roo': 'body {margin: 1px}'
-		'bar.roo': ''
-	}, {
-		'foo.css': '''
-			body {
-				margin: 1px;
-			}
-		'''
-		'bar.css': null
-	}, done
-
-test 'roole importing-files', (done) ->
-	assert.compileToWithCmd 'roole bar.roo', {
-		'foo.roo': 'body {margin: 1px}'
-		'bar.roo': '@import "foo.roo";'
-	}, {
-		'foo.css': null
-		'bar.css': '''
-			body {
-				margin: 1px;
-			}
-		'''
-	}, done
-
-test 'roole dir/importing-file', (done) ->
-	assert.compileToWithCmd 'roole foo/bar.roo', {
-		'foo/foo.roo': 'body {margin: 1px}'
-		'foo/bar.roo': '@import "foo.roo";'
-	}, {
-		'foo/foo.css': null
-		'foo/bar.css': '''
-			body {
-				margin: 1px;
-			}
-		'''
-	}, done
-
 test 'roole -f empty-file', (done) ->
 	assert.compileToWithCmd 'roole -f foo.roo', {
 		'foo.roo': ''
 	}, {
 		'foo.css': ''
-	}, done
-
-test 'roole dir', (done) ->
-	assert.compileToWithCmd 'roole foo', {
-		'foo/foo.roo': 'body {margin: 1px}'
-		'foo/bar.roo': 'body {margin: 2px}'
-	}, {
-		'foo/foo.css': '''
-			body {
-				margin: 1px;
-			}
-		'''
-		'foo/bar.css': '''
-			body {
-				margin: 2px;
-			}
-		'''
 	}, done
 
 test 'roole -o dir file', (done) ->
