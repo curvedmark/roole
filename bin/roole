@@ -3,16 +3,9 @@
 
 var Q = require('q');
 var fs = require('fs');
-var qfs = {
-	stat: Q.denodeify(fs.stat),
-	readFile: Q.denodeify(fs.readFile),
-	readdir: Q.denodeify(fs.readdir),
-	writeFile: Q.denodeify(fs.writeFile)
-};
 var path = require('path');
-var format = require('util').format;
+var EventEmitter = require('events').EventEmitter;
 var mkdirp = require('mkdirp');
-var qmkdirp = Q.denodeify(mkdirp);
 var program = require('commander');
 var _ = require('../lib/helper');
 var roole = require('../lib/roole');
@@ -31,20 +24,55 @@ program
 	.parse(process.argv);
 
 var options = _.mixin({}, program, {prettyError: true});
+var emitter = new EventEmitter();
 
 if (!program.args.length) {
-	readStdin().then(compile).done(console.log);
-} else if (!program.watch) {
-	resolveFiles(program.args).then(compileFiles).done(outputFiles);
+	compileStdin();
+} else if (program.print) {
+	compileAndPrintFiles(program.args);
+} else if (program.watch) {
+	compileAndWatchFiles(program.args);
 } else {
-	var files;
-	resolveFiles(program.args).then(function (f) {
-		files = f;
-		return files;
-	}).then(compileFiles).then(outputFiles).catch(function (error) {
-		printError(error);
-		return files;
-	}).done(watchFiles);
+	compileAndWriteFiles(program.args);
+}
+
+function compileStdin() {
+	readStdin().then(compile).done(console.log);
+}
+
+function compileAndPrintFiles(filenames) {
+	resolveFiles(filenames).then(compileFiles).done(printFiles);
+}
+
+function compileAndWatchFiles(filenames) {
+	resolveFiles(filenames).then(compileFiles).then(writeFiles)
+		.catch(printError).then(function (files) {
+			emitter.on('skip', printSkipInfo)
+				.on('write', printWriteInfo)
+				.on('watch', printWatchInfo);
+			return files;
+		}).done(watchFiles);
+
+	function printSkipInfo(file) {
+		console.log('  %s compiled to empty string, not writing to file', file.input.name );
+	}
+
+	function printWriteInfo(file) {
+		console.log('  compiled %s to %s', file.input.name, file.output.name);
+	}
+
+	function printWatchInfo(filename) {
+		console.log('  watching %s', filename);
+	}
+}
+
+function compileAndWriteFiles(filenames) {
+	emitter.on('skip', printSkipInfo);
+	resolveFiles(filenames).then(compileFiles).done(writeFiles);
+
+	function printSkipInfo(file) {
+		console.log('INFO: %d compiled to empty string, not writing to file', file.input.name);
+	}
 }
 
 function readStdin() {
@@ -69,33 +97,58 @@ function compile(input, opts) {
 	return deferred.promise;
 }
 
-function resolveFiles(filenames, root, rooOnly) {
-	var stats = filenames.map(function (filename) {
-		return qfs.stat(filename);
-	});
-	return Q.all(stats).then(function (stats) {
-		var files = filenames.map(function (filename, i) {
-			if (stats[i].isFile() && (!rooOnly || /\.roo$/.test(filename))) {
-				return resolveFile(filename, root);
-			} else if (stats[i].isDirectory()) {
-				return resolveDir(filename, root);
-			}
-		}).filter(function (file) {
-			return file;
+function resolveFiles(filenames, base, rooOnly) {
+	return checkFiles(filenames, function (filename) {
+		if (!rooOnly || /\.roo$/.test(filename)) {
+			return resolveFile(filename, base);
+		}
+	}, function (dirname) {
+		return resolveDir(dirname, base);
+	}).then(function (files) {
+		files = files.filter(function (filter) {
+			return filter;
 		});
-		return Q.all(files).then(function (files) {
-			return _.flatten(files);
-		});
+		return _.flatten(files);
 	});
 }
 
-function resolveFile(filename, root) {
+function checkFiles(filenames, fileAction, dirAction) {
+	return statFiles(filenames).then(function (stats) {
+		var results = filenames.map(function (filename, i) {
+			return action(filename, stats[i]);
+		}).filter(function (result) {
+			return result;
+		});
+		return Q.all(results);
+	});
+
+	function action(filename, stats) {
+		if (stats.isFile()) {
+			return fileAction(filename);
+		} else if (stats.isDirectory()) {
+			return dirAction(filename);
+		}
+	}
+}
+
+function statFiles(filenames) {
+	var stats = filenames.map(function (filename) {
+		return statFile(filename);
+	});
+	return Q.all(stats);
+}
+
+function statFile(filename) {
+	return Q.nfcall(fs.stat, filename);
+}
+
+function resolveFile(filename, base) {
 	var out = filename.replace(/\.roo$|$/, '.css');
 	if (program.out) {
-		out = root ? path.relative(root, out) : path.basename(out);
+		out = base ? path.relative(base, out) : path.basename(out);
 		out = path.join(program.out, out);
 	}
-	return qfs.readFile(filename, 'utf8').then(function (content) {
+	return readFile(filename).then(function (content) {
 		return {
 			input: {name: filename, content: content},
 			output: {name: out}
@@ -103,13 +156,21 @@ function resolveFile(filename, root) {
 	});
 }
 
-function resolveDir(dirname, root) {
-	return qfs.readdir(dirname).then(function (filenames) {
+function readFile(filename) {
+	return Q.nfcall(fs.readFile, filename, 'utf8');
+}
+
+function resolveDir(dirname, base) {
+	return readDir(dirname).then(function (filenames) {
+		return resolveFiles(filenames, base || dirname, true);
+	});
+}
+
+function readDir(dirname) {
+	return Q.nfcall(fs.readdir, dirname).then(function (filenames) {
 		return filenames.map(function (filename) {
 			return path.join(dirname, filename);
 		});
-	}).then(function (filenames) {
-		return resolveFiles(filenames, root || dirname, true);
 	});
 }
 
@@ -126,22 +187,17 @@ function compileFile(file) {
 	});
 }
 
-function outputFiles(files) {
-	if (program.print) {
-		var content = files.filter(function(file) {
-			return file.output.content;
-		}).map(function(file) {
-			return file.output.content;
-		}).join('\n\n');
-		console.log(content);
-		return files;
-	}
-	return writeFiles(files);
+function printFiles(files) {
+	var content = files.filter(function(file) {
+		return file.output.content;
+	}).map(function(file) {
+		return file.output.content;
+	}).join('\n\n');
+	console.log(content);
 }
 
 function printError(error) {
-	console.error();
-	console.error(error.name + ':', error.message);
+	console.error('%s: %s', error.name, error.message);
 }
 
 function writeFiles(files) {
@@ -151,36 +207,22 @@ function writeFiles(files) {
 
 function writeFile(file) {
 	if (!file.output.content && !program.force) {
-		printEmptyFileInfo(file);
+		emitter.emit('skip', file);
 		return file;
 	}
-
 	var dir = path.dirname(file.output.name);
-	return qmkdirp(dir).then(function () {
-		return qfs.writeFile(file.output.name, file.output.content);
+	return Q.nfcall(mkdirp, dir).then(function () {
+		return Q.nfcall(fs.writeFile, file.output.name, file.output.content);
 	}).then(function () {
-		printWriteInfo(file);
+		emitter.emit('write', file);
 		return file;
 	});
 }
 
-function printEmptyFileInfo(file) {
-	var msg = '%d compiled to empty string, not writing to file';
-	msg = format(msg, file.input.name);
-	console.log((program.watch ? '  ' : 'INFO: ') + msg);
-}
-
-function printWriteInfo(file) {
-	if (!program.watch) {
-		return;
-	}
-	var msg = 'compiled %s to %s';
-	msg = format(msg, file.input.name, file.output.name);
-	console.log('  ' + msg);
-}
-
 function watchFiles(files) {
-	printWatchedFiles(program.args);
+	program.args.forEach(function (filename) {
+		emitter.emit('watch', filename);
+	});
 	files.forEach(watchFile);
 }
 
@@ -189,22 +231,11 @@ function watchFile(file) {
 		if (curr.mtime <= prev.mtime) {
 			return;
 		}
-		var content = fs.readFileSync(file.input.name, 'utf8');
-		file.input.content = content;
-		compileFile(file).then(writeFile).catch(function (error) {
+		readFile(file.input.name).then(function (content) {
+			file.input.content = content;
+			return file;
+		}).then(compileFile).then(writeFile).catch(function (error) {
 			printError(error);
 		});
-	});
-}
-
-function printWatchedFiles(filenames) {
-	filenames.map(function(filename) {
-		var stats = fs.statSync(filename);
-		if (stats.isDirectory() && filename.slice(-1) !== '/') {
-			filename += '/';
-		}
-		return filename;
-	}).map(function (filename) {
-		console.log('  watching', filename);
 	});
 }
