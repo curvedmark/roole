@@ -89,27 +89,27 @@ test 'extend ruleset outside @void has no effect', ->
 	'''
 
 test 'nest @import under @void', ->
-	assert.compileTo {
-		imports:
-			'button.roo': '''
-				.button {
-					display: inline-block;
-				}
+	assert.compileTo [
+		'button.roo': '''
+			.button {
+				display: inline-block;
+			}
 
-				.large-button {
-					@extend .button;
-					width: 100px;
-				}
-			'''
-	}, '''
-		@void {
-			@import 'button';
-		}
+			.large-button {
+				@extend .button;
+				width: 100px;
+			}
+		'''
+		'''
+			@void {
+				@import 'button';
+			}
 
-		#submit {
-			@extend .large-button;
-		}
-	''', '''
+			#submit {
+				@extend .large-button;
+			}
+		'''
+	], '''
 		#submit {
 			display: inline-block;
 		}

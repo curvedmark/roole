@@ -49,23 +49,23 @@ test '@media creates new scope', ->
 	'''
 
 test '@import does not create new scope', ->
-	assert.compileTo {
-		imports:
-			'base.roo': '''
-				$width = 500px;
-				body {
-					width: $width;
-				}
-			'''
-	}, '''
-		$width = 980px;
+	assert.compileTo [
+		'base.roo': '''
+			$width = 500px;
+			body {
+				width: $width;
+			}
+		'''
+		'''
+			$width = 980px;
 
-		@import 'base';
+			@import 'base';
 
-		html {
-			width: $width;
-		}
-	''', '''
+			html {
+				width: $width;
+			}
+		'''
+	], '''
 		body {
 			width: 500px;
 		}

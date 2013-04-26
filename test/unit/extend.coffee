@@ -404,20 +404,20 @@ test 'ignore following @media', ->
 	'''
 
 test 'extend selector in the imported file', ->
-	assert.compileTo {
-		imports:
-			'button.roo': '''
-				.button {
-					display: inline-block;
-				}
-			'''
-	}, '''
-		@import 'button';
+	assert.compileTo [
+		'button.roo': '''
+			.button {
+				display: inline-block;
+			}
+		'''
+		'''
+			@import 'button';
 
-		#submit {
-			@extend .button;
-		}
-	''', '''
+			#submit {
+				@extend .button;
+			}
+		'''
+	], '''
 		.button,
 		#submit {
 			display: inline-block;
@@ -425,21 +425,21 @@ test 'extend selector in the imported file', ->
 	'''
 
 test 'not extending selector in the importing file', ->
-	assert.compileTo {
-		imports:
-			'button.roo': '''
-				#submit {
-					@extend .button;
-					display: block;
-				}
-			'''
-	}, '''
-		.button {
-			display: inline-block;
-		}
+	assert.compileTo [
+		'button.roo': '''
+			#submit {
+				@extend .button;
+				display: block;
+			}
+		'''
+		'''
+			.button {
+				display: inline-block;
+			}
 
-		@import 'button';
-	''', '''
+			@import 'button';
+		'''
+	], '''
 		.button {
 			display: inline-block;
 		}

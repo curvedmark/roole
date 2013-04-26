@@ -3,16 +3,16 @@ assert = require '../assert'
 suite '@import'
 
 test 'import with string', ->
-	assert.compileTo {
-		imports:
-			'base.roo': '''
-				body {
-					margin: 0;
-				}
-			'''
-	}, '''
-		@import 'base';
-	''', '''
+	assert.compileTo [
+		'base.roo': '''
+			body {
+				margin: 0;
+			}
+		'''
+		'''
+			@import 'base';
+		'''
+	], '''
 		body {
 			margin: 0;
 		}
@@ -40,41 +40,41 @@ test 'import with media query', ->
 	'''
 
 test 'nest under ruleset', ->
-	assert.compileTo {
-		imports:
-			'base.roo': '''
-				body {
-					margin: 0;
-				}
-			'''
-	}, '''
-		html {
-			@import 'base';
-		}
-	''', '''
+	assert.compileTo [
+		'base.roo': '''
+			body {
+				margin: 0;
+			}
+		'''
+		'''
+			html {
+				@import 'base';
+			}
+		'''
+	], '''
 		html body {
 			margin: 0;
 		}
 	'''
 
 test 'recursively import', ->
-	assert.compileTo {
-		imports:
-			'reset.roo': '''
-				body {
-					margin: 0;
-				}
-			'''
-			'button.roo': '''
-				@import 'reset';
+	assert.compileTo [
+		'reset.roo': '''
+			body {
+				margin: 0;
+			}
+		'''
+		'button.roo': '''
+			@import 'reset';
 
-				.button {
-					display: inline-block;
-				}
-			'''
-	}, '''
-		@import 'button';
-	''', '''
+			.button {
+				display: inline-block;
+			}
+		'''
+		'''
+			@import 'button';
+		'''
+	], '''
 		body {
 			margin: 0;
 		}
@@ -85,31 +85,31 @@ test 'recursively import', ->
 	'''
 
 test 'import same file multiple times', ->
-	assert.compileTo {
-		imports:
-			'reset.roo': '''
-				body {
-					margin: 0;
-				}
-			'''
-			'button.roo': '''
-				@import 'reset';
+	assert.compileTo [
+		'reset.roo': '''
+			body {
+				margin: 0;
+			}
+		'''
+		'button.roo': '''
+			@import 'reset';
 
-				.button {
-					display: inline-block;
-				}
-			'''
-			'tabs.roo': '''
-				@import 'reset';
+			.button {
+				display: inline-block;
+			}
+		'''
+		'tabs.roo': '''
+			@import 'reset';
 
-				.tabs {
-					overflow: hidden;
-				}
-			'''
-	}, '''
-		@import 'button';
-		@import 'tabs';
-	''', '''
+			.tabs {
+				overflow: hidden;
+			}
+		'''
+		'''
+			@import 'button';
+			@import 'tabs';
+		'''
+	], '''
 		body {
 			margin: 0;
 		}
@@ -124,23 +124,23 @@ test 'import same file multiple times', ->
 	'''
 
 test 'recursively import files of the same directory', ->
-	assert.compileTo {
-		imports:
-			'tabs/tab.roo': '''
-				.tab {
-					float: left;
-				}
-			'''
-			'tabs/index.roo': '''
-				@import 'tab';
+	assert.compileTo [
+		'tabs/tab.roo': '''
+			.tab {
+				float: left;
+			}
+		'''
+		'tabs/index.roo': '''
+			@import 'tab';
 
-				.tabs {
-					overflow: hidden;
-				}
-			'''
-	}, '''
-		@import 'tabs/index';
-	''', '''
+			.tabs {
+				overflow: hidden;
+			}
+		'''
+		'''
+			@import 'tabs/index';
+		'''
+	], '''
 		.tab {
 			float: left;
 		}
@@ -151,23 +151,23 @@ test 'recursively import files of the same directory', ->
 	'''
 
 test 'recursively import files of different directories', ->
-	assert.compileTo {
-		imports:
-			'reset.roo': '''
-				body {
-					margin: 0;
-				}
-			'''
-			'tabs/index.roo': '''
-				@import '../reset';
+	assert.compileTo [
+		'reset.roo': '''
+			body {
+				margin: 0;
+			}
+		'''
+		'tabs/index.roo': '''
+			@import '../reset';
 
-				.tabs {
-					overflow: hidden;
-				}
-			'''
-	}, '''
-		@import 'tabs/index';
-	''', '''
+			.tabs {
+				overflow: hidden;
+			}
+		'''
+		'''
+			@import 'tabs/index';
+		'''
+	], '''
 		body {
 			margin: 0;
 		}
@@ -178,18 +178,18 @@ test 'recursively import files of different directories', ->
 	'''
 
 test 'import empty file', ->
-	assert.compileTo {
-		imports:
-			'var.roo': '''
-				$width = 980px;
-			'''
-	}, '''
-		@import 'var';
+	assert.compileTo [
+		'var.roo': '''
+			$width = 980px;
+		'''
+		'''
+			@import 'var';
 
-		body {
-			width: $width;
-		}
-	''', '''
+			body {
+				width: $width;
+			}
+		'''
+	], '''
 		body {
 			width: 980px;
 		}
@@ -204,13 +204,13 @@ test 'not importing file with variables in the path', ->
 	'''
 
 test 'not allow importing of a file with a syntax error', ->
-	assert.failAt {
-		imports:
-			'base.roo': '''
-				body # {
-					margin: 0;
-				}
-			'''
-	}, '''
-		@import 'base';
-	''', {line: 1, column: 7, filename: 'base.roo'}
+	assert.failAt [
+		'base.roo': '''
+			body # {
+				margin: 0;
+			}
+		'''
+		'''
+			@import 'base';
+		'''
+	], {line: 1, column: 7, filename: 'base.roo'}

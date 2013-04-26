@@ -4,6 +4,7 @@ var fs = require('fs');
 var path = require('path');
 var exec = require('child_process').exec;
 var mkdirp = require('mkdirp');
+var _ = require('../lib/helper');
 var roole = require('../lib/roole');
 var assert = exports;
 
@@ -12,6 +13,16 @@ assert.compileTo = function(options, input, css) {
 		css = input;
 		input = options;
 		options = {};
+	}
+
+	if (Array.isArray(input)) {
+		var imports = input;
+		input = imports.pop();
+		var files = {};
+		imports.forEach(function (file) {
+			_.mixin(files, file);
+		});
+		options.imports = files;
 	}
 
 	options.prettyError = true;
@@ -47,6 +58,16 @@ assert.failAt = function(options, input, loc) {
 		loc = input;
 		input = options;
 		options = {};
+	}
+
+	if (Array.isArray(input)) {
+		var imports = input;
+		input = imports.pop();
+		var files = {};
+		imports.forEach(function (file) {
+			_.mixin(files, file);
+		});
+		options.imports = files;
 	}
 
 	options.prettyError = true;
