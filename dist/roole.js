@@ -1,5 +1,5 @@
 /*
- * Roole - A language that compiles to CSS v0.4.1
+ * Roole - A language that compiles to CSS v0.5.0-dev
  * http://roole.org
  *
  * Copyright 2012 Glen Huang
@@ -10813,7 +10813,7 @@ function displayError(message) {
 	document.body.appendChild(errorElement);
 }
 
-roole.version = '0.4.1';
+roole.version = '0.5.0-dev';
 
 return roole;
 

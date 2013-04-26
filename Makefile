@@ -82,6 +82,8 @@ LIB_FILES = \
 
 VERSION = $(shell node -e "console.log(require('./package.json').version)")
 
+all: min
+
 parser: lib/parser/generatedParser.js
 
 lib/parser/generatedParser.js: \
@@ -164,7 +166,7 @@ dist/roole.min.js: \
 	 	../build/json version=$(VERSION) content=- | \
 		../build/mustache roole.min.js.mustache >roole.min.js
 
-browser-test: parser min test/test.min.js test/vendor/mocha.js test/vendor/mocha.css
+browser-test: parser roole test/test.js test/vendor/mocha.js test/vendor/mocha.css
 
 test/test.min.js: node_modules/.bin/uglifyjs test/test.js
 	cd test && \
@@ -202,9 +204,6 @@ coverage/test/unit:
 clean:
 	rm -rf \
 		coverage \
-		dist/roole.js \
-		dist/roole.min.js \
-		dist/roole.min.js.map \
 		test/vendor \
 		test/test.js \
 		test/test.min.js \
