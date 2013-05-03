@@ -13,13 +13,11 @@ test 'single-line commnet', ->
 		// before selector
 		body // selctor
 		{
-		// after selector
 			// before property
 			width: auto; // property
 			// after property
-		// outdent
-			height: auto; // before eof
-		}
+			height: auto;
+		} // before eof
 	''', '''
 		body {
 			width: auto;

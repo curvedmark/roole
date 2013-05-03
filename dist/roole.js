@@ -9888,159 +9888,128 @@ var Normalizer = function() {};
 Normalizer.prototype = new Visitor();
 
 Normalizer.prototype.normalize = function(ast) {
-	return this.visit(ast);
+	this.level = 0;
+	this.visit(ast.children);
+	return ast;
 };
 
-Normalizer.prototype.visitRoot =
-Normalizer.prototype.visitRuleList = Normalizer.prototype.visitNode;
-
-Normalizer.prototype.visitNode = _.noop;
+Normalizer.prototype.visitNode = function () {};
 
 
 
 Normalizer.prototype.visitRoot = function(rootNode) {
-	var parentRoot = this.parentRoot;
-	this.parentRoot = rootNode;
-
-	var childNodes = this.visit(rootNode.children);
-
-	this.parentRoot = parentRoot;
-
-	if (parentRoot && !childNodes.length) {
-		return null;
-	}
+	return this.visit(rootNode.children);
 };
 
-Normalizer.prototype.visitRuleset = function(rulesetNode) {
-	var selectorListNode = rulesetNode.children[0];
-
-	if (this.insideVoid) {
-		if (!selectorListNode.extendedSelectors) {
-			return null;
-		}
-
-		selectorListNode.children = selectorListNode.extendedSelectors;
+Normalizer.prototype.visitRuleset = function(ruleset) {
+	var selectorList = ruleset.children[0];
+	if (this.inVoid) {
+		if (!selectorList.extended) return null;
+		selectorList.children = selectorList.extended;
 	}
-
+	ruleset.level = this.level;
+	++this.level;
 	var parentSelectorList = this.parentSelectorList;
-	this.parentSelectorList = selectorListNode;
+	this.parentSelectorList = selectorList;
 
-	var ruleListNode = this.visit(rulesetNode.children[1]);
+	var ruleList = ruleset.children[1];
+	var children = this.visit(ruleList.children);
 
+	--this.level;
 	this.parentSelectorList = parentSelectorList;
 
-	var propertyNodes = [];
-	var otherNodes = [];
-
-	ruleListNode.children.forEach(function(childNode) {
-		if (childNode.type === 'property') {
-			propertyNodes.push(childNode);
-		} else {
-			otherNodes.push(childNode);
-		}
+	var props = [];
+	var rules = [];
+	children.forEach(function (child) {
+		if (child.type === 'property') props.push(child);
+		else rules.push(child);
 	});
-
-	if (!propertyNodes.length) {
-		return otherNodes;
-	}
-
-	var firstPropertyNode = propertyNodes[0];
-	var propertyListNode = Node('ruleList', propertyNodes, {loc: firstPropertyNode.loc});
-
-	// bubble child medias if under a media
-	var mediaNodes;
-	if (this.parentMedia) {
-		mediaNodes = [];
-		var others = [];
-		otherNodes.forEach(function(node) {
-			if (node.type === 'media') {
-				mediaNodes.push(node);
-			} else {
-				others.push(node);
-			}
+	if (!props.length) {
+		rules.forEach(function (rule) {
+			if (rule.level) --rule.level;
 		});
-		otherNodes = others;
+		return rules;
 	}
 
-	if (!otherNodes.length) {
-		ruleListNode = null;
-	} else {
-		ruleListNode.children = otherNodes;
-	}
+	ruleList = {
+		type: 'ruleList',
+		children: props,
+		loc: props[0].loc,
+	};
+	ruleset.children[1] = ruleList;
+	rules.unshift(ruleset);
 
-	rulesetNode.children = [selectorListNode, propertyListNode, ruleListNode];
-
-	if (this.parentMedia && mediaNodes.length) {
-		return [rulesetNode].concat(mediaNodes);
-	}
+	return rules;
 };
 
-Normalizer.prototype.visitMedia = function(mediaNode) {
-	var mediaQueryListNode = mediaNode.children[0];
-
+Normalizer.prototype.visitMedia = function(media) {
+	var level;
+	if (this.parentMedia) {
+		media.level = this.parentMedia.level + 1;
+		level = this.level;
+		this.level = 0;
+	} else {
+		level = media.level = this.level;
+		this.level = 0;
+	}
 	var parentMedia = this.parentMedia;
-	this.parentMedia = mediaNode;
+	this.parentMedia = media;
 
-	var ruleListNode = this.visit(mediaNode.children[1]);
+	var ruleList = media.children[1];
+	var children = this.visit(ruleList.children);
 
+	this.level = level;
 	this.parentMedia = parentMedia;
 
-	var propertyNodes = [];
-	var rulesetNodes = [];
-	var otherNodes = [];
-
-	ruleListNode.children.forEach(function(childNode) {
-		switch (childNode.type) {
-		case 'property':
-			propertyNodes.push(childNode);
-			break;
-		case 'ruleset':
-			rulesetNodes.push(childNode);
-			break;
-		default:
-			otherNodes.push(childNode);
-		}
+	var props = [];
+	var rulesets = [];
+	var rules = [];
+	children.forEach(function (child) {
+		if (child.type === 'property') props.push(child);
+		else if (child.type === 'ruleset') rulesets.push(child);
+		else rules.push(child);
 	});
-
-	if (propertyNodes.length) {
+	if (props.length) {
 		if (!this.parentSelectorList) {
-			throw Err("@media containing properties is not allowed at the top level", mediaNode);
+			throw Err('@media containing properties is not allowed at the top level', media);
 		}
-
-		var firstPropertyNode = propertyNodes[0];
-		var propertyList = Node('ruleList', propertyNodes, {loc: firstPropertyNode.loc});
-
-		var rulesetChildNodes = [this.parentSelectorList, propertyList, null];
-		var rulesetNode = Node('ruleset', rulesetChildNodes, {loc: this.parentSelectorList.loc});
-		rulesetNodes.unshift(rulesetNode);
+		var ruleList = {
+			type: 'ruleList',
+			children: props,
+			loc: props[0].loc,
+		};
+		var ruleset = {
+			type: 'ruleset',
+			children: [this.parentSelectorList, ruleList],
+		};
+		rulesets.unshift(ruleset);
 	}
-
-	if (!rulesetNodes.length) {
-		return otherNodes;
-	}
-
-	var firstRulesetNode = rulesetNodes[0];
-	var rulesetListNode = Node('ruleList', rulesetNodes, {loc: firstRulesetNode.loc});
-
-	if (!otherNodes.length) {
-		ruleListNode = null;
+	if (rulesets.length) {
+		var ruleList = {
+			type: 'ruleList',
+			children: rulesets,
+			loc: rulesets[0].loc,
+		};
+		media.children[1] = ruleList;
+		rules.unshift(media);
 	} else {
-		ruleListNode.children = otherNodes;
+		rules.forEach(function (rule) {
+			if (rule.level) --rule.level;
+		});
 	}
-
-	mediaNode.children = [mediaQueryListNode, rulesetListNode, ruleListNode];
+	return rules;
 };
 
 Normalizer.prototype.visitVoid = function(voidNode) {
-	var insideVoid = this.insideVoid;
-	this.insideVoid = true;
+	var inVoid = this.inVoid;
+	this.inVoid = true;
 
-	var ruleListNode = voidNode.children[0];
-	this.visit(ruleListNode);
+	var ruleList = voidNode.children[0];
+	var children = this.visit(ruleList.children);
 
-	this.insideVoid = insideVoid;
+	this.inVoid = inVoid;
 
-	return ruleListNode.children;
+	return children;
 };
 
 var normalizer = {};
@@ -10336,21 +10305,14 @@ Compiler.prototype = new Visitor();
 Compiler.prototype.compile = function(ast, options) {
 	this.indentUnit = options.indent;
 	this.precision = options.precision;
-	this.indentLevel = 0;
+	this.level = 0;
 
 	return this.visit(ast);
 };
 
-Compiler.prototype.indent = function() {
-	++this.indentLevel;
-};
-
-Compiler.prototype.outdent = function() {
-	--this.indentLevel;
-};
-
-Compiler.prototype.indentString = function() {
-	return new Array(this.indentLevel + 1).join(this.indentUnit);
+Compiler.prototype.indent = function(offset) {
+	if (offset === undefined) offset = 0;
+	return new Array(this.level + offset + 1).join(this.indentUnit);
 };
 
 
@@ -10359,36 +10321,26 @@ Compiler.prototype.visitNode = function(node) {
 	return this.visit(node.children).join('');
 };
 
-Compiler.prototype.visitRoot = function(rootNode) {
-	return this.visit(rootNode.children).join('\n\n');
-};
-
 Compiler.prototype.visitComment = function(commentNode) {
-	return '/*' + commentNode.children[0] + '*/';
+	return '/*' + commentNode.children[0] + '*/\n';
 };
 
 Compiler.prototype.visitRuleset = function(rulesetNode) {
+	var level = this.level;
+	this.level += rulesetNode.level || 0;
+
 	var selectorListNode = rulesetNode.children[0];
-	var css = this.visit(selectorListNode) + ' {\n';
-
+	var css = this.visit(selectorListNode) + ' ';
 	var propertyListNode = rulesetNode.children[1];
-	this.indent();
-	css += this.indentString() + this.visit(propertyListNode);
-	this.outdent();
-	css += '\n' + this.indentString() + '}';
+	css += this.visit(propertyListNode);
 
-	var ruleListNode = rulesetNode.children[2];
-	if (ruleListNode) {
-		this.indent();
-		css += '\n' + this.indentString() + this.visit(ruleListNode);
-		this.outdent();
-	}
-
+	this.level = level;
 	return css;
 };
 
 Compiler.prototype.visitSelectorList = function(selectorListNode) {
-	return this.visit(selectorListNode.children).join(',\n' + this.indentString());
+	return this.indent() + this.visit(selectorListNode.children)
+		.join(',\n' + this.indent());
 };
 
 Compiler.prototype.visitCombinator = function(combinatorNode) {
@@ -10430,44 +10382,44 @@ Compiler.prototype.visitPseudoSelector = function(pseudoSelectorNode) {
 };
 
 Compiler.prototype.visitProperty = function(propertyNode) {
-	var css = this.visit(propertyNode.children[0]) + ': ' +  this.visit(propertyNode.children[1]);
+	var css = this.indent() + this.visit(propertyNode.children[0]) + ': ' +  this.visit(propertyNode.children[1]);
 
 	var priority = propertyNode.children[2];
 	if (priority) { css += ' ' + priority; }
 
-	css += ';';
+	css += ';\n';
 
 	return css;
 };
 
-Compiler.prototype.visitRuleList = function(ruleListNode) {
-	return this.visit(ruleListNode.children).join('\n' + this.indentString());
+Compiler.prototype.visitRuleList = function(ruleList) {
+	++this.level;
+	var css = '{\n' + this.visit(ruleList.children).join('');
+	--this.level;
+	css += this.indent() + '}';
+	css += '\n';
+
+	return  css;
 };
 
 Compiler.prototype.visitMedia = function(mediaNode) {
+	var level = mediaNode.level;
+	this.level = mediaNode.level;
+
+	var css = this.indent() + '@media';
 	var mediaQueryListNode = mediaNode.children[0];
-	var css = '@media';
-	css += mediaQueryListNode.children.length > 1 ? '\n' + this.indentString() : ' ';
-	css += this.visit(mediaQueryListNode) + ' {\n';
-
+	css += mediaQueryListNode.children.length > 1 ? '\n' : ' ';
+	css += this.visit(mediaQueryListNode) + ' ';
 	var rulesetListNode = mediaNode.children[1];
-	this.indent();
-	css += this.indentString() + this.visit(rulesetListNode);
-	this.outdent();
-	css += '\n' + this.indentString() + '}';
+	css += this.visit(rulesetListNode);
 
-	var ruleListNode = mediaNode.children[2];
-	if (ruleListNode) {
-		this.indent();
-		css += '\n' + this.indentString() + this.visit(ruleListNode);
-		this.outdent();
-	}
-
+	this.level = level;
 	return css;
 };
 
 Compiler.prototype.visitMediaQueryList = function(mediaQueryListNode) {
-	return this.visit(mediaQueryListNode.children).join(',\n' + this.indentString());
+	return this.indent() + this.visit(mediaQueryListNode.children)
+		.join(',\n' + this.indent());
 };
 
 Compiler.prototype.visitMediaQuery = function(mediaQueryNode) {
@@ -10558,13 +10510,10 @@ Compiler.prototype.visitKeyframes = function(keyframesNode) {
 	if (prefix) { css += '-' + prefix + '-'; }
 
 	var nameNode = keyframesNode.children[1];
-	css += 'keyframes ' + this.visit(nameNode) + ' {\n';
+	css += 'keyframes ' + this.visit(nameNode);
 
 	var ruleListNode = keyframesNode.children[2];
-	this.indent();
-	css += this.indentString() + this.visit(ruleListNode);
-	this.outdent();
-	css += '\n' + this.indentString() + '}';
+	css += this.visit(ruleListNode);
 
 	return css;
 };
@@ -10572,13 +10521,9 @@ Compiler.prototype.visitKeyframes = function(keyframesNode) {
 Compiler.prototype.visitKeyframeList = Compiler.prototype.visitRuleList;
 
 Compiler.prototype.visitKeyframe = function(keyframeNode) {
-	var css = this.visit(keyframeNode.children[0]) + ' {\n';
-	this.indent();
-	css += this.indentString() + this.visit(keyframeNode.children[1]);
-	this.outdent();
-	css += '\n' + this.indentString() + '}';
-
-	return css;
+	return this.indent(1) + this.visit(keyframeNode.children[0]) + ' {\n'
+	     + this.indent(2) + this.visit(keyframeNode.children[1])
+	     + this.indent(1) + '\n}';
 };
 
 Compiler.prototype.visitKeyframeSelectorList = function(keyframeSelectorListNode) {
@@ -10586,13 +10531,10 @@ Compiler.prototype.visitKeyframeSelectorList = function(keyframeSelectorListNode
 };
 
 Compiler.prototype.visitFontFace = function(fontFaceNode) {
-	var css = '@font-face {\n';
-	this.indent();
-	css += this.indentString() + this.visit(fontFaceNode.children[0]);
-	this.outdent();
-	css += '\n' + this.indentString() + '}';
-
-	return css;
+	this.level = 0;
+	return '@font-face {\n'
+	     + this.indent(1) + this.visit(fontFaceNode.children[0])
+	     + '\n}';
 };
 
 Compiler.prototype.visitPage = function(pageNode) {
@@ -10602,10 +10544,8 @@ Compiler.prototype.visitPage = function(pageNode) {
 	}
 	css += '{\n';
 	var propertyListNode = pageNode.children[1];
-	this.indent();
-	css += this.indentString() + this.visit(propertyListNode);
-	this.outdent();
-	css += '\n' + this.indentString() + '}';
+	css += this.indent(1) + this.visit(propertyListNode);
+	css += '\n}';
 
 	return css;
 };

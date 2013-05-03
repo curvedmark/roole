@@ -159,12 +159,12 @@ test 'deeply nest media query', ->
 		@media screen {
 			body {
 				width: auto;
+
 				@media (color) {
 					@media (monochrome) {
 						height: auto;
 					}
 				}
-
 				div {
 					height: auto;
 				}

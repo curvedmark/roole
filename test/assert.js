@@ -34,11 +34,12 @@ assert.compileTo = function(options, input, css) {
 		if (error) {
 			throw error;
 		}
-
+		output = output.slice(0, -1);
 		if (output !== css) {
 			error = new Error('');
-			error.actual = output;
-			error.expected = css;
+			// error.actual = output;
+			// error.expected = css;
+			// error.showDiff = true;
 
 			output = output ? '\n"""\n' + output + '\n"""\n' : ' ' + output + '\n';
 			css = css ? '\n"""\n' + css + '\n"""' : ' empty string';
