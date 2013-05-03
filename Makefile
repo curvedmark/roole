@@ -65,9 +65,7 @@ LIB_FILES = \
 	lib/extender/rulesetFilter.js \
 	lib/extender/selectorExtender.js \
 	lib/extender/index.js \
-	lib/normalizer/normalizer.js \
-	$(call node-files,normalizer) \
-	lib/normalizer/index.js \
+	lib/normalizer/*.js \
 	lib/prefixer/prefixer.js \
 	lib/prefixer/propertyNamePrefixer.js \
 	lib/prefixer/linearGradientPrefixer.js \
