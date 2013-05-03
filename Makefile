@@ -73,9 +73,7 @@ LIB_FILES = \
 	lib/prefixer/linearGradientPrefixer.js \
 	$(call node-files,prefixer) \
 	lib/prefixer/index.js \
-	lib/compiler/compiler.js \
-	$(call node-files,compiler) \
-	lib/compiler/index.js \
+	lib/compiler/*.js \
 	lib/formatter.js \
 	lib/roole.js \
 	lib/browser.js
