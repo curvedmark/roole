@@ -47,31 +47,10 @@ LIB_FILES = \
 	lib/helper.js \
 	lib/err.js \
 	lib/node.js \
-	lib/parser/generatedParser.js \
-	lib/parser/index.js \
-	lib/visitor.js \
-	lib/importer/xhr-loader.js \
-	lib/importer/importer.js \
-	lib/importer/index.js \
-	lib/evaluator/scope.js \
-	lib/evaluator/evaluator.js \
-	$(call node-files,evaluator) \
-	lib/evaluator/index.js \
-	lib/bif/index.js \
-	$(call function-files,bif) \
-	lib/extender/extender.js \
-	$(call node-files,extender) \
-	lib/extender/mediaFilter.js \
-	lib/extender/rulesetFilter.js \
-	lib/extender/selectorExtender.js \
-	lib/extender/index.js \
-	lib/normalizer/*.js \
-	lib/prefixer/prefixer.js \
-	lib/prefixer/propertyNamePrefixer.js \
-	lib/prefixer/linearGradientPrefixer.js \
-	$(call node-files,prefixer) \
-	lib/prefixer/index.js \
-	lib/compiler/*.js \
+	lib/bif/*.js \
+	lib/*.js \
+	lib/visitor/*.js \
+	lib/visitor/*/*.js \
 	lib/formatter.js \
 	lib/roole.js \
 	lib/browser.js
