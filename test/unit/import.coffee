@@ -39,6 +39,13 @@ test 'import with media query', ->
 		@import 'base' screen;
 	'''
 
+test 'import with media query list', ->
+	assert.compileTo '''
+		@import 'base' screen, print;
+	''', '''
+		@import 'base' screen, print;
+	'''
+
 test 'nest under ruleset', ->
 	assert.compileTo [
 		'base.roo': '''

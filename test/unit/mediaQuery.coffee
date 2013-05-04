@@ -169,7 +169,6 @@ test 'deeply nest media query', ->
 					height: auto;
 				}
 			}
-
 			@media (monochrome) {
 				p {
 					margin: 0;
