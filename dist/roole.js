@@ -347,31 +347,7 @@ Prefixer.prototype.visitNode = _.noop;
 require('./node/ruleset.js');
 require('./node/property.js');
 require('./node/keyframes.js');
-},{"./node/ruleset.js":23,"./node/property.js":24,"./node/keyframes.js":25,"../helper":2,"../visitor":12}],8:[function(require,module,exports){
-/**
- * Normalizer
- *
- * Remove empty ruleset/media nodes, unextended void nodes, etc.
- */
-'use strict';
-
-var Visitor = require('../visitor');
-var Normalizer = module.exports = function() {};
-
-Normalizer.prototype = new Visitor();
-
-Normalizer.prototype.normalize = function(node) {
-	this.visit(node.children);
-	return node;
-};
-
-Normalizer.prototype.visitNode = function () {};
-
-require('./node/root');
-require('./node/ruleset');
-require('./node/media');
-require('./node/void');
-},{"../visitor":12,"./node/root":26,"./node/ruleset":27,"./node/media":28,"./node/void":29}],10:[function(require,module,exports){
+},{"./node/ruleset.js":23,"./node/property.js":24,"./node/keyframes.js":25,"../helper":2,"../visitor":12}],10:[function(require,module,exports){
 /**
  * Compiler
  *
@@ -448,57 +424,31 @@ require('./node/keyframeSelectorList');
 require('./node/fontFace');
 require('./node/page');
 require('./node/charset');
-},{"../visitor":12,"./node/root":30,"./node/ruleset":31,"./node/selectorList":32,"./node/combinator":33,"./node/universalSelector":34,"./node/classSelector":35,"./node/hashSelector":36,"./node/attributeSelector":37,"./node/negationSelector":38,"./node/pseudoSelector":39,"./node/property":40,"./node/ruleList":41,"./node/media":42,"./node/mediaQueryList":43,"./node/mediaQuery":44,"./node/mediaType":45,"./node/mediaFeature":46,"./node/import":47,"./node/url":48,"./node/string":49,"./node/number":50,"./node/percentage":51,"./node/dimension":52,"./node/color":53,"./node/call":54,"./node/argumentList":55,"./node/range":56,"./node/null":57,"./node/separator":58,"./node/keyframes":59,"./node/keyframe":60,"./node/keyframeSelectorList":61,"./node/fontFace":62,"./node/page":63,"./node/charset":64}],6:[function(require,module,exports){
+},{"../visitor":12,"./node/root":26,"./node/ruleset":27,"./node/selectorList":28,"./node/combinator":29,"./node/universalSelector":30,"./node/classSelector":31,"./node/hashSelector":32,"./node/attributeSelector":33,"./node/negationSelector":34,"./node/pseudoSelector":35,"./node/property":36,"./node/ruleList":37,"./node/media":38,"./node/mediaQueryList":39,"./node/mediaQuery":40,"./node/mediaType":41,"./node/mediaFeature":42,"./node/import":43,"./node/url":44,"./node/string":45,"./node/number":46,"./node/percentage":47,"./node/dimension":48,"./node/color":49,"./node/call":50,"./node/argumentList":51,"./node/range":52,"./node/null":53,"./node/separator":54,"./node/keyframes":55,"./node/keyframe":56,"./node/keyframeSelectorList":57,"./node/fontFace":58,"./node/page":59,"./node/charset":60}],8:[function(require,module,exports){
 /**
- * Evaluator
+ * Normalizer
  *
- * Eliminate dynamic constructs (e.g., variable, @if, @for).
+ * Remove empty ruleset/media nodes, unextended void nodes, etc.
  */
 'use strict';
 
 var Visitor = require('../visitor');
-var bif = require('../bif');
-var Scope = require('./scope');
-module.exports = Evaluator;
+var Normalizer = module.exports = function() {};
 
-function Evaluator() {}
+Normalizer.prototype = new Visitor();
 
-Evaluator.prototype = new Visitor();
-
-Evaluator.prototype.evaluate = function(ast) {
-	this.scope = new Scope(bif);
-	return this.visit(ast);
+Normalizer.prototype.normalize = function(node) {
+	this.visit(node.children);
+	return node;
 };
 
+Normalizer.prototype.visitNode = function () {};
+
+require('./node/root');
 require('./node/ruleset');
-require('./node/selector');
-require('./node/selectorInterpolation');
-require('./node/classSelector');
-require('./node/assignment');
-require('./node/call');
-require('./node/function');
-require('./node/return');
-require('./node/variable');
-require('./node/identifier');
-require('./node/string');
-require('./node/range');
-require('./node/logical');
-require('./node/equality');
-require('./node/relational');
-require('./node/arithmetic');
-require('./node/unary');
 require('./node/media');
-require('./node/mediaQuery');
-require('./node/mediaInterpolation');
 require('./node/void');
-require('./node/block');
-require('./node/if');
-require('./node/for');
-require('./node/keyframes');
-require('./node/keyframe');
-require('./node/module');
-require('./node/fontFace');
-},{"../visitor":12,"./scope":65,"./node/ruleset":66,"./node/selector":67,"./node/selectorInterpolation":68,"./node/classSelector":69,"./node/assignment":70,"./node/call":71,"./node/function":72,"./node/return":73,"./node/variable":74,"./node/identifier":75,"./node/string":76,"./node/logical":77,"./node/range":78,"./node/equality":79,"./node/relational":80,"./node/arithmetic":81,"./node/unary":82,"./node/media":83,"./node/mediaQuery":84,"./node/mediaInterpolation":85,"./node/void":86,"./node/block":87,"./node/if":88,"./node/for":89,"./node/keyframes":90,"./node/keyframe":91,"./node/module":92,"./node/fontFace":93,"../bif":94}],5:[function(require,module,exports){
+},{"../visitor":12,"./node/root":61,"./node/ruleset":62,"./node/media":63,"./node/void":64}],5:[function(require,module,exports){
 /**
  * Importer
  *
@@ -617,7 +567,57 @@ Importer.prototype.visitImport = function(importNode) {
 		}
 	}, this);
 };
-},{"../helper":2,"../node":95,"../visitor":12,"./fs-loader":96,"../parser":4}],95:[function(require,module,exports){
+},{"../helper":2,"../node":65,"../visitor":12,"./fs-loader":66,"../parser":4}],6:[function(require,module,exports){
+/**
+ * Evaluator
+ *
+ * Eliminate dynamic constructs (e.g., variable, @if, @for).
+ */
+'use strict';
+
+var Visitor = require('../visitor');
+var bif = require('../bif');
+var Scope = require('./scope');
+module.exports = Evaluator;
+
+function Evaluator() {}
+
+Evaluator.prototype = new Visitor();
+
+Evaluator.prototype.evaluate = function(ast) {
+	this.scope = new Scope(bif);
+	return this.visit(ast);
+};
+
+require('./node/ruleset');
+require('./node/selector');
+require('./node/selectorInterpolation');
+require('./node/classSelector');
+require('./node/assignment');
+require('./node/call');
+require('./node/function');
+require('./node/return');
+require('./node/variable');
+require('./node/identifier');
+require('./node/string');
+require('./node/range');
+require('./node/logical');
+require('./node/equality');
+require('./node/relational');
+require('./node/arithmetic');
+require('./node/unary');
+require('./node/media');
+require('./node/mediaQuery');
+require('./node/mediaInterpolation');
+require('./node/void');
+require('./node/block');
+require('./node/if');
+require('./node/for');
+require('./node/keyframes');
+require('./node/keyframe');
+require('./node/module');
+require('./node/fontFace');
+},{"../visitor":12,"./scope":67,"./node/ruleset":68,"./node/selector":69,"./node/selectorInterpolation":70,"./node/classSelector":71,"./node/assignment":72,"./node/call":73,"./node/function":74,"./node/return":75,"./node/variable":76,"./node/identifier":77,"./node/string":78,"./node/range":79,"./node/logical":80,"./node/equality":81,"./node/relational":82,"./node/arithmetic":83,"./node/unary":84,"./node/media":85,"./node/mediaQuery":86,"./node/mediaInterpolation":87,"./node/void":88,"./node/block":89,"./node/if":90,"./node/for":91,"./node/keyframes":92,"./node/keyframe":93,"./node/module":94,"./node/fontFace":95,"../bif":96}],65:[function(require,module,exports){
 /**
  * Node
  *
@@ -839,7 +839,38 @@ Node.toListNode = function(node) {
 
 	return node;
 };
-},{}],65:[function(require,module,exports){
+},{}],66:[function(require,module,exports){
+'use strict';
+/* jshint browser: true, node: false */
+
+var loader = {};
+
+loader.load = function(url, callback, context) {
+	var xhr = new XMLHttpRequest();
+
+	xhr.onreadystatechange = function() {
+		if (xhr.readyState !== 4) {
+			return;
+		}
+
+		if (xhr.status >= 200 && xhr.status < 300 || xhr.status === 304) {
+			callback.call(context, null, xhr.responseText);
+		} else {
+			callback.call(context, new Error('Failed to request file ' + url + ': ' + xhr.status));
+		}
+	};
+
+	// disable cache
+	url += (url.indexOf('?') === -1 ? '?' : '&') + '_=' + Date.now();
+
+	try {
+		xhr.open('GET', url, true);
+		xhr.send(null);
+	} catch (error) {
+		callback.call(context, error);
+	}
+};
+},{}],67:[function(require,module,exports){
 /**
  * Scope
  *
@@ -874,37 +905,6 @@ Scope.prototype.resolve = function(name) {
 		if(value) {
 			return value;
 		}
-	}
-};
-},{}],96:[function(require,module,exports){
-'use strict';
-/* jshint browser: true, node: false */
-
-var loader = {};
-
-loader.load = function(url, callback, context) {
-	var xhr = new XMLHttpRequest();
-
-	xhr.onreadystatechange = function() {
-		if (xhr.readyState !== 4) {
-			return;
-		}
-
-		if (xhr.status >= 200 && xhr.status < 300 || xhr.status === 304) {
-			callback.call(context, null, xhr.responseText);
-		} else {
-			callback.call(context, new Error('Failed to request file ' + url + ': ' + xhr.status));
-		}
-	};
-
-	// disable cache
-	url += (url.indexOf('?') === -1 ? '?' : '&') + '_=' + Date.now();
-
-	try {
-		xhr.open('GET', url, true);
-		xhr.send(null);
-	} catch (error) {
-		callback.call(context, error);
 	}
 };
 },{}],12:[function(require,module,exports){
@@ -9359,7 +9359,7 @@ module.exports = (function() {
   };
 })();
 
-},{"../helper":2}],94:[function(require,module,exports){
+},{"../helper":2}],96:[function(require,module,exports){
 'use strict';
 
 require('./func/len');
@@ -9433,7 +9433,7 @@ Prefixer.prototype.visitProperty = function(propertyNode) {
 	propertyNodes.push(propertyNode);
 	return propertyNodes;
 };
-},{"../../node":95,"../propertyNamePrefixer":100,"../linearGradientPrefixer":101,"../":9}],25:[function(require,module,exports){
+},{"../../node":65,"../propertyNamePrefixer":100,"../linearGradientPrefixer":101,"../":9}],25:[function(require,module,exports){
 'use strict';
 
 var _ = require('../../helper');
@@ -9469,25 +9469,7 @@ Prefixer.prototype.visitKeyframes = function(keyframesNode) {
 
 	return keyframesNodes;
 };
-},{"../../helper":2,"../../node":95,"../":9}],66:[function(require,module,exports){
-'use strict';
-
-var Evaluator = require('../');
-
-Evaluator.prototype.visitRuleset = function(rulesetNode) {
-	this.visit(rulesetNode.children[0]);
-
-	this.scope.add();
-
-	var ruleListNode = this.visit(rulesetNode.children[1]);
-
-	this.scope.remove();
-
-	if (!ruleListNode.children.length) {
-		return null;
-	}
-};
-},{"../":6}],67:[function(require,module,exports){
+},{"../../helper":2,"../../node":65,"../":9}],69:[function(require,module,exports){
 'use strict';
 
 var Evaluator = require('../');
@@ -9516,6 +9498,24 @@ Evaluator.prototype.visitSelector = function(selectorNode) {
 	selectorNode.children = childNodes;
 };
 },{"../":6}],68:[function(require,module,exports){
+'use strict';
+
+var Evaluator = require('../');
+
+Evaluator.prototype.visitRuleset = function(rulesetNode) {
+	this.visit(rulesetNode.children[0]);
+
+	this.scope.add();
+
+	var ruleListNode = this.visit(rulesetNode.children[1]);
+
+	this.scope.remove();
+
+	if (!ruleListNode.children.length) {
+		return null;
+	}
+};
+},{"../":6}],70:[function(require,module,exports){
 'use strict';
 
 var _ = require('../../helper');
@@ -9547,7 +9547,7 @@ Evaluator.prototype.visitSelectorInterpolation = function(selectorInterpolationN
 
 	return selectorNode.children;
 };
-},{"../../helper":2,"../../parser":4,"../":6}],69:[function(require,module,exports){
+},{"../../helper":2,"../../parser":4,"../":6}],71:[function(require,module,exports){
 'use strict';
 
 var RooleError = require('../../error');
@@ -9566,7 +9566,7 @@ Evaluator.prototype.visitClassSelector = function(classSelectorNode) {
 		valueNode.children[0] = this.parentModuleName + value;
 	}
 };
-},{"../../error":102,"../":6}],70:[function(require,module,exports){
+},{"../../error":102,"../":6}],72:[function(require,module,exports){
 'use strict';
 
 var Evaluator = require('../');
@@ -9598,7 +9598,25 @@ Evaluator.prototype.visitAssignment = function(assignmentNode) {
 	this.scope.define(variableName, valueNode);
 	return null;
 };
-},{"../":6}],71:[function(require,module,exports){
+},{"../":6}],74:[function(require,module,exports){
+'use strict';
+
+var Scope = require('../scope');
+var Evaluator = require('../');
+
+Evaluator.prototype.visitFunction = function(functionNode) {
+	var parameterListNode = functionNode.children[0];
+	parameterListNode.children.forEach(function(parameterNode) {
+		if (parameterNode.type !== 'parameter') {
+			return;
+		}
+
+		parameterNode.children[1] = this.visit(parameterNode.children[1]);
+	}, this);
+
+	functionNode.scope = new Scope(this.scope);
+};
+},{"../scope":67,"../":6}],73:[function(require,module,exports){
 'use strict';
 
 var RooleError = require('../../error');
@@ -9698,25 +9716,7 @@ Evaluator.prototype.visitCall = function(callNode) {
 
 	return returnedNode;
 };
-},{"../../error":102,"../../node":95,"../":6}],72:[function(require,module,exports){
-'use strict';
-
-var Scope = require('../scope');
-var Evaluator = require('../');
-
-Evaluator.prototype.visitFunction = function(functionNode) {
-	var parameterListNode = functionNode.children[0];
-	parameterListNode.children.forEach(function(parameterNode) {
-		if (parameterNode.type !== 'parameter') {
-			return;
-		}
-
-		parameterNode.children[1] = this.visit(parameterNode.children[1]);
-	}, this);
-
-	functionNode.scope = new Scope(this.scope);
-};
-},{"../scope":65,"../":6}],73:[function(require,module,exports){
+},{"../../error":102,"../../node":65,"../":6}],75:[function(require,module,exports){
 'use strict';
 
 var RooleError = require('../../error');
@@ -9733,7 +9733,7 @@ Evaluator.prototype.visitReturn = function(returnNode) {
 
 	return null;
 };
-},{"../../error":102,"../":6}],74:[function(require,module,exports){
+},{"../../error":102,"../":6}],76:[function(require,module,exports){
 'use strict';
 
 var RooleError = require('../../error');
@@ -9753,7 +9753,7 @@ Evaluator.prototype.visitVariable = function(variableNode) {
 
 	return valueNode;
 };
-},{"../../error":102,"../../node":95,"../":6}],75:[function(require,module,exports){
+},{"../../error":102,"../../node":65,"../":6}],77:[function(require,module,exports){
 'use strict';
 
 var RooleError = require('../../error');
@@ -9774,36 +9774,7 @@ Evaluator.prototype.visitIdentifier = function(identifierNode) {
 
 	identifierNode.children = [value];
 };
-},{"../../error":102,"../../node":95,"../":6}],77:[function(require,module,exports){
-'use strict';
-
-var Node = require('../../node');
-var Evaluator = require('../');
-
-Evaluator.prototype.visitLogical = function(logicalNode) {
-	var operator = logicalNode.operator;
-	var leftNode = logicalNode.children[0];
-	var rightNode = logicalNode.children[1];
-
-	switch (operator) {
-	case 'and':
-		leftNode = this.visit(leftNode);
-		if (!Node.toBoolean(leftNode)) {
-			return leftNode;
-		}
-
-		return this.visit(rightNode);
-
-	case 'or':
-		leftNode = this.visit(leftNode);
-		if (Node.toBoolean(leftNode)) {
-			return leftNode;
-		}
-
-		return this.visit(rightNode);
-	}
-};
-},{"../../node":95,"../":6}],76:[function(require,module,exports){
+},{"../../error":102,"../../node":65,"../":6}],78:[function(require,module,exports){
 'use strict';
 
 var RooleError = require('../../error');
@@ -9832,7 +9803,7 @@ Evaluator.prototype.visitString = function(stringNode) {
 	}, this).join('');
 	stringNode.children = [value];
 };
-},{"../../error":102,"../../node":95,"../":6}],78:[function(require,module,exports){
+},{"../../error":102,"../../node":65,"../":6}],79:[function(require,module,exports){
 'use strict';
 
 var RooleError = require('../../error');
@@ -9856,7 +9827,36 @@ Evaluator.prototype.visitRange = function(rangeNode) {
 		throw RooleError("only numberic values are allowed in 'range'", invalidNode);
 	}
 };
-},{"../../error":102,"../../node":95,"../":6}],79:[function(require,module,exports){
+},{"../../error":102,"../../node":65,"../":6}],80:[function(require,module,exports){
+'use strict';
+
+var Node = require('../../node');
+var Evaluator = require('../');
+
+Evaluator.prototype.visitLogical = function(logicalNode) {
+	var operator = logicalNode.operator;
+	var leftNode = logicalNode.children[0];
+	var rightNode = logicalNode.children[1];
+
+	switch (operator) {
+	case 'and':
+		leftNode = this.visit(leftNode);
+		if (!Node.toBoolean(leftNode)) {
+			return leftNode;
+		}
+
+		return this.visit(rightNode);
+
+	case 'or':
+		leftNode = this.visit(leftNode);
+		if (Node.toBoolean(leftNode)) {
+			return leftNode;
+		}
+
+		return this.visit(rightNode);
+	}
+};
+},{"../../node":65,"../":6}],81:[function(require,module,exports){
 'use strict';
 
 var Node = require('../../node');
@@ -9889,63 +9889,7 @@ Evaluator.prototype.visitEquality = function(equalityNode) {
 		return !Node.equal(leftNode, rightNode) ? trueNode() : falseNode();
 	}
 };
-},{"../../node":95,"../":6}],80:[function(require,module,exports){
-'use strict';
-
-var Node = require('../../node');
-var Evaluator = require('../');
-
-Evaluator.prototype.visitRelational = function(relationalNode) {
-	var operator = relationalNode.operator;
-	var leftNode = this.visit(relationalNode.children[0]);
-	var rightNode = this.visit(relationalNode.children[1]);
-
-	var trueNode = function() {
-		return {
-			type: 'boolean',
-			children: [true],
-			loc: leftNode.loc,
-		};
-	};
-	var falseNode = function() {
-		return {
-			type: 'boolean',
-			children: [false],
-			loc: leftNode.loc,
-		};
-	};
-
-	var leftValue, rightValue;
-	if (
-		leftNode.type === 'identifier' && rightNode.type === 'identifier' ||
-		leftNode.type === 'string' && rightNode.type === 'string'
-	) {
-		leftValue = leftNode.children[0];
-		rightValue = rightNode.children[0];
-	} else {
-		leftValue = Node.toNumber(leftNode);
-		if (leftValue === null) {
-			return falseNode();
-		}
-
-		rightValue = Node.toNumber(rightNode);
-		if (rightValue === null) {
-			return falseNode();
-		}
-	}
-
-	switch (operator) {
-	case '>':
-		return leftValue > rightValue ? trueNode() : falseNode();
-	case '>=':
-		return leftValue >= rightValue ? trueNode() : falseNode();
-	case '<':
-		return leftValue < rightValue ? trueNode() : falseNode();
-	case '<=':
-		return leftValue <= rightValue ? trueNode() : falseNode();
-	}
-};
-},{"../../node":95,"../":6}],81:[function(require,module,exports){
+},{"../../node":65,"../":6}],83:[function(require,module,exports){
 'use strict';
 
 var RooleError = require('../../error');
@@ -10086,7 +10030,63 @@ Evaluator.prototype.visitArithmetic = function(arithmeticNode) {
 
 	throw RooleError("unsupported binary operation: '" + leftNode.type + "' " + operator + " '" + rightNode.type + "'", leftNode);
 };
-},{"../../error":102,"../../node":95,"../":6}],82:[function(require,module,exports){
+},{"../../error":102,"../../node":65,"../":6}],82:[function(require,module,exports){
+'use strict';
+
+var Node = require('../../node');
+var Evaluator = require('../');
+
+Evaluator.prototype.visitRelational = function(relationalNode) {
+	var operator = relationalNode.operator;
+	var leftNode = this.visit(relationalNode.children[0]);
+	var rightNode = this.visit(relationalNode.children[1]);
+
+	var trueNode = function() {
+		return {
+			type: 'boolean',
+			children: [true],
+			loc: leftNode.loc,
+		};
+	};
+	var falseNode = function() {
+		return {
+			type: 'boolean',
+			children: [false],
+			loc: leftNode.loc,
+		};
+	};
+
+	var leftValue, rightValue;
+	if (
+		leftNode.type === 'identifier' && rightNode.type === 'identifier' ||
+		leftNode.type === 'string' && rightNode.type === 'string'
+	) {
+		leftValue = leftNode.children[0];
+		rightValue = rightNode.children[0];
+	} else {
+		leftValue = Node.toNumber(leftNode);
+		if (leftValue === null) {
+			return falseNode();
+		}
+
+		rightValue = Node.toNumber(rightNode);
+		if (rightValue === null) {
+			return falseNode();
+		}
+	}
+
+	switch (operator) {
+	case '>':
+		return leftValue > rightValue ? trueNode() : falseNode();
+	case '>=':
+		return leftValue >= rightValue ? trueNode() : falseNode();
+	case '<':
+		return leftValue < rightValue ? trueNode() : falseNode();
+	case '<=':
+		return leftValue <= rightValue ? trueNode() : falseNode();
+	}
+};
+},{"../../node":65,"../":6}],84:[function(require,module,exports){
 'use strict';
 
 var RooleError = require('../../error');
@@ -10119,7 +10119,7 @@ Evaluator.prototype.visitUnary = function(unaryNode) {
 
 	throw RooleError("unsupported unary operation: " + operator + "'" + operandNode.type + "'", unaryNode);
 };
-},{"../../error":102,"../../node":95,"../":6}],83:[function(require,module,exports){
+},{"../../error":102,"../../node":65,"../":6}],85:[function(require,module,exports){
 'use strict';
 
 var Evaluator = require('../');
@@ -10135,7 +10135,7 @@ Evaluator.prototype.visitMedia = function(mediaNode) {
 		return null;
 	}
 };
-},{"../":6}],84:[function(require,module,exports){
+},{"../":6}],86:[function(require,module,exports){
 'use strict';
 
 var Evaluator = require('../');
@@ -10147,7 +10147,7 @@ Evaluator.prototype.visitMediaQuery = function(mediaQueryNode) {
 		return childNodes;
 	}
 };
-},{"../":6}],85:[function(require,module,exports){
+},{"../":6}],87:[function(require,module,exports){
 'use strict';
 
 var _ = require('../../helper');
@@ -10183,7 +10183,7 @@ Evaluator.prototype.visitMediaInterpolation = function(mediaInterpolationNode) {
 
 	return mediaQueryNode;
 };
-},{"../../helper":2,"../../parser":4,"../":6}],86:[function(require,module,exports){
+},{"../../helper":2,"../../parser":4,"../":6}],88:[function(require,module,exports){
 'use strict';
 
 var Evaluator = require('../');
@@ -10193,7 +10193,7 @@ Evaluator.prototype.visitVoid = function(voidNode) {
 	this.visit(voidNode.children);
 	this.scope.remove();
 };
-},{"../":6}],87:[function(require,module,exports){
+},{"../":6}],89:[function(require,module,exports){
 'use strict';
 
 var Evaluator = require('../');
@@ -10208,7 +10208,7 @@ Evaluator.prototype.visitBlock = function(blockNode) {
 
 	return ruleListNode.children;
 };
-},{"../":6}],88:[function(require,module,exports){
+},{"../":6}],90:[function(require,module,exports){
 'use strict';
 
 var Node = require('../../node');
@@ -10233,7 +10233,7 @@ Evaluator.prototype.visitIf = function(ifNode) {
 
 	return this.visit(alternativeNode.children);
 };
-},{"../../node":95,"../":6}],89:[function(require,module,exports){
+},{"../../node":65,"../":6}],91:[function(require,module,exports){
 'use strict';
 
 var RooleError = require('../../error');
@@ -10323,25 +10323,7 @@ Evaluator.prototype.visitFor = function(forNode) {
 
 	return ruleNodes;
 };
-},{"../../error":102,"../../node":95,"../":6}],91:[function(require,module,exports){
-'use strict';
-
-var Evaluator = require('../');
-
-Evaluator.prototype.visitKeyframe = function(keyframeNode) {
-	this.visit(keyframeNode.children[0]);
-
-	this.scope.add();
-
-	var ruleListNode = this.visit(keyframeNode.children[1]);
-
-	this.scope.remove();
-
-	if (!ruleListNode.children.length) {
-		return null;
-	}
-};
-},{"../":6}],90:[function(require,module,exports){
+},{"../../error":102,"../../node":65,"../":6}],92:[function(require,module,exports){
 'use strict';
 
 var Evaluator = require('../');
@@ -10359,7 +10341,25 @@ Evaluator.prototype.visitKeyframes = function(keyframesNode) {
 		return null;
 	}
 };
-},{"../":6}],92:[function(require,module,exports){
+},{"../":6}],93:[function(require,module,exports){
+'use strict';
+
+var Evaluator = require('../');
+
+Evaluator.prototype.visitKeyframe = function(keyframeNode) {
+	this.visit(keyframeNode.children[0]);
+
+	this.scope.add();
+
+	var ruleListNode = this.visit(keyframeNode.children[1]);
+
+	this.scope.remove();
+
+	if (!ruleListNode.children.length) {
+		return null;
+	}
+};
+},{"../":6}],94:[function(require,module,exports){
 'use strict';
 
 var RooleError = require('../../error');
@@ -10389,7 +10389,7 @@ Evaluator.prototype.visitModule = function(moduleNode) {
 
 	return ruleListNode.children;
 };
-},{"../../error":102,"../../node":95,"../":6}],93:[function(require,module,exports){
+},{"../../error":102,"../../node":65,"../":6}],95:[function(require,module,exports){
 'use strict';
 
 var Evaluator = require('../');
@@ -10401,20 +10401,7 @@ Evaluator.prototype.visitFontFace = function(fontFaceNode) {
 		return null;
 	}
 };
-},{"../":6}],13:[function(require,module,exports){
-'use strict';
-
-var Extender = require('../');
-
-Extender.prototype.visitRoot = function(rootNode) {
-	var extendBoundaryNode = this.extendBoundaryNode;
-	this.extendBoundaryNode = rootNode;
-
-	this.visit(rootNode.children);
-
-	this.extendBoundaryNode = extendBoundaryNode;
-};
-},{"../":7}],14:[function(require,module,exports){
+},{"../":6}],14:[function(require,module,exports){
 'use strict';
 
 var Extender = require('../');
@@ -10428,6 +10415,19 @@ Extender.prototype.visitRuleset = function(rulesetNode) {
 	this.visit(rulesetNode.children[1]);
 
 	this.parentSelectorList = parentSelectorList;
+};
+},{"../":7}],13:[function(require,module,exports){
+'use strict';
+
+var Extender = require('../');
+
+Extender.prototype.visitRoot = function(rootNode) {
+	var extendBoundaryNode = this.extendBoundaryNode;
+	this.extendBoundaryNode = rootNode;
+
+	this.visit(rootNode.children);
+
+	this.extendBoundaryNode = extendBoundaryNode;
 };
 },{"../":7}],15:[function(require,module,exports){
 'use strict';
@@ -10458,7 +10458,7 @@ Extender.prototype.visitSelectorList = function(selectorListNode) {
 		this.visit(selectorListNode.children);
 	}
 };
-},{"../../node":95,"../":7}],16:[function(require,module,exports){
+},{"../../node":65,"../":7}],16:[function(require,module,exports){
 'use strict';
 
 var RooleError = require('../../error');
@@ -10526,22 +10526,7 @@ Extender.prototype.visitAmpersandSelector = function(ampersandSelectorNode) {
 
 	return this.parentSelector.children;
 };
-},{"../../error":102,"../../node":95,"../":7}],18:[function(require,module,exports){
-'use strict';
-
-var Extender = require('../');
-
-Extender.prototype.visitMedia = function(mediaNode) {
-	var mediaQueryListNode = this.visit(mediaNode.children[0]);
-
-	var parentMediaQueryList = this.parentMediaQueryList;
-	this.parentMediaQueryList = mediaQueryListNode;
-
-	this.visit(mediaNode.children[1]);
-
-	this.parentMediaQueryList = parentMediaQueryList;
-};
-},{"../":7}],19:[function(require,module,exports){
+},{"../../error":102,"../../node":65,"../":7}],19:[function(require,module,exports){
 'use strict';
 
 var Node = require('../../node');
@@ -10567,7 +10552,22 @@ Extender.prototype.visitMediaQueryList = function(mediaQueryListNode) {
 		this.visit(mediaQueryListNode.children);
 	}
 };
-},{"../../node":95,"../":7}],20:[function(require,module,exports){
+},{"../../node":65,"../":7}],18:[function(require,module,exports){
+'use strict';
+
+var Extender = require('../');
+
+Extender.prototype.visitMedia = function(mediaNode) {
+	var mediaQueryListNode = this.visit(mediaNode.children[0]);
+
+	var parentMediaQueryList = this.parentMediaQueryList;
+	this.parentMediaQueryList = mediaQueryListNode;
+
+	this.visit(mediaNode.children[1]);
+
+	this.parentMediaQueryList = parentMediaQueryList;
+};
+},{"../":7}],20:[function(require,module,exports){
 'use strict';
 
 var Extender = require('../');
@@ -10633,12 +10633,375 @@ Extender.prototype.visitVoid = function(voidNode) {
 },{"../":7}],26:[function(require,module,exports){
 'use strict';
 
+var Compiler = require('../');
+
+Compiler.prototype.visitRoot = function(root) {
+	var comments = this.comments(root);
+	var rules = root.children.reduce(function (css, child, i) {
+		var str = this.visit(child);
+		if (!child.level && i) css += '\n';
+		return css + str + '\n';
+	}.bind(this), '');
+	return comments + rules;
+};
+},{"../":10}],27:[function(require,module,exports){
+'use strict';
+
+var Compiler = require('../');
+
+Compiler.prototype.visitRuleset = function(ruleset) {
+	var level = this.level;
+	this.level += ruleset.level || 0;
+
+	var indent = this.indent();
+	var comments = this.comments(ruleset);
+	var selList = this.visit(ruleset.children[0]);
+	var ruleList = this.visit(ruleset.children[1]);
+
+	this.level = level;
+	return comments + indent + selList + ' ' + ruleList;
+};
+},{"../":10}],28:[function(require,module,exports){
+'use strict';
+
+var Compiler = require('../');
+
+Compiler.prototype.visitSelectorList = function(selList) {
+	return this.visit(selList.children).join(',\n' + this.indent());
+};
+},{"../":10}],29:[function(require,module,exports){
+'use strict';
+
+var Compiler = require('../');
+
+Compiler.prototype.visitCombinator = function(comb) {
+	var value = comb.children[0];
+	if (value !== ' ') value = ' ' + value + ' ';
+	return value;
+};
+},{"../":10}],30:[function(require,module,exports){
+'use strict';
+
+var Compiler = require('../');
+
+Compiler.prototype.visitUniversalSelector = function() {
+	return '*';
+};
+},{"../":10}],31:[function(require,module,exports){
+'use strict';
+
+var Compiler = require('../');
+
+Compiler.prototype.visitClassSelector = function(sel) {
+	return '.' + this.visit(sel.children[0]);
+};
+},{"../":10}],32:[function(require,module,exports){
+'use strict';
+
+var Compiler = require('../');
+
+Compiler.prototype.visitHashSelector = function(sel) {
+	return '#' + this.visit(sel.children[0]);
+};
+},{"../":10}],33:[function(require,module,exports){
+'use strict';
+
+var Compiler = require('../');
+
+Compiler.prototype.visitAttributeSelector = function(sel) {
+	var attr = this.visit(sel.children).join(sel.operator);
+	return '[' + attr + ']';
+};
+},{"../":10}],34:[function(require,module,exports){
+'use strict';
+
+var Compiler = require('../');
+
+Compiler.prototype.visitNegationSelector = function(sel) {
+	return ':not(' + this.visit(sel.children[0]) + ')';
+};
+},{"../":10}],35:[function(require,module,exports){
+'use strict';
+
+var Compiler = require('../');
+
+Compiler.prototype.visitPseudoSelector = function(sel) {
+	var colon = sel.doubleColon ? '::' : ':';
+	var name = this.visit(sel.children[0]);
+	var args = this.visit(sel.children[1]) || '';
+	if (args) args = '(' + args + ')';
+	return colon + name + args;
+};
+},{"../":10}],36:[function(require,module,exports){
+'use strict';
+
+var Compiler = require('../');
+
+Compiler.prototype.visitProperty = function(prop) {
+	var name = this.visit(prop.children[0]);
+	var value = this.visit(prop.children[1]);
+	var priority = prop.priority || '';
+	if (priority) priority = ' ' + priority;
+	var indent = this.indent();
+	var comments = this.comments(prop);
+	return comments + indent + name + ': ' +  value + priority + ';';
+};
+},{"../":10}],37:[function(require,module,exports){
+'use strict';
+
+var Compiler = require('../');
+
+Compiler.prototype.visitRuleList = function(ruleList) {
+	++this.level;
+
+	var rules = this.visit(ruleList.children).join('\n');
+
+	--this.level;
+	return '{\n' + rules + '\n' + this.indent() + '}';
+};
+},{"../":10}],39:[function(require,module,exports){
+'use strict';
+
+var Compiler = require('../');
+
+Compiler.prototype.visitMediaQueryList = function(mqList) {
+	return this.visit(mqList.children).join(', ');
+};
+},{"../":10}],38:[function(require,module,exports){
+'use strict';
+
+var Compiler = require('../');
+
+Compiler.prototype.visitMedia = function(media) {
+	var level = this.level;
+	this.level += media.level || 0;
+
+	var comments = this.comments(media);
+	var indent = this.indent();
+	var mqList = media.children[0];
+	var mqs = mqList.children;
+	mqList = this.visit(mqs).join(',\n' + this.indent());
+	mqList = (mqs.length === 1 ? ' ' : '\n' + this.indent()) + mqList;
+	var ruleList = this.visit(media.children[1]);
+
+	this.level = level;
+	return comments + indent + '@media' + mqList + ' ' + ruleList;
+};
+},{"../":10}],40:[function(require,module,exports){
+'use strict';
+
+var Compiler = require('../');
+
+Compiler.prototype.visitMediaQuery = function(mq) {
+	return this.visit(mq.children).join(' and ');
+};
+},{"../":10}],41:[function(require,module,exports){
+'use strict';
+
+var Compiler = require('../');
+
+Compiler.prototype.visitMediaType = function(mt) {
+	var modifier = mt.modifier || '';
+	if (modifier) modifier += ' ';
+	var name = this.visit(mt.children[0]);
+
+	return modifier + name;
+};
+},{"../":10}],42:[function(require,module,exports){
+'use strict';
+
+var Compiler = require('../');
+
+Compiler.prototype.visitMediaFeature = function(mf) {
+	var name = this.visit(mf.children[0]);
+	var value = this.visit(mf.children[1]) || '';
+	if (value) value = ': ' + value;
+	return '(' + name + value + ')';
+};
+},{"../":10}],44:[function(require,module,exports){
+'use strict';
+
+var Compiler = require('../');
+
+Compiler.prototype.visitUrl = function(url) {
+	url = this.visit(url.children[0]);
+	return 'url(' + url + ')';
+};
+},{"../":10}],43:[function(require,module,exports){
+'use strict';
+
+var Compiler = require('../');
+
+Compiler.prototype.visitImport = function(imp) {
+	var comments = this.comments(imp);
+	var url = this.visit(imp.children[0]);
+	var mq = this.visit(imp.children[1]) || '';
+	if (mq) mq = ' ' + mq;
+	return comments + '@import ' + url + mq + ';';
+};
+},{"../":10}],45:[function(require,module,exports){
+'use strict';
+
+var Compiler = require('../');
+
+Compiler.prototype.visitString = function(str) {
+	return str.quote + str.children[0] + str.quote;
+};
+},{"../":10}],46:[function(require,module,exports){
+'use strict';
+
+var Compiler = require('../');
+
+Compiler.prototype.visitNumber = function(num) {
+	num = +num.children[0].toFixed(this.options.precision);
+	return num.toString();
+};
+},{"../":10}],47:[function(require,module,exports){
+'use strict';
+
+var Compiler = require('../');
+
+Compiler.prototype.visitPercentage = function(per) {
+	var num = +per.children[0].toFixed(this.options.precision);
+	return num + '%';
+};
+},{"../":10}],48:[function(require,module,exports){
+'use strict';
+
+var Compiler = require('../');
+
+Compiler.prototype.visitDimension = function(dimen) {
+	var num = +dimen.children[0].toFixed(this.options.precision);
+	var unit = dimen.children[1];
+	return num + unit;
+};
+},{"../":10}],49:[function(require,module,exports){
+'use strict';
+
+var Compiler = require('../');
+
+Compiler.prototype.visitColor = function(color) {
+	return '#' + color.children[0];
+};
+},{"../":10}],50:[function(require,module,exports){
+'use strict';
+
+var Compiler = require('../');
+
+Compiler.prototype.visitCall = function(call) {
+	var name = this.visit(call.children[0]);
+	var args = this.visit(call.children[1]);
+	return name + '(' + args + ')';
+};
+},{"../":10}],51:[function(require,module,exports){
+'use strict';
+
+var Compiler = require('../');
+
+Compiler.prototype.visitArgumentList = function(argList) {
+	return this.visit(argList.children).join(', ');
+};
+},{"../":10}],52:[function(require,module,exports){
+'use strict';
+
+var Node = require('../../node');
+var Compiler = require('../');
+
+Compiler.prototype.visitRange = function(range) {
+	return this.visit(Node.toListNode(range));
+};
+},{"../../node":65,"../":10}],53:[function(require,module,exports){
+'use strict';
+
+var Compiler = require('../');
+
+Compiler.prototype.visitNull = function() {
+	return 'null';
+};
+},{"../":10}],54:[function(require,module,exports){
+'use strict';
+
+var Compiler = require('../');
+
+Compiler.prototype.visitSeparator = function(sep) {
+	sep = sep.children[0];
+	if (sep === ',') sep += ' ';
+	return sep;
+};
+},{"../":10}],55:[function(require,module,exports){
+'use strict';
+
+var Compiler = require('../');
+
+Compiler.prototype.visitKeyframes = function(kfs) {
+	var comments = this.comments(kfs);
+	var prefix = kfs.prefix || '';
+	if (prefix) prefix = '-' + prefix + '-';
+	var name = this.visit(kfs.children[0]);
+	var ruleList = this.visit(kfs.children[1]);
+	return comments + '@' + prefix + 'keyframes ' + name + ' ' + ruleList;
+};
+},{"../":10}],56:[function(require,module,exports){
+'use strict';
+
+var Compiler = require('../');
+
+Compiler.prototype.visitKeyframe = function(kf) {
+	var comments = this.comments(kf);
+	var indent = this.indent();
+	var sel = this.visit(kf.children[0]);
+	var ruleList = this.visit(kf.children[1]);
+	return comments + indent + sel + ' ' + ruleList;
+};
+},{"../":10}],58:[function(require,module,exports){
+'use strict';
+
+var Compiler = require('../');
+
+Compiler.prototype.visitFontFace = function(ff) {
+	var comments = this.comments(ff);
+	var ruleList = this.visit(ff.children[0]);
+	return comments + '@font-face '+ ruleList;
+};
+},{"../":10}],57:[function(require,module,exports){
+'use strict';
+
+var Compiler = require('../');
+
+Compiler.prototype.visitKeyframeSelectorList = function(selList) {
+	return this.visit(selList.children).join(', ');
+};
+},{"../":10}],59:[function(require,module,exports){
+'use strict';
+
+var Compiler = require('../');
+
+Compiler.prototype.visitPage = function(page) {
+	var comments = this.comments(page);
+	var name = this.visit(page.children[0]) || '';
+	if (name) name = ' :' + name;
+	var ruleList = this.visit(page.children[1]);
+	return comments + '@page' + name + ' ' + ruleList;
+};
+},{"../":10}],61:[function(require,module,exports){
+'use strict';
+
 var Normalizer = require('../');
 
 Normalizer.prototype.visitRoot = function(rootNode) {
 	return this.visit(rootNode.children);
 };
-},{"../":8}],27:[function(require,module,exports){
+},{"../":8}],60:[function(require,module,exports){
+'use strict';
+
+var Compiler = require('../');
+
+Compiler.prototype.visitCharset = function(charset) {
+	var comments = this.comments(charset);
+	var value = this.visit(charset.children[0]);
+	return comments + '@charset ' + value + ';';
+};
+},{"../":10}],62:[function(require,module,exports){
 'use strict';
 
 var Normalizer = require('../');
@@ -10680,7 +11043,7 @@ Normalizer.prototype.visitRuleset = function(ruleset) {
 
 	return rules;
 };
-},{"../":8}],28:[function(require,module,exports){
+},{"../":8}],63:[function(require,module,exports){
 'use strict';
 
 var RooleError = require('../../error');
@@ -10734,7 +11097,7 @@ Normalizer.prototype.visitMedia = function(media) {
 
 	return rules;
 };
-},{"../../error":102,"../":8}],29:[function(require,module,exports){
+},{"../../error":102,"../":8}],64:[function(require,module,exports){
 'use strict';
 
 var Normalizer = require('../');
@@ -10749,370 +11112,7 @@ Normalizer.prototype.visitVoid = function(voidNode) {
 	this.inVoid = inVoid;
 	return children;
 };
-},{"../":8}],30:[function(require,module,exports){
-'use strict';
-
-var Compiler = require('../');
-
-Compiler.prototype.visitRoot = function(root) {
-	var comments = this.comments(root);
-	var rules = root.children.reduce(function (css, child, i) {
-		var str = this.visit(child);
-		if (!child.level && i) css += '\n';
-		return css + str + '\n';
-	}.bind(this), '');
-	return comments + rules;
-};
-},{"../":10}],31:[function(require,module,exports){
-'use strict';
-
-var Compiler = require('../');
-
-Compiler.prototype.visitRuleset = function(ruleset) {
-	var level = this.level;
-	this.level += ruleset.level || 0;
-
-	var indent = this.indent();
-	var comments = this.comments(ruleset);
-	var selList = this.visit(ruleset.children[0]);
-	var ruleList = this.visit(ruleset.children[1]);
-
-	this.level = level;
-	return comments + indent + selList + ' ' + ruleList;
-};
-},{"../":10}],32:[function(require,module,exports){
-'use strict';
-
-var Compiler = require('../');
-
-Compiler.prototype.visitSelectorList = function(selList) {
-	return this.visit(selList.children).join(',\n' + this.indent());
-};
-},{"../":10}],33:[function(require,module,exports){
-'use strict';
-
-var Compiler = require('../');
-
-Compiler.prototype.visitCombinator = function(comb) {
-	var value = comb.children[0];
-	if (value !== ' ') value = ' ' + value + ' ';
-	return value;
-};
-},{"../":10}],35:[function(require,module,exports){
-'use strict';
-
-var Compiler = require('../');
-
-Compiler.prototype.visitClassSelector = function(sel) {
-	return '.' + this.visit(sel.children[0]);
-};
-},{"../":10}],34:[function(require,module,exports){
-'use strict';
-
-var Compiler = require('../');
-
-Compiler.prototype.visitUniversalSelector = function() {
-	return '*';
-};
-},{"../":10}],36:[function(require,module,exports){
-'use strict';
-
-var Compiler = require('../');
-
-Compiler.prototype.visitHashSelector = function(sel) {
-	return '#' + this.visit(sel.children[0]);
-};
-},{"../":10}],37:[function(require,module,exports){
-'use strict';
-
-var Compiler = require('../');
-
-Compiler.prototype.visitAttributeSelector = function(sel) {
-	var attr = this.visit(sel.children).join(sel.operator);
-	return '[' + attr + ']';
-};
-},{"../":10}],38:[function(require,module,exports){
-'use strict';
-
-var Compiler = require('../');
-
-Compiler.prototype.visitNegationSelector = function(sel) {
-	return ':not(' + this.visit(sel.children[0]) + ')';
-};
-},{"../":10}],39:[function(require,module,exports){
-'use strict';
-
-var Compiler = require('../');
-
-Compiler.prototype.visitPseudoSelector = function(sel) {
-	var colon = sel.doubleColon ? '::' : ':';
-	var name = this.visit(sel.children[0]);
-	var args = this.visit(sel.children[1]) || '';
-	if (args) args = '(' + args + ')';
-	return colon + name + args;
-};
-},{"../":10}],40:[function(require,module,exports){
-'use strict';
-
-var Compiler = require('../');
-
-Compiler.prototype.visitProperty = function(prop) {
-	var name = this.visit(prop.children[0]);
-	var value = this.visit(prop.children[1]);
-	var priority = prop.priority || '';
-	if (priority) priority = ' ' + priority;
-	var indent = this.indent();
-	var comments = this.comments(prop);
-	return comments + indent + name + ': ' +  value + priority + ';';
-};
-},{"../":10}],41:[function(require,module,exports){
-'use strict';
-
-var Compiler = require('../');
-
-Compiler.prototype.visitRuleList = function(ruleList) {
-	++this.level;
-
-	var rules = this.visit(ruleList.children).join('\n');
-
-	--this.level;
-	return '{\n' + rules + '\n' + this.indent() + '}';
-};
-},{"../":10}],42:[function(require,module,exports){
-'use strict';
-
-var Compiler = require('../');
-
-Compiler.prototype.visitMedia = function(media) {
-	var level = this.level;
-	this.level += media.level || 0;
-
-	var comments = this.comments(media);
-	var indent = this.indent();
-	var mqList = media.children[0];
-	var mqs = mqList.children;
-	mqList = this.visit(mqs).join(',\n' + this.indent());
-	mqList = (mqs.length === 1 ? ' ' : '\n' + this.indent()) + mqList;
-	var ruleList = this.visit(media.children[1]);
-
-	this.level = level;
-	return comments + indent + '@media' + mqList + ' ' + ruleList;
-};
-},{"../":10}],43:[function(require,module,exports){
-'use strict';
-
-var Compiler = require('../');
-
-Compiler.prototype.visitMediaQueryList = function(mqList) {
-	return this.visit(mqList.children).join(', ');
-};
-},{"../":10}],44:[function(require,module,exports){
-'use strict';
-
-var Compiler = require('../');
-
-Compiler.prototype.visitMediaQuery = function(mq) {
-	return this.visit(mq.children).join(' and ');
-};
-},{"../":10}],45:[function(require,module,exports){
-'use strict';
-
-var Compiler = require('../');
-
-Compiler.prototype.visitMediaType = function(mt) {
-	var modifier = mt.modifier || '';
-	if (modifier) modifier += ' ';
-	var name = this.visit(mt.children[0]);
-
-	return modifier + name;
-};
-},{"../":10}],46:[function(require,module,exports){
-'use strict';
-
-var Compiler = require('../');
-
-Compiler.prototype.visitMediaFeature = function(mf) {
-	var name = this.visit(mf.children[0]);
-	var value = this.visit(mf.children[1]) || '';
-	if (value) value = ': ' + value;
-	return '(' + name + value + ')';
-};
-},{"../":10}],47:[function(require,module,exports){
-'use strict';
-
-var Compiler = require('../');
-
-Compiler.prototype.visitImport = function(imp) {
-	var comments = this.comments(imp);
-	var url = this.visit(imp.children[0]);
-	var mq = this.visit(imp.children[1]) || '';
-	if (mq) mq = ' ' + mq;
-	return comments + '@import ' + url + mq + ';';
-};
-},{"../":10}],48:[function(require,module,exports){
-'use strict';
-
-var Compiler = require('../');
-
-Compiler.prototype.visitUrl = function(url) {
-	url = this.visit(url.children[0]);
-	return 'url(' + url + ')';
-};
-},{"../":10}],49:[function(require,module,exports){
-'use strict';
-
-var Compiler = require('../');
-
-Compiler.prototype.visitString = function(str) {
-	return str.quote + str.children[0] + str.quote;
-};
-},{"../":10}],50:[function(require,module,exports){
-'use strict';
-
-var Compiler = require('../');
-
-Compiler.prototype.visitNumber = function(num) {
-	num = +num.children[0].toFixed(this.options.precision);
-	return num.toString();
-};
-},{"../":10}],51:[function(require,module,exports){
-'use strict';
-
-var Compiler = require('../');
-
-Compiler.prototype.visitPercentage = function(per) {
-	var num = +per.children[0].toFixed(this.options.precision);
-	return num + '%';
-};
-},{"../":10}],52:[function(require,module,exports){
-'use strict';
-
-var Compiler = require('../');
-
-Compiler.prototype.visitDimension = function(dimen) {
-	var num = +dimen.children[0].toFixed(this.options.precision);
-	var unit = dimen.children[1];
-	return num + unit;
-};
-},{"../":10}],53:[function(require,module,exports){
-'use strict';
-
-var Compiler = require('../');
-
-Compiler.prototype.visitColor = function(color) {
-	return '#' + color.children[0];
-};
-},{"../":10}],54:[function(require,module,exports){
-'use strict';
-
-var Compiler = require('../');
-
-Compiler.prototype.visitCall = function(call) {
-	var name = this.visit(call.children[0]);
-	var args = this.visit(call.children[1]);
-	return name + '(' + args + ')';
-};
-},{"../":10}],55:[function(require,module,exports){
-'use strict';
-
-var Compiler = require('../');
-
-Compiler.prototype.visitArgumentList = function(argList) {
-	return this.visit(argList.children).join(', ');
-};
-},{"../":10}],56:[function(require,module,exports){
-'use strict';
-
-var Node = require('../../node');
-var Compiler = require('../');
-
-Compiler.prototype.visitRange = function(range) {
-	return this.visit(Node.toListNode(range));
-};
-},{"../../node":95,"../":10}],57:[function(require,module,exports){
-'use strict';
-
-var Compiler = require('../');
-
-Compiler.prototype.visitNull = function() {
-	return 'null';
-};
-},{"../":10}],58:[function(require,module,exports){
-'use strict';
-
-var Compiler = require('../');
-
-Compiler.prototype.visitSeparator = function(sep) {
-	sep = sep.children[0];
-	if (sep === ',') sep += ' ';
-	return sep;
-};
-},{"../":10}],59:[function(require,module,exports){
-'use strict';
-
-var Compiler = require('../');
-
-Compiler.prototype.visitKeyframes = function(kfs) {
-	var comments = this.comments(kfs);
-	var prefix = kfs.prefix || '';
-	if (prefix) prefix = '-' + prefix + '-';
-	var name = this.visit(kfs.children[0]);
-	var ruleList = this.visit(kfs.children[1]);
-	return comments + '@' + prefix + 'keyframes ' + name + ' ' + ruleList;
-};
-},{"../":10}],60:[function(require,module,exports){
-'use strict';
-
-var Compiler = require('../');
-
-Compiler.prototype.visitKeyframe = function(kf) {
-	var comments = this.comments(kf);
-	var indent = this.indent();
-	var sel = this.visit(kf.children[0]);
-	var ruleList = this.visit(kf.children[1]);
-	return comments + indent + sel + ' ' + ruleList;
-};
-},{"../":10}],61:[function(require,module,exports){
-'use strict';
-
-var Compiler = require('../');
-
-Compiler.prototype.visitKeyframeSelectorList = function(selList) {
-	return this.visit(selList.children).join(', ');
-};
-},{"../":10}],62:[function(require,module,exports){
-'use strict';
-
-var Compiler = require('../');
-
-Compiler.prototype.visitFontFace = function(ff) {
-	var comments = this.comments(ff);
-	var ruleList = this.visit(ff.children[0]);
-	return comments + '@font-face '+ ruleList;
-};
-},{"../":10}],63:[function(require,module,exports){
-'use strict';
-
-var Compiler = require('../');
-
-Compiler.prototype.visitPage = function(page) {
-	var comments = this.comments(page);
-	var name = this.visit(page.children[0]) || '';
-	if (name) name = ' :' + name;
-	var ruleList = this.visit(page.children[1]);
-	return comments + '@page' + name + ' ' + ruleList;
-};
-},{"../":10}],64:[function(require,module,exports){
-'use strict';
-
-var Compiler = require('../');
-
-Compiler.prototype.visitCharset = function(charset) {
-	var comments = this.comments(charset);
-	var value = this.visit(charset.children[0]);
-	return comments + '@charset ' + value + ';';
-};
-},{"../":10}],102:[function(require,module,exports){
+},{"../":8}],102:[function(require,module,exports){
 /**
  * RooleError
  *
@@ -11195,7 +11195,7 @@ PropertyNamePrefixer.prototype.visitIdentifier = function(identifierNode) {
 
 	return prefixedPropertyNameNodes;
 };
-},{"../helper":2,"../visitor":12,"../node":95}],101:[function(require,module,exports){
+},{"../helper":2,"../visitor":12,"../node":65}],101:[function(require,module,exports){
 /**
  * LinearGradientPrefixer
  *
@@ -11293,7 +11293,7 @@ LinearGradientPrefixer.prototype.visitCall = function(callNode) {
 		return positionNode;
 	});
 };
-},{"../visitor":12,"../helper":2,"../node":95}],103:[function(require,module,exports){
+},{"../helper":2,"../visitor":12,"../node":65}],103:[function(require,module,exports){
 /**
  * Media Filter
  *
@@ -11348,7 +11348,7 @@ MediaFilter.prototype.visitMedia = function(mediaNode) {
 		this.visit(ruleListNode);
 	}
 };
-},{"../helper":2,"../node":95,"../visitor":12}],104:[function(require,module,exports){
+},{"../helper":2,"../node":65,"../visitor":12}],104:[function(require,module,exports){
 /**
  * Ruleset Filter
  *
@@ -11410,7 +11410,7 @@ RulesetFilter.prototype.visitRuleset = function(rulesetNode) {
 	var ruleListNode = rulesetNode.children[1];
 	this.visit(ruleListNode);
 };
-},{"../helper":2,"../node":95,"../visitor":12}],105:[function(require,module,exports){
+},{"../helper":2,"../node":65,"../visitor":12}],105:[function(require,module,exports){
 /**
  * Selector Extender
  *
@@ -11495,7 +11495,7 @@ SelectorExtender.prototype.visitSelectorList = function(selectorListNode) {
 
 	return selectorListClone;
 };
-},{"../helper":2,"../node":95,"../visitor":12,"./":7}],97:[function(require,module,exports){
+},{"../helper":2,"../node":65,"../visitor":12,"./":7}],97:[function(require,module,exports){
 'use strict';
 
 var RooleError = require('../../error');
@@ -11521,7 +11521,58 @@ bif.len = function(callNode) {
 		loc: callNode.loc,
 	};
 };
-},{"../../error":102,"../":94}],98:[function(require,module,exports){
+},{"../../error":102,"../":96}],99:[function(require,module,exports){
+'use strict';
+
+var Node = require('../../node');
+var RooleError = require('../../error');
+var bif = require('../');
+
+bif.opp = function(callNode) {
+	var argumentListNode = callNode.children[1];
+	if (!argumentListNode.children.length) {
+		throw RooleError('no arguments passed', callNode);
+	}
+
+	var argumentNode = argumentListNode.children[0];
+	var argumentClone = Node.clone(argumentNode);
+
+	if (argumentClone.type === 'list') {
+		argumentClone.children[0] = toOppNode(argumentClone.children[0]);
+		argumentClone.children[2] = toOppNode(argumentClone.children[2]);
+		return argumentClone;
+	}
+
+	return toOppNode(argumentClone);
+};
+
+function toOppNode(node) {
+	var pos = Node.toString(node);
+	if (pos === null || (pos = toOppPos(pos)) == null) {
+		throw RooleError('invalid position', node);
+	}
+
+	node.children[0] = pos;
+	return node;
+}
+
+function toOppPos(pos) {
+	switch(pos) {
+	case 'left':
+		return 'right';
+	case 'right':
+		return 'left';
+	case 'top':
+		return 'bottom';
+	case 'bottom':
+		return 'top';
+	case 'center':
+		return 'center';
+	}
+
+	return null;
+}
+},{"../../node":65,"../../error":102,"../":96}],98:[function(require,module,exports){
 'use strict';
 
 var Node = require('../../node');
@@ -11619,57 +11670,75 @@ bif.unit = function(callNode) {
 		throw RooleError("'" + unitNode.type + "' is not a valid unit", unitNode);
 	}
 };
-},{"../../node":95,"../../error":102,"../":94}],99:[function(require,module,exports){
-'use strict';
-
-var Node = require('../../node');
-var RooleError = require('../../error');
-var bif = require('../');
-
-bif.opp = function(callNode) {
-	var argumentListNode = callNode.children[1];
-	if (!argumentListNode.children.length) {
-		throw RooleError('no arguments passed', callNode);
-	}
-
-	var argumentNode = argumentListNode.children[0];
-	var argumentClone = Node.clone(argumentNode);
-
-	if (argumentClone.type === 'list') {
-		argumentClone.children[0] = toOppNode(argumentClone.children[0]);
-		argumentClone.children[2] = toOppNode(argumentClone.children[2]);
-		return argumentClone;
-	}
-
-	return toOppNode(argumentClone);
-};
-
-function toOppNode(node) {
-	var pos = Node.toString(node);
-	if (pos === null || (pos = toOppPos(pos)) == null) {
-		throw RooleError('invalid position', node);
-	}
-
-	node.children[0] = pos;
-	return node;
-}
-
-function toOppPos(pos) {
-	switch(pos) {
-	case 'left':
-		return 'right';
-	case 'right':
-		return 'left';
-	case 'top':
-		return 'bottom';
-	case 'bottom':
-		return 'top';
-	case 'center':
-		return 'center';
-	}
-
-	return null;
-}
-},{"../../node":95,"../../error":102,"../":94}]},{},[1])(1)
+},{"../../node":65,"../../error":102,"../":96}]},{},[1])(1)
 });
-;
+;/**
+ * Compile style and link elements in the HTML.
+ */
+'use strict';
+/* jshint browser: true, node: false */
+/* global roole, loader */
+
+var selector = 'link[rel="stylesheet/roole"],style[type="text/roole"]';
+var elements = document.querySelectorAll(selector);
+
+Array.prototype.forEach.call(elements, function(element) {
+	var styleElement = document.createElement('style');
+	document.head.appendChild(styleElement);
+
+	var options = {
+		prettyError: true
+	};
+
+	if (element.nodeName === 'STYLE') {
+		roole.compile(element.textContent, options, function(error, css) {
+			if (error) {
+				displayError(error.message);
+				throw error;
+			}
+
+			styleElement.textContent = css;
+		});
+	} else if (element.nodeName === 'LINK') {
+		var url = element.getAttribute('href');
+		loader.load(url, function(error, content) {
+			if (error) {
+				displayError(error.message);
+				throw error;
+			}
+
+			options.filename = url;
+			roole.compile(content, options, function(error, css) {
+				if (error) {
+					displayError(error.message);
+					throw error;
+				}
+
+				styleElement.textContent = css;
+			});
+		});
+	}
+});
+
+function displayError(message) {
+	var errorElement = document.createElement('pre');
+	var style = [
+		['font', '14px/1.25 Menlo,Monaco,Consolas,"Lucida Console",monospace'],
+		['border', '3px solid #f60f92'],
+		['color', '#000'],
+		['background-color', '#ffeff4'],
+		['padding', '1em'],
+		['margin', '0'],
+		['position', 'fixed'],
+		['top', '0'],
+		['left', '0'],
+		['right', '0'],
+		['z-index', '99999999']
+	].map(function(property) {
+		return property[0] + ':' + property[1];
+	}).join(';');
+
+	errorElement.setAttribute('style', style);
+	errorElement.textContent = message;
+	document.body.appendChild(errorElement);
+}

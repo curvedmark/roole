@@ -27,10 +27,8 @@ dist/roole.js: lib/parser/generatedParser.js $(LIB_FILES) node_modules
 	echo ' * Copyright 2012 Glen Huang'                           >>$@
 	echo ' * Released under the MIT license'                      >>$@
 	echo ' */'                                                    >>$@
-	$(BIN)/browserify \
-		--transform brpkg\
-		--standalone roole \
-		./lib/roole.js >>$@
+	$(BIN)/browserify --transform brpkg --standalone roole ./lib/roole.js >>$@
+	cat lib/browser.js >>$@
 
 dist/roole.min.js: dist/roole.js node_modules
 	echo '// Roole v$(VERSION) | roole.org | MIT license' >$@
