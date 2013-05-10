@@ -113,8 +113,6 @@ assert.failAt = function(options, input, loc) {
 };
 
 assert.compileToWithCmd = function(cmd, input, output, done) {
-	var existsSync = fs.existsSync || path.existsSync;
-
 	var dir = 'test-dir';
 
 	var callback = function(error) {
@@ -158,7 +156,7 @@ assert.compileToWithCmd = function(cmd, input, output, done) {
 					filename = path.join(dir, filename);
 					var name = filename.substr(dir.length + 1);
 
-					if (existsSync(filename)) {
+					if (fs.existsSync(filename)) {
 						if (fileContent === null) {
 							return callback(new Error('"' + name + '" is created, which is not supposed to be'));
 						}
