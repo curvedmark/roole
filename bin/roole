@@ -37,7 +37,9 @@ if (!program.args.length) {
 }
 
 function compileStdin() {
-	readStdin().then(compile).done(console.log);
+	readStdin().then(compile).done(function (css) {
+		process.stdout.write(css);
+	});
 }
 
 function compileAndPrintFiles(filenames) {
@@ -192,8 +194,8 @@ function printFiles(files) {
 		return file.output.content;
 	}).map(function(file) {
 		return file.output.content;
-	}).join('\n\n');
-	console.log(content);
+	}).join('\n');
+	process.stdout.write(content);
 }
 
 function printError(error) {

@@ -5,7 +5,7 @@ var path = require('path');
 var exec = require('child_process').exec;
 var mkdirp = require('mkdirp');
 var _ = require('../lib/helper');
-var roole = require('../lib/roole');
+var roole = typeof window === 'undefined' ? global.roole : window.roole;
 var assert = exports;
 
 assert.compileTo = function(options, input, css) {
@@ -25,6 +25,7 @@ assert.compileTo = function(options, input, css) {
 		options.imports = files;
 	}
 
+	if (css) css += '\n';
 	options.prettyError = true;
 
 	var called = false;
@@ -34,7 +35,7 @@ assert.compileTo = function(options, input, css) {
 		if (error) {
 			throw error;
 		}
-		output = output.slice(0, -1);
+
 		if (output !== css) {
 			error = new Error('');
 			// error.actual = output;
@@ -162,6 +163,7 @@ assert.compileToWithCmd = function(cmd, input, output, done) {
 							return callback(new Error('"' + name + '" is created, which is not supposed to be'));
 						}
 
+						if (fileContent) fileContent += '\n';
 						var realContent = fs.readFileSync(filename, 'utf8');
 
 						if (realContent !== fileContent) {

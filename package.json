@@ -19,7 +19,7 @@
     "url": "git://github.com/curvedmark/roole.git"
   },
   "scripts": {
-    "test": "make all-test"
+    "test": "make test-all"
   },
   "dependencies": {
     "mkdirp": "0.3.x",
@@ -29,10 +29,20 @@
   "devDependencies": {
     "pegjs": "git://github.com/dmajda/pegjs.git#798ed6a8a4fbfc36b312ba09d428a5832808d9d6",
     "mustache": "0.7.x",
-    "mocha": "1.x",
+    "mocha": "1.8.x",
+    "mocha-phantomjs": "2.x",
     "coffee-script": "1.x",
     "uglify-js": "2.x",
-    "jscoverage": "0.3.x",
-    "jshint": "1.x"
+    "jshint": "1.x",
+    "browserify": "curvedmark/node-browserify#resolve",
+    "coffeeify": "0.4.x",
+    "brpkg": "0.1.x"
+  },
+  "browser": {
+    "child_process": false,
+    "mkdirp": false,
+    "path": false,
+    "fs": false,
+    "./lib/importer/fs-loader.js": "./lib/importer/xhr-loader.js"
   }
 }

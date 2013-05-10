@@ -1,7 +1,3 @@
 node_modules
 components
-/coverage
-/test/vendor
 /test/test.js
-/test/test.min.js
-/test/test.min.js.map
