@@ -24,7 +24,7 @@
   "dependencies": {
     "mkdirp": "0.3.x",
     "commander": "1.x",
-    "q": "0.9.x"
+    "p-promise": "0.2.x"
   },
   "devDependencies": {
     "pegjs": "git://github.com/dmajda/pegjs.git#798ed6a8a4fbfc36b312ba09d428a5832808d9d6",

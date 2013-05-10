@@ -1,12 +1,13 @@
 #!/usr/bin/env node
 'use strict';
 
-var Q = require('q');
+var P = require('p-promise');
 var fs = require('fs');
 var path = require('path');
 var EventEmitter = require('events').EventEmitter;
 var mkdirp = require('mkdirp');
 var program = require('commander');
+var slice = [].slice
 var _ = require('../lib/helper');
 var roole = require('../lib/roole');
 
@@ -48,7 +49,7 @@ function compileAndPrintFiles(filenames) {
 
 function compileAndWatchFiles(filenames) {
 	resolveFiles(filenames).then(compileFiles).then(writeFiles)
-		.catch(printError).then(function (files) {
+		.then(null, printError).then(function (files) {
 			emitter.on('skip', printSkipInfo)
 				.on('write', printWriteInfo)
 				.on('watch', printWatchInfo);
@@ -78,7 +79,7 @@ function compileAndWriteFiles(filenames) {
 }
 
 function readStdin() {
-	var deferred = Q.defer();
+	var deferred = P.defer();
 	var stdin = '';
 	process.stdin.resume();
 	process.stdin.setEncoding('utf8');
@@ -93,9 +94,11 @@ function readStdin() {
 }
 
 function compile(input, opts) {
-	var deferred = Q.defer();
-	var resolver = deferred.makeNodeResolver();
-	roole.compile(input, opts || options, resolver);
+	var deferred = P.defer();
+	roole.compile(input, opts || options, function (err, css) {
+		if (err) deferred.reject(err);
+		else deferred.resolve(css);
+	});
 	return deferred.promise;
 }
 
@@ -121,7 +124,7 @@ function checkFiles(filenames, fileAction, dirAction) {
 		}).filter(function (result) {
 			return result;
 		});
-		return Q.all(results);
+		return P.all(results);
 	});
 
 	function action(filename, stats) {
@@ -137,11 +140,26 @@ function statFiles(filenames) {
 	var stats = filenames.map(function (filename) {
 		return statFile(filename);
 	});
-	return Q.all(stats);
+	return P.all(stats);
 }
 
 function statFile(filename) {
-	return Q.nfcall(fs.stat, filename);
+	return nfcall(fs.stat, filename);
+}
+
+function nfcall(method) {
+	var deferred = P.defer();
+	var args = slice.call(arguments, 1);
+	args.push(function (err) {
+		if (err) deferred.reject(err);
+		else {
+			var args = slice.call(arguments, 1);
+			if (args.length === 1) args = args[0];
+			deferred.resolve(args);
+		}
+	});
+	method.apply(undefined, args);
+	return deferred.promise;
 }
 
 function resolveFile(filename, base) {
@@ -159,7 +177,7 @@ function resolveFile(filename, base) {
 }
 
 function readFile(filename) {
-	return Q.nfcall(fs.readFile, filename, 'utf8');
+	return nfcall(fs.readFile, filename, 'utf8');
 }
 
 function resolveDir(dirname, base) {
@@ -169,7 +187,7 @@ function resolveDir(dirname, base) {
 }
 
 function readDir(dirname) {
-	return Q.nfcall(fs.readdir, dirname).then(function (filenames) {
+	return nfcall(fs.readdir, dirname).then(function (filenames) {
 		return filenames.map(function (filename) {
 			return path.join(dirname, filename);
 		});
@@ -178,7 +196,7 @@ function readDir(dirname) {
 
 function compileFiles(files) {
 	files = files.map(compileFile);
-	return Q.all(files);
+	return P.all(files);
 }
 
 function compileFile(file) {
@@ -204,7 +222,7 @@ function printError(error) {
 
 function writeFiles(files) {
 	files = files.map(writeFile);
-	return Q.all(files);
+	return P.all(files);
 }
 
 function writeFile(file) {
@@ -213,8 +231,8 @@ function writeFile(file) {
 		return file;
 	}
 	var dir = path.dirname(file.output.name);
-	return Q.nfcall(mkdirp, dir).then(function () {
-		return Q.nfcall(fs.writeFile, file.output.name, file.output.content);
+	return nfcall(mkdirp, dir).then(function () {
+		return nfcall(fs.writeFile, file.output.name, file.output.content);
 	}).then(function () {
 		emitter.emit('write', file);
 		return file;
@@ -236,7 +254,7 @@ function watchFile(file) {
 		readFile(file.input.name).then(function (content) {
 			file.input.content = content;
 			return file;
-		}).then(compileFile).then(writeFile).catch(function (error) {
+		}).then(compileFile).then(writeFile).then(null, function (error) {
 			printError(error);
 		});
 	});
