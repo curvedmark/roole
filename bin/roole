@@ -7,7 +7,7 @@ var path = require('path');
 var EventEmitter = require('events').EventEmitter;
 var mkdirp = require('mkdirp');
 var program = require('commander');
-var slice = [].slice
+var slice = [].slice;
 var _ = require('../lib/helper');
 var roole = require('../lib/roole');
 

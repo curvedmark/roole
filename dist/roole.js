@@ -15,6 +15,7 @@ return (function(e,t,n){function i(n,s){if(!t[n]){if(!e[n]){var o=typeof require
 'use strict';
 
 var _ = require('./helper');
+var P = require('p-promise');
 var Parser = require('./parser');
 var Importer = require('./importer');
 var Evaluator = require('./evaluator');
@@ -38,53 +39,481 @@ roole.defaults = {
 };
 
 roole.compile = function(input, options, callback) {
-	if (callback == null) {
+	if (typeof options === 'function') {
 		callback = options;
 		options = {};
-	} else if (options == null) {
+	} else if (!options) {
 		options = {};
 	}
-
 	options = _.mixin({}, roole.defaults, options);
 	options.imports[options.filename] = input;
-	if (options.prettyError) {
-		var cb = callback;
-		callback = function (error, output) {
-			if (error && error.loc) {
-				var input = options.imports[error.loc.filename];
-				error.message = formatter.format(error, input);
+
+	var promise = P().then(function () {
+		var node = new Parser(options).parse(input);
+		return new Evaluator(options).evaluate(node);
+	}).then(function (node) {
+		// new Extender(options).extender(node);
+		// new Normalizer(options).normalize(node);
+		// new Prefixer(options).prefix(node);
+		return new Compiler(options).compile(node);
+	});
+
+	if (!callback) return promise;
+	return promise.then(function (output) {
+		callback(null, output);
+	}, function (err) {
+		if (err.loc) {
+			var input = options.imports[err.loc.filename];
+			err.message = formatter.format(err, input);
+		}
+		callback(err);
+	});
+};
+},{"./helper":2,"./formatter":3,"./parser":4,"./importer":5,"./evaluator":6,"./extender":7,"./normalizer":8,"./prefixer":9,"./compiler":10,"p-promise":11}],12:[function(require,module,exports){
+// shim for using process in browser
+
+var process = module.exports = {};
+
+process.nextTick = (function () {
+    var canSetImmediate = typeof window !== 'undefined'
+    && window.setImmediate;
+    var canPost = typeof window !== 'undefined'
+    && window.postMessage && window.addEventListener
+    ;
+
+    if (canSetImmediate) {
+        return function (f) { return window.setImmediate(f) };
+    }
+
+    if (canPost) {
+        var queue = [];
+        window.addEventListener('message', function (ev) {
+            if (ev.source === window && ev.data === 'process-tick') {
+                ev.stopPropagation();
+                if (queue.length > 0) {
+                    var fn = queue.shift();
+                    fn();
+                }
+            }
+        }, true);
+
+        return function nextTick(fn) {
+            queue.push(fn);
+            window.postMessage('process-tick', '*');
+        };
+    }
+
+    return function nextTick(fn) {
+        setTimeout(fn, 0);
+    };
+})();
+
+process.title = 'browser';
+process.browser = true;
+process.env = {};
+process.argv = [];
+
+process.binding = function (name) {
+    throw new Error('process.binding is not supported');
+}
+
+// TODO(shtylman)
+process.cwd = function () { return '/' };
+process.chdir = function (dir) {
+    throw new Error('process.chdir is not supported');
+};
+
+},{}],11:[function(require,module,exports){
+(function(process){;(function( factory ){
+	// CommonJS
+	if ( typeof module !== "undefined" && module && module.exports ) {
+		module.exports = factory();
+
+	// RequireJS
+	} else if ( typeof define === "function" && define.amd ) {
+		define( factory );
+
+	// global
+	} else {
+		P = factory();
+	}
+})(function() {
+	"use strict";
+
+	var
+		head = { f: null, n: null }, tail = head,
+		running = false,
+
+		channel, // MessageChannel
+		requestTick, // --> requestTick( onTick, 0 )
+
+		// window or worker
+		wow = ot(typeof window) && window || ot(typeof worker) && worker,
+
+		toStr = ({}).toString,
+		isArray;
+
+	function onTick() {
+		while ( head.n ) {
+			head = head.n;
+			var f = head.f;
+			head.f = null;
+			f();
+		}
+		running = false;
+	}
+
+	var runLater = function( f ) {
+		tail = tail.n = { f: f, n: null };
+		if ( !running ) {
+			running = true;
+			requestTick( onTick, 0 );
+		}
+	};
+
+	function ot( type ) {
+		return type === "object" || type === "function";
+	}
+
+	function ft( type ) {
+		return type === "function";
+	}
+
+	if ( ft(typeof setImmediate) ) {
+		//runLater = wow ?
+		requestTick = wow ?
+			function( cb ) {
+				wow.setImmediate( cb );
+			} :
+			function( cb ) {
+				setImmediate( cb );
+			};
+
+	} else if ( ot(typeof process) && process && ft(typeof process.nextTick) ) {
+		requestTick = process.nextTick;
+		//runLater = process.nextTick;
+
+	} else if ( ft(typeof MessageChannel) ) {
+		channel = new MessageChannel();
+		channel.port1.onmessage = onTick;
+		requestTick = function() {
+			channel.port2.postMessage(0);
+		};
+
+	} else {
+		requestTick = setTimeout;
+
+		if ( wow && ot(typeof Image) && Image ) {
+			(function(){
+				var c = 0;
+
+				var requestTickViaImage = function( cb ) {
+					var img = new Image();
+					img.onerror = cb;
+					img.src = 'data:image/png,';
+				};
+
+				// Before using it, test if it works properly, with async dispatching.
+				try {
+					requestTickViaImage(function() {
+						if ( --c === 0 ) {
+							requestTick = requestTickViaImage;
+						}
+					});
+					++c;
+				} catch (e) {}
+
+				// Also use it only if faster then setTimeout.
+				c && setTimeout(function() {
+					c = 0;
+				}, 0);
+			})();
+		}
+	}
+
+	//__________________________________________________________________________
+
+
+	isArray = Array.isArray || function( val ) {
+		return !!val && toStr.call( val ) === "[object Array]";
+	};
+
+	function forEach( arr, cb ) {
+		for ( var i = 0, l = arr.length; i < l; ++i ) {
+			if ( i in arr ) {
+				cb( arr[i], i );
 			}
-			cb(error, output);
+		}
+	}
+
+	function each( obj, cb ) {
+		if ( isArray(obj) ) {
+			forEach( obj, cb );
+			return;
+		}
+
+		for ( var prop in obj ) {
+			cb( obj[prop], prop );
+		}
+	}
+
+	function reportError( error ) {
+		try {
+			if ( P.onerror ) {
+				P.onerror( error );
+			} else {
+				throw error;
+			}
+
+		} catch ( e ) {
+			setTimeout(function() {
+				throw e;
+			}, 0);
+		}
+	}
+
+	var PENDING = 0;
+	var FULFILLED = 1;
+	var REJECTED = 2;
+
+	function P( x ) {
+		return x instanceof Promise ?
+			x :
+			Resolve( new Promise(), x );
+	}
+
+	function Settle( p, state, value ) {
+		if ( p._state ) {
+			return p;
+		}
+
+		p._state = state;
+		p._value = value;
+
+		forEach( p._pending, runLater );
+		p._pending = null;
+
+		return p;
+	}
+
+	function Append( p, f ) {
+		p._pending.push( f );
+		//p._tail = p._tail.n = { f: f, n: null };
+	}
+
+	function Resolve( p, x ) {
+		if ( p._state ) {
+			return p;
+		}
+
+		if ( x instanceof Promise ) {
+			if ( x._state ) {
+				Settle( p, x._state, x._value );
+
+			} else {
+				Append(x, function() {
+					Settle( p, x._state, x._value );
+				});
+			}
+
+		} else if ( x !== Object(x) ) {
+			Settle( p, FULFILLED, x );
+
+		} else {
+			runLater(function() {
+				try {
+					var then = x.then;
+
+					if ( typeof then === "function" ) {
+						var r = resolverFor( p, x );
+						then.call( x, r.resolve, r.reject );
+
+					} else {
+						Settle( p, FULFILLED, x );
+					}
+
+				} catch ( e ) {
+					Settle( p, REJECTED, e );
+				}
+			});
+		}
+
+		return p;
+	}
+
+	function resolverFor( promise, x ) {
+		var done = false;
+
+		return {
+			promise: promise,
+
+			resolve: function( y ) {
+				if ( !done ) {
+					done = true;
+
+					if ( x && x === y ) {
+						Settle( promise, FULFILLED, y );
+
+					} else {
+						Resolve( promise, y );
+					}
+				}
+			},
+
+			reject: function( reason ) {
+				if ( !done ) {
+					done = true;
+					Settle( promise, REJECTED, reason );
+				}
+			}
 		};
 	}
 
-	compile(input, options, callback);
-};
-
-function compile(input, options, callback) {
-	var output;
-	try {
-		output = new Parser(options).parse(input);
-	} catch (error) {
-		return callback(error);
+	P.defer = defer;
+	function defer() {
+		return resolverFor( new Promise() );
 	}
-	new Importer(options).import(output, function(error, output) {
-		if (error) {
-			return callback(error);
+
+	function Promise() {
+		this._state = 0;
+		this._value = void 0;
+		this._pending = [];
+	}
+
+	Promise.prototype.then = function( onFulfilled, onRejected ) {
+		var cb = typeof onFulfilled === "function" ? onFulfilled : null;
+		var eb = typeof onRejected === "function" ? onRejected : null;
+
+		var p = this;
+		var p2 = new Promise();
+
+		function onSettled() {
+			var x, func = p._state === FULFILLED ? cb : eb;
+
+			if ( func !== null ) {
+				try {
+					x = func( p._value );
+
+				} catch ( e ) {
+					Settle( p2, REJECTED, e );
+					return;
+				}
+
+				Resolve( p2, x );
+
+			} else {
+				Settle( p2, p._state, p._value );
+			}
 		}
-		try {
-			output = new Evaluator(options).evaluate(output);
-			output = new Extender(options).extend(output);
-			output = new Normalizer(options).normalize(output);
-			output = new Prefixer(options).prefix(output);
-			output = new Compiler(options).compile(output);
-		} catch (error) {
-			return callback(error);
+
+		if ( p._state === PENDING ) {
+			Append( p, onSettled );
+
+		} else {
+			runLater( onSettled );
 		}
-		callback(null, output);
-	});
-}
-},{"./helper":2,"./formatter":3,"./parser":4,"./importer":5,"./evaluator":6,"./extender":7,"./normalizer":8,"./prefixer":9,"./compiler":10}],2:[function(require,module,exports){
+
+		return p2;
+	};
+
+	Promise.prototype.done = function( cb, eb ) {
+		var p = this;
+
+		if ( cb || eb ) {
+			p = p.then( cb, eb );
+		}
+
+		p.then( null, reportError );
+	};
+
+	Promise.prototype.spread = function( cb, eb ) {
+		return this.then(cb && function( array ) {
+			return all( array ).then(function( values ) {
+				return cb.apply( void 0, values );
+			});
+		}, eb);
+	};
+
+	Promise.prototype.timeout = function( ms, msg ) {
+		var p = this;
+		var p2 = new Promise();
+
+		if ( p._state !== PENDING ) {
+			Settle( p2, p._state, p._value );
+
+		} else {
+			var timeoutId = setTimeout(function() {
+				Settle( p2, REJECTED,
+					new Error(msg || "Timed out after " + ms + " ms") );
+			}, ms);
+
+			Append(p, function() {
+				clearTimeout( timeoutId );
+				Settle( p2, p._state, p._value );
+			});
+		}
+
+		return p2;
+	};
+
+	Promise.prototype.delay = function( ms ) {
+		var p = this;
+		var p2 = new Promise();
+		setTimeout(function() {
+			Resolve( p2, p );
+		}, ms);
+		return p2;
+	};
+
+	P.all = all;
+	function all( promises ) {
+		var waiting = 0;
+		var d = defer();
+		each( promises, function( promise, index ) {
+			var p = P( promise );
+			if ( p._state === PENDING ) {
+				++waiting;
+				p.then(function( value ) {
+					promises[ index ] = value;
+					if ( --waiting === 0 ) {
+						d.resolve( promises );
+					}
+				}, d.reject);
+
+			} else {
+				promises[ index ] = p._value;
+			}
+		});
+		if ( waiting === 0 ) {
+			d.resolve( promises );
+		}
+		return d.promise;
+	}
+
+	P.onerror = null;
+
+	P.prototype = Promise.prototype;
+
+	P.nextTick = function( f ) {
+		runLater(function() {
+			try {
+				f();
+
+			} catch ( ex ) {
+				setTimeout(function() {
+					throw ex;
+				}, 0);
+			}
+		});
+	};
+
+	P._each = each;
+
+	return P;
+});
+
+})(require("__browserify_process"))
+},{"__browserify_process":12}],2:[function(require,module,exports){
 /**
  * Helper
  *
@@ -176,6 +605,13 @@ _.normalizePath = function (path) {
 	}
 
 	return parts.join('/');
+};
+
+_.loop = function (range, cb) {
+	var from = range.from;
+	var to = range.to;
+	var step = range.step || 1;
+
 };
 },{}],3:[function(require,module,exports){
 /**
@@ -276,179 +712,39 @@ Parser.prototype._normalizeError = function (error) {
 		filename: this.options.filename,
 	};
 };
-},{"./generatedParser":11}],7:[function(require,module,exports){
+},{"./generatedParser":13}],6:[function(require,module,exports){
 /**
- * Extender
+ * Evaluator
  *
- * Join nested selectors and media queries, and extend selectors
- * specified in extend nodes.
+ * Eliminate dynamic constructs (e.g., variable, @if, @for).
  */
 'use strict';
 
-var _ = require('../helper');
-var Visitor = require('../visitor');
+var TranslatorAsync = require('../visitor/translatorAsync');
+var Scope = require('./scope');
+var methods = require('./node');
+var bifs = require('./bif');
 
-module.exports = Extender;
+module.exports = Evaluator;
 
-function Extender() {}
+function Evaluator(options) {
+	this.options = options;
+	this.imported = {};
+	this.scope = new Scope(bifs);
+}
 
-Extender.prototype = new Visitor();
+Evaluator.prototype = new TranslatorAsync();
 
-Extender.prototype.extend = function(ast) {
+Evaluator.prototype.evaluate = function(ast) {
 	return this.visit(ast);
 };
 
-Extender.prototype.visitRuleList = Extender.prototype.visitNode;
-
-Extender.prototype.visitNode = _.noop;
-
-require('./node/root');
-require('./node/ruleset');
-require('./node/selectorList');
-require('./node/selector');
-require('./node/ampersandSelector');
-require('./node/media');
-require('./node/mediaQueryList');
-require('./node/mediaQuery');
-require('./node/extend');
-require('./node/void');
-},{"../helper":2,"../visitor":12,"./node/root":13,"./node/ruleset":14,"./node/selectorList":15,"./node/selector":16,"./node/ampersandSelector":17,"./node/media":18,"./node/mediaQueryList":19,"./node/mediaQuery":20,"./node/extend":21,"./node/void":22}],9:[function(require,module,exports){
-/**
- * Prefixer
- *
- * Prefix property nodes, keyframes nodes, etc
- */
-'use strict';
-
-var _ = require('../helper');
-var Visitor = require('../visitor');
-module.exports = Prefixer;
-
-function Prefixer(options) {
-	this.options = options;
-}
-
-Prefixer.prototype = new Visitor();
-
-Prefixer.prototype.prefix = function(ast) {
-	this.prefixes = this.options.prefix.trim().split(/\s+/);
-	return this.visit(ast);
+Evaluator.prototype._visit = function (node) {
+	if (node !== Object(node)) return node;
+	var method = methods[node.type in methods ? node.type : 'node'];
+	return method(this, node);
 };
-
-Prefixer.prototype.visitRoot =
-Prefixer.prototype.visitRuleset =
-Prefixer.prototype.visitMedia =
-Prefixer.prototype.visitKeyframeList =
-Prefixer.prototype.visitKeyframe =
-Prefixer.prototype.visitRuleList = Prefixer.prototype.visitNode;
-
-Prefixer.prototype.visitNode = _.noop;
-
-require('./node/ruleset.js');
-require('./node/property.js');
-require('./node/keyframes.js');
-},{"./node/ruleset.js":23,"./node/property.js":24,"./node/keyframes.js":25,"../helper":2,"../visitor":12}],10:[function(require,module,exports){
-/**
- * Compiler
- *
- * Compile AST to CSS.
- */
-'use strict';
-
-var Visitor = require('../visitor');
-
-module.exports = Compiler;
-
-function Compiler(options) {
-	this.options = options;
-}
-
-Compiler.prototype = new Visitor();
-
-Compiler.prototype.compile = function(node) {
-	this.level = 0;
-	return this.visit(node);
-};
-
-Compiler.prototype.indent = function(offset) {
-	if (offset === undefined) offset = 0;
-	return new Array(this.level + offset + 1).join(this.options.indent);
-};
-
-Compiler.prototype.comments = function(node) {
-	var comments = node.comments;
-	if (!comments) return '';
-	comments = comments.map(function (comment) {
-		return comment.replace(/\n/g, '\n' + this.indent());
-	}, this).join('\n' + this.indent());
-	if (comments) return this.indent() + comments + '\n';
-	return comments;
-};
-
-Compiler.prototype.visitNode = function (node) {
-	return this.visit(node.children).join('');
-};
-
-require('./node/root');
-require('./node/ruleset');
-require('./node/selectorList');
-require('./node/combinator');
-require('./node/universalSelector');
-require('./node/classSelector');
-require('./node/hashSelector');
-require('./node/attributeSelector');
-require('./node/negationSelector');
-require('./node/pseudoSelector');
-require('./node/property');
-require('./node/ruleList');
-require('./node/media');
-require('./node/mediaQueryList');
-require('./node/mediaQuery');
-require('./node/mediaType');
-require('./node/mediaFeature');
-require('./node/import');
-require('./node/url');
-require('./node/string');
-require('./node/number');
-require('./node/percentage');
-require('./node/dimension');
-require('./node/color');
-require('./node/call');
-require('./node/argumentList');
-require('./node/range');
-require('./node/null');
-require('./node/separator');
-require('./node/keyframes');
-require('./node/keyframe');
-require('./node/keyframeSelectorList');
-require('./node/fontFace');
-require('./node/page');
-require('./node/charset');
-},{"../visitor":12,"./node/root":26,"./node/ruleset":27,"./node/selectorList":28,"./node/combinator":29,"./node/universalSelector":30,"./node/classSelector":31,"./node/hashSelector":32,"./node/attributeSelector":33,"./node/negationSelector":34,"./node/pseudoSelector":35,"./node/property":36,"./node/ruleList":37,"./node/media":38,"./node/mediaQueryList":39,"./node/mediaQuery":40,"./node/mediaType":41,"./node/mediaFeature":42,"./node/import":43,"./node/url":44,"./node/string":45,"./node/number":46,"./node/percentage":47,"./node/dimension":48,"./node/color":49,"./node/call":50,"./node/argumentList":51,"./node/range":52,"./node/null":53,"./node/separator":54,"./node/keyframes":55,"./node/keyframe":56,"./node/keyframeSelectorList":57,"./node/fontFace":58,"./node/page":59,"./node/charset":60}],8:[function(require,module,exports){
-/**
- * Normalizer
- *
- * Remove empty ruleset/media nodes, unextended void nodes, etc.
- */
-'use strict';
-
-var Visitor = require('../visitor');
-var Normalizer = module.exports = function() {};
-
-Normalizer.prototype = new Visitor();
-
-Normalizer.prototype.normalize = function(node) {
-	this.visit(node.children);
-	return node;
-};
-
-Normalizer.prototype.visitNode = function () {};
-
-require('./node/root');
-require('./node/ruleset');
-require('./node/media');
-require('./node/void');
-},{"../visitor":12,"./node/root":61,"./node/ruleset":62,"./node/media":63,"./node/void":64}],5:[function(require,module,exports){
+},{"../visitor/translatorAsync":14,"./scope":15,"./node":16,"./bif":17}],5:[function(require,module,exports){
 /**
  * Importer
  *
@@ -567,63 +863,226 @@ Importer.prototype.visitImport = function(importNode) {
 		}
 	}, this);
 };
-},{"../helper":2,"../node":65,"../visitor":12,"./fs-loader":66,"../parser":4}],6:[function(require,module,exports){
+},{"../helper":2,"../node":18,"./fs-loader":19,"../parser":4,"../visitor":20}],7:[function(require,module,exports){
 /**
- * Evaluator
+ * Extender
  *
- * Eliminate dynamic constructs (e.g., variable, @if, @for).
+ * Join nested selectors and media queries, and extend selectors
+ * specified in extend nodes.
+ */
+'use strict';
+
+var _ = require('../helper');
+var Visitor = require('../visitor');
+
+module.exports = Extender;
+
+function Extender() {}
+
+Extender.prototype = new Visitor();
+
+Extender.prototype.extend = function(ast) {
+	return this.visit(ast);
+};
+
+Extender.prototype.visitRuleList = Extender.prototype.visitNode;
+
+Extender.prototype.visitNode = _.noop;
+
+require('./node/root');
+require('./node/ruleset');
+require('./node/selectorList');
+require('./node/selector');
+require('./node/ampersandSelector');
+require('./node/media');
+require('./node/mediaQueryList');
+require('./node/mediaQuery');
+require('./node/extend');
+require('./node/void');
+},{"../helper":2,"./node/root":21,"./node/ruleset":22,"./node/selectorList":23,"./node/selector":24,"./node/ampersandSelector":25,"./node/media":26,"./node/mediaQueryList":27,"./node/mediaQuery":28,"./node/extend":29,"./node/void":30,"../visitor":20}],8:[function(require,module,exports){
+/**
+ * Normalizer
+ *
+ * Remove empty ruleset/media nodes, unextended void nodes, etc.
  */
 'use strict';
 
 var Visitor = require('../visitor');
-var bif = require('../bif');
-var Scope = require('./scope');
-module.exports = Evaluator;
+var Normalizer = module.exports = function() {};
 
-function Evaluator() {}
+Normalizer.prototype = new Visitor();
 
-Evaluator.prototype = new Visitor();
+Normalizer.prototype.normalize = function(node) {
+	this.visit(node.children);
+	return node;
+};
 
-Evaluator.prototype.evaluate = function(ast) {
-	this.scope = new Scope(bif);
+Normalizer.prototype.visitNode = function () {};
+
+require('./node/root');
+require('./node/ruleset');
+require('./node/media');
+require('./node/void');
+},{"./node/root":31,"./node/ruleset":32,"./node/void":33,"./node/media":34,"../visitor":20}],9:[function(require,module,exports){
+/**
+ * Prefixer
+ *
+ * Prefix property nodes, keyframes nodes, etc
+ */
+'use strict';
+
+var _ = require('../helper');
+var Visitor = require('../visitor');
+module.exports = Prefixer;
+
+function Prefixer(options) {
+	this.options = options;
+}
+
+Prefixer.prototype = new Visitor();
+
+Prefixer.prototype.prefix = function(ast) {
+	this.prefixes = this.options.prefix.trim().split(/\s+/);
 	return this.visit(ast);
 };
 
-require('./node/ruleset');
-require('./node/selector');
-require('./node/selectorInterpolation');
-require('./node/classSelector');
-require('./node/assignment');
-require('./node/call');
-require('./node/function');
-require('./node/return');
-require('./node/variable');
-require('./node/identifier');
-require('./node/string');
-require('./node/range');
-require('./node/logical');
-require('./node/equality');
-require('./node/relational');
-require('./node/arithmetic');
-require('./node/unary');
-require('./node/media');
-require('./node/mediaQuery');
-require('./node/mediaInterpolation');
-require('./node/void');
-require('./node/block');
-require('./node/if');
-require('./node/for');
-require('./node/keyframes');
-require('./node/keyframe');
-require('./node/module');
-require('./node/fontFace');
-},{"../visitor":12,"./scope":67,"./node/ruleset":68,"./node/selector":69,"./node/selectorInterpolation":70,"./node/classSelector":71,"./node/assignment":72,"./node/call":73,"./node/function":74,"./node/return":75,"./node/variable":76,"./node/identifier":77,"./node/string":78,"./node/range":79,"./node/logical":80,"./node/equality":81,"./node/relational":82,"./node/arithmetic":83,"./node/unary":84,"./node/media":85,"./node/mediaQuery":86,"./node/mediaInterpolation":87,"./node/void":88,"./node/block":89,"./node/if":90,"./node/for":91,"./node/keyframes":92,"./node/keyframe":93,"./node/module":94,"./node/fontFace":95,"../bif":96}],65:[function(require,module,exports){
+Prefixer.prototype.visitRoot =
+Prefixer.prototype.visitRuleset =
+Prefixer.prototype.visitMedia =
+Prefixer.prototype.visitKeyframeList =
+Prefixer.prototype.visitKeyframe =
+Prefixer.prototype.visitRuleList = Prefixer.prototype.visitNode;
+
+Prefixer.prototype.visitNode = _.noop;
+
+require('./node/ruleset.js');
+require('./node/property.js');
+require('./node/keyframes.js');
+},{"./node/ruleset.js":35,"./node/property.js":36,"./node/keyframes.js":37,"../helper":2,"../visitor":20}],10:[function(require,module,exports){
+/**
+ * Compiler
+ *
+ * Compile AST to CSS.
+ */
+'use strict';
+
+var Translator = require('../visitor/translator');
+var methods = require('./node');
+
+module.exports = Compiler;
+
+function Compiler(options) {
+	this.options = options;
+}
+
+Compiler.prototype = new Translator();
+
+Compiler.prototype.compile = function(node) {
+	this.level = 0;
+	return this.visit(node);
+};
+
+Compiler.prototype.indent = function(offset) {
+	if (offset === undefined) offset = 0;
+	return new Array(this.level + offset + 1).join(this.options.indent);
+};
+
+Compiler.prototype.comments = function(node) {
+	var comments = node.comments;
+	if (!comments) return '';
+	comments = comments.map(function (comment) {
+		return comment.replace(/\n/g, '\n' + this.indent());
+	}, this).join('\n' + this.indent());
+	if (comments) return this.indent() + comments + '\n';
+	return comments;
+};
+
+Compiler.prototype._visit = function (node) {
+	if (node !== Object(node)) return node;
+	var method = methods[node.type in methods ? node.type : 'node'];
+	return method(this, node);
+};
+},{"../visitor/translator":38,"./node":39}],15:[function(require,module,exports){
+/**
+ * Scope
+ *
+ * Regulate lexical scoping.
+ */
+'use strict';
+
+var Scope = module.exports = function(scopes) {
+	this.scopes = scopes ? [scopes, {}] : [{}];
+};
+
+Scope.prototype.clone = function () {
+	var scope = new Scope()
+	scope.scopes = this.scopes.slice(0);
+	return scope;
+};
+
+Scope.prototype.push = function() {
+	this.scopes.push({});
+};
+
+Scope.prototype.pop = function() {
+	this.scopes.pop();
+};
+
+Scope.prototype.define = function(name, value) {
+	this.scopes[this.scopes.length - 1][name] = value;
+};
+
+Scope.prototype.resolve = function(name) {
+	var length = this.scopes.length;
+	var value;
+
+	while (length--) {
+		value = this.scopes[length][name];
+		if(value) {
+			return value;
+		}
+	}
+};
+},{}],19:[function(require,module,exports){
+'use strict';
+/* jshint browser: true, node: false */
+
+var loader = {};
+
+loader.load = function(url, callback, context) {
+	var xhr = new XMLHttpRequest();
+
+	xhr.onreadystatechange = function() {
+		if (xhr.readyState !== 4) {
+			return;
+		}
+
+		if (xhr.status >= 200 && xhr.status < 300 || xhr.status === 304) {
+			callback.call(context, null, xhr.responseText);
+		} else {
+			callback.call(context, new Error('Failed to request file ' + url + ': ' + xhr.status));
+		}
+	};
+
+	// disable cache
+	url += (url.indexOf('?') === -1 ? '?' : '&') + '_=' + Date.now();
+
+	try {
+		xhr.open('GET', url, true);
+		xhr.send(null);
+	} catch (error) {
+		callback.call(context, error);
+	}
+};
+},{}],18:[function(require,module,exports){
 /**
  * Node
  *
  * A collection of node utility functions.
  */
 'use strict';
+
+var RooleError = require('./error');
 
 var Node = exports;
 
@@ -706,32 +1165,23 @@ Node.toNumber = function(node) {
 	case 'number':
 	case 'percentage':
 	case 'dimension':
-		return node.children[0];
-
-	default:
-		return null;
+		return +node.children[0].toFixed(3);
 	}
 };
 
 Node.toString = function(node) {
-	if (typeof node === 'string') {
-		return node;
-	}
+	if (typeof node === 'string') return node;
 
 	switch (node.type) {
 	case 'number':
 		return '' + node.children[0];
-
 	case 'identifier':
 	case 'string':
 		return '' + node.children[0];
-
 	case 'percentage':
+		return Node.toNumber(node) + '%';
 	case 'dimension':
-		return node.children[0] + node.children[1];
-
-	default:
-		return null;
+		return Node.toNumber(node) + node.children[1];
 	}
 };
 
@@ -739,18 +1189,66 @@ Node.toBoolean = function(node) {
 	switch (node.type) {
 	case 'boolean':
 		return node.children[0];
-
 	case 'number':
 	case 'percentage':
 	case 'dimension':
 		return !!node.children[0];
-
 	case 'identifier':
 	case 'string':
-		return node.children.length !== 1 || !!node.children[0];
+		return !!node.children[0];
 	}
-
 	return true;
+};
+
+Node.toValue = function (node) {
+	switch (node.type) {
+	case 'number':
+	case 'percentage':
+	case 'dimension':
+		return Node.toNumber(node);
+	case 'boolean':
+	case 'identifier':
+	case 'string':
+		return node.children[0];
+	}
+};
+
+Node.toArray = function (node) {
+	switch (node.type) {
+	case 'list':
+		return node.children.filter(function (item, i) {
+			if (i % 2 === 0) return true;
+		});
+	case 'range':
+		var ex = node.operator === '...';
+		var from = node.children[0];
+		var fromNum = from.children[0];
+		var to = node.children[1];
+		var toNum = to.children[0];
+
+		if (!ex) {
+			if (fromNum <= toNum) ++toNum;
+			else --toNum;
+		}
+		var items = [];
+		if (fromNum <= toNum) {
+			for (var i = fromNum; i < toNum; ++i) {
+				createNum(i);
+			}
+		} else {
+			for (var i = fromNum; i > toNum; --i) {
+				createNum(i);
+			}
+		}
+		return items;
+	}
+	return [node];
+
+	function createNum(i) {
+		var clone = Node.clone(from);
+		clone.children[0] = i;
+		items.push(clone);
+	}
 };
 
 Node.toListNode = function(node) {
@@ -839,142 +1337,155 @@ Node.toListNode = function(node) {
 
 	return node;
 };
-},{}],66:[function(require,module,exports){
-'use strict';
-/* jshint browser: true, node: false */
 
-var loader = {};
-
-loader.load = function(url, callback, context) {
-	var xhr = new XMLHttpRequest();
-
-	xhr.onreadystatechange = function() {
-		if (xhr.readyState !== 4) {
-			return;
-		}
-
-		if (xhr.status >= 200 && xhr.status < 300 || xhr.status === 304) {
-			callback.call(context, null, xhr.responseText);
-		} else {
-			callback.call(context, new Error('Failed to request file ' + url + ': ' + xhr.status));
-		}
-	};
-
-	// disable cache
-	url += (url.indexOf('?') === -1 ? '?' : '&') + '_=' + Date.now();
-
-	try {
-		xhr.open('GET', url, true);
-		xhr.send(null);
-	} catch (error) {
-		callback.call(context, error);
+Node.perform = function (op, left, right) {
+	switch (left.type + ' ' + op + ' ' + right.type) {
+	case 'number + number':
+	case 'percentage + number':
+	case 'percentage + percentage':
+	case 'dimension + number':
+	case 'dimension + dimension':
+	case 'identifier + number':
+	case 'identifier + boolean':
+	case 'identifier + identifier':
+	case 'string + number':
+	case 'string + boolean':
+	case 'string + identifier':
+	case 'string + string':
+		var clone = Node.clone(left);
+		clone.children[0] += right.children[0];
+		return clone;
+	case 'identifier + percentage':
+	case 'identifier + dimension':
+	case 'string + dimension':
+	case 'string + percentage':
+		var clone = Node.clone(left);
+		clone.children[0] += Node.toString(right);
+		return clone;
+	case 'number + percentage':
+	case 'number + dimension':
+	case 'number + string':
+	case 'boolean + identifier':
+	case 'boolean + string':
+	case 'identifier + string':
+		var clone = Node.clone(right);
+		clone.children[0] = left.children[0] + clone.children[0];
+		return clone;
+	case 'percentage + string':
+	case 'dimension + string':
+		var clone = Node.clone(right);
+		clone.children[0] = Node.toString(left) + clone.children[0];
+		return clone;
+	case 'number - number':
+	case 'percentage - percentage':
+	case 'percentage - number':
+	case 'dimension - dimension':
+	case 'dimension - number':
+		var clone = Node.clone(left);
+		clone.children[0] -= right.children[0];
+		return clone;
+	case 'number - dimension':
+	case 'number - percentage':
+		var clone = Node.clone(right);
+		clone.children[0] = left.children[0] - right.children[0];
+		return clone;
+	case 'number * number':
+	case 'percentage * number':
+	case 'dimension * number':
+		var clone = Node.clone(left);
+		clone.children[0] *= right.children[0];
+		return clone;
+	case 'number * dimension':
+	case 'number * percentage':
+		var clone = Node.clone(right);
+		clone.children[0] = left.children[0] * right.children[0];
+		return clone;
+	case 'number / number':
+	case 'percentage / number':
+	case 'dimension / number':
+		var divisor = right.children[0];
+		if (divisor === 0) throw new RooleError('divide by zero', right);
+		var clone = Node.clone(left);
+		clone.children[0] /= divisor;
+		return clone;
+	case 'percentage / percentage':
+	case 'dimension / dimension':
+		var divisor = right.children[0];
+		if (divisor === 0) throw new RooleError('divide by zero', right);
+		return {
+			type: 'number',
+			children: [left.children[0] / divisor],
+			loc: left.loc,
+		};
+	case 'number / dimension':
+	case 'number / percentage':
+		var divisor = right.children[0];
+		if (divisor === 0) throw new RooleError('divide by zero', right);
+		var clone = Node.clone(right);
+		clone.children[0] = left.children[0] / divisor;
+		return clone;
+	case 'number % number':
+	case 'percentage % number':
+	case 'dimension % number':
+		var divisor = right.children[0];
+		if (divisor === 0) throw new RooleError('modulo by zero', right);
+		var clone = Node.clone(left);
+		clone.children[0] %= right.children[0];
+		return clone;
+	case 'number % percentage':
+	case 'number % dimension':
+		var divisor = right.children[0];
+		if (divisor === 0) throw new RooleError('modulo by zero', right);
+		var clone = Node.clone(right);
+		clone.children[0] = left.children[0] % right.children[0];
+		return clone;
+	case 'percentage % percentage':
+	case 'dimension % dimension':
+		var divisor = right.children[0];
+		if (divisor === 0) throw new RooleError('modulo by zero', right);
+		return {
+			type: 'number',
+			children: [left.children[0] % divisor],
+			loc: left.loc,
+		};
 	}
+	throw new RooleError('unsupported binary operation: ' + left.type + ' ' + op + ' ' + right.type, left);
 };
-},{}],67:[function(require,module,exports){
-/**
- * Scope
- *
- * Regulate lexical scoping.
- */
-'use strict';
-
-var Scope = module.exports = function(scope) {
-	this.scopes = scope instanceof Scope
-		? scope.scopes.slice(0)
-		: [scope, {}];
-};
-
-Scope.prototype.add = function() {
-	this.scopes.push({});
-};
-
-Scope.prototype.remove = function() {
-	this.scopes.pop();
-};
-
-Scope.prototype.define = function(name, value) {
-	this.scopes[this.scopes.length - 1][name] = value;
-};
-
-Scope.prototype.resolve = function(name) {
-	var length = this.scopes.length;
-	var value;
-
-	while (length--) {
-		value = this.scopes[length][name];
-		if(value) {
-			return value;
-		}
-	}
-};
-},{}],12:[function(require,module,exports){
+},{"./error":40}],20:[function(require,module,exports){
 /**
  * Visitor
  *
  * Visit each node in the ast.
+ *
+ * Child classes should implement `visitor._visit(node)`, which will
+ * be called for each node in the ast.
+ *
+ * Action can throw visitor.stop to stop visitor from vistor sub
  */
 'use strict';
 
-var _ = require('./helper');
-var Visitor = module.exports = function() {};
+module.exports = Visitor;
+
+function Visitor() {}
 
 Visitor.prototype.visit = function(node) {
-	if (Array.isArray(node)) {
-		return this._visitNodes(node);
-	}
-
-	var visitedNode = this._visitNode(node);
-	if (visitedNode === undefined) { visitedNode = node; }
-
-	return visitedNode;
+	if (Array.isArray(node)) return this._visitNodes(node);
+	return this._visitNode(node);
 };
 
-Visitor.prototype._visitNode = function(node) {
-	if (node === null || typeof node !== 'object') {
-		return;
-	}
-
-	var methodName = 'visit' + _.capitalize(node.type);
-	var method = this[methodName] || this.visitNode;
-	return method.call(this, node);
-};
-
-Visitor.prototype._visitNodes = function(nodes) {
-	var i = 0;
-
-	while (i < nodes.length) {
-		var node = this._visitNode(nodes[i]);
-
-		if (node === undefined) {
-			++i;
-			continue;
-		}
-
-		if (node === null) {
-			if (nodes[i] === null) { ++i; }
-			else { nodes.splice(i, 1); }
-			continue;
-		}
-
-		if (!Array.isArray(node)) {
-			nodes[i] = node;
-			++i;
-			continue;
-		}
-
-		nodes.splice.apply(nodes, [i, 1].concat(node));
-		i += node.length;
-	}
-
+Visitor.prototype._visitNodes = function (nodes) {
+	nodes.forEach(this._visitNode.bind(this));
 	return nodes;
 };
 
-Visitor.prototype.visitNode = function(node) {
-	if (node.children) {
-		this._visitNodes(node.children);
-	}
+Visitor.prototype._visitNode = function(node) {
+	return this._visit(node);
 };
-},{"./helper":2}],11:[function(require,module,exports){
+
+Visitor.prototype._visit = function () {
+	throw new Error('not implemented');
+};
+},{}],13:[function(require,module,exports){
 module.exports = (function() {
   /*
    * Generated by PEG.js 0.7.0.
@@ -1044,13 +1555,13 @@ module.exports = (function() {
   function parse(input) {
     var options = arguments.length > 1 ? arguments[1] : {},
 
-        peg$startRuleFunctions = { root: peg$parseroot, selector: peg$parseselector, mediaQuery: peg$parsemediaQuery },
-        peg$startRuleFunction  = peg$parseroot,
+        peg$startRuleFunctions = { stylesheet: peg$parsestylesheet, selector: peg$parseselector, mediaQuery: peg$parsemediaQuery },
+        peg$startRuleFunction  = peg$parsestylesheet,
 
         peg$c0 = null,
         peg$c1 = function(comments, rules) {
         		return {
-        			type: 'root',
+        			type: 'stylesheet',
         			comments: comments,
         			children: rules,
         		};
@@ -1610,7 +2121,8 @@ module.exports = (function() {
         peg$c178 = function(variable, operator, value) {
         		return {
         			type: 'assignment',
-        			children: [variable, operator, value],
+        			operator: operator,
+        			children: [variable, value],
         			loc: loc(),
         		};
         	},
@@ -1988,7 +2500,7 @@ module.exports = (function() {
       }
     }
 
-    function peg$parseroot() {
+    function peg$parsestylesheet() {
       var s0, s1, s2, s3;
 
       s0 = peg$currPos;
@@ -9359,13 +9871,328 @@ module.exports = (function() {
   };
 })();
 
-},{"../helper":2}],96:[function(require,module,exports){
+},{"../helper":2}],38:[function(require,module,exports){
+/**
+ * Translator
+ *
+ * Translate each node in the ast.
+ *
+ * When translating an array of node, actions can return a value to
+ * modify the corresponding node:
+ *
+ * `null` - remove the node
+ * `undefined` - do nothing
+ * Array - replace the node with the shallowly flattened array
+ * others - replace the node with the returned value
+ */
 'use strict';
 
-require('./func/len');
-require('./func/unit');
-require('./func/opp');
-},{"./func/len":97,"./func/unit":98,"./func/opp":99}],23:[function(require,module,exports){
+var Visitor = require('./');
+
+module.exports = Translator;
+
+function Translator() {}
+
+Translator.prototype = new Visitor();
+
+Translator.prototype._visitNode = function (node) {
+	var ret = this._visit(node);
+	if (ret === undefined) ret = node;
+	return ret;
+};
+
+Translator.prototype._visitNodes = function (nodes) {
+	var rets = nodes.map(this._visitNode.bind(this));
+	return this._replaceNodes(rets, nodes);
+};
+
+Translator.prototype._replaceNodes = function (rets, nodes) {
+	var offset = 0;
+	rets.forEach(function (ret, i) {
+		i += offset;
+		if (ret === null) {
+			if (nodes[i] === null) return;
+			nodes.splice(i, 1);
+			--offset;
+			return;
+		}
+		if (Array.isArray(ret)) {
+			nodes.splice.apply(nodes, [i, 1].concat(ret));
+			offset += ret.length - 1;
+			return;
+		}
+		nodes[i] = ret;
+	});
+	return nodes;
+};
+},{"./":20}],16:[function(require,module,exports){
+'use strict';
+
+exports.node                  = require('./node');
+exports.ruleset               = require('./ruleset');
+exports.selector              = require('./selector');
+// exports.selectorInterpolation = require('./selectorInterpolation');
+exports.classSelector         = require('./classSelector');
+exports.assignment            = require('./assignment');
+exports.call                  = require('./call');
+exports.function              = require('./function');
+exports.return                = require('./return');
+exports.variable              = require('./variable');
+exports.identifier            = require('./identifier');
+exports.string                = require('./string');
+exports.range                 = require('./range');
+exports.logical               = require('./logical');
+exports.equality              = require('./equality');
+exports.relational            = require('./relational');
+exports.arithmetic            = require('./arithmetic');
+exports.unary                 = require('./unary');
+// exports.media                 = require('./media');
+// exports.mediaQuery            = require('./mediaQuery');
+// exports.mediaInterpolation    = require('./mediaInterpolation');
+// exports.void                  = require('./void');
+// exports.block                 = require('./block');
+exports.if                    = require('./if');
+exports.for                   = require('./for');
+exports.keyframes             = require('./keyframes');
+exports.keyframe              = require('./keyframe');
+// exports.module                = require('./module');
+exports.fontFace              = require('./fontFace');
+},{"./node":41,"./ruleset":42,"./selector":43,"./classSelector":44,"./assignment":45,"./call":46,"./function":47,"./return":48,"./variable":49,"./identifier":50,"./string":51,"./range":52,"./logical":53,"./equality":54,"./relational":55,"./arithmetic":56,"./unary":57,"./if":58,"./for":59,"./keyframes":60,"./keyframe":61,"./fontFace":62}],21:[function(require,module,exports){
+'use strict';
+
+var Extender = require('../');
+
+Extender.prototype.visitRoot = function(rootNode) {
+	var extendBoundaryNode = this.extendBoundaryNode;
+	this.extendBoundaryNode = rootNode;
+
+	this.visit(rootNode.children);
+
+	this.extendBoundaryNode = extendBoundaryNode;
+};
+},{"../":7}],22:[function(require,module,exports){
+'use strict';
+
+var Extender = require('../');
+
+Extender.prototype.visitRuleset = function(rulesetNode) {
+	var selectorListNode = this.visit(rulesetNode.children[0]);
+
+	var parentSelectorList = this.parentSelectorList;
+	this.parentSelectorList = selectorListNode;
+
+	this.visit(rulesetNode.children[1]);
+
+	this.parentSelectorList = parentSelectorList;
+};
+},{"../":7}],17:[function(require,module,exports){
+'use strict';
+
+exports.len  = require('./len');
+exports.unit = require('./unit');
+exports.opp  = require('./opp');
+},{"./len":63,"./unit":64,"./opp":65}],23:[function(require,module,exports){
+'use strict';
+
+var Node = require('../../node');
+var Extender = require('../');
+
+Extender.prototype.visitSelectorList = function(selectorListNode) {
+	var selectorListClone = Node.clone(selectorListNode);
+	selectorListNode.originalNode = selectorListClone;
+
+	if (this.parentSelectorList) {
+		var childNodes = [];
+		var length = this.parentSelectorList.children.length;
+
+		this.parentSelectorList.children.forEach(function(parentSelector, i) {
+			this.parentSelector = parentSelector;
+
+			var selectorListClone = i === length - 1 ?
+				selectorListNode :
+				Node.clone(selectorListNode);
+			childNodes = childNodes.concat(this.visit(selectorListClone.children));
+		}, this);
+
+		selectorListNode.children = childNodes;
+	} else {
+		this.parentSelector = null;
+		this.visit(selectorListNode.children);
+	}
+};
+},{"../../node":18,"../":7}],24:[function(require,module,exports){
+'use strict';
+
+var RooleError = require('../../error');
+var Extender = require('../');
+
+Extender.prototype.visitSelector = function(selectorNode) {
+	this.visit(selectorNode.children);
+
+	if (this.hasAmpersandSelector) {
+		this.hasAmpersandSelector = false;
+		return;
+	}
+
+	var firstNode = selectorNode.children[0];
+	var startWithCombinator = firstNode.type === 'combinator';
+	if (startWithCombinator) {
+		if (!this.parentSelector) {
+			throw RooleError("selector starting with a combinator is not allowed at the top level", firstNode);
+		}
+
+		selectorNode.children = this.parentSelector.children.concat(selectorNode.children);
+	} else if (this.parentSelector) {
+		var combinator = {
+			type: 'combinator',
+			children: [' '],
+			loc: selectorNode.loc,
+		};
+		selectorNode.children = this.parentSelector.children.concat(combinator, selectorNode.children);
+	}
+};
+},{"../../error":40,"../":7}],25:[function(require,module,exports){
+'use strict';
+
+var RooleError = require('../../error');
+var Node = require('../../node');
+var Extender = require('../');
+
+Extender.prototype.visitAmpersandSelector = function(ampersandSelectorNode) {
+	if (!this.parentSelector) {
+		throw RooleError("& selector is not allowed at the top level", ampersandSelectorNode);
+	}
+
+	this.hasAmpersandSelector = true;
+
+	var valueNode = ampersandSelectorNode.children[0];
+	if (valueNode) {
+		var lastNode = this.parentSelector.children[this.parentSelector.children.length - 1];
+		switch (lastNode.type) {
+		case 'classSelector':
+		case 'hashSelector':
+		case 'typeSelector':
+			break;
+		default:
+			throw RooleError("parent selector '" + lastNode.type + "' is not allowed to be appended", ampersandSelectorNode);
+		}
+
+		var lastClone = Node.clone(lastNode);
+		var identifierNode = lastClone.children[0];
+		identifierNode.children[0] += valueNode.children[0];
+		var childNodes = this.parentSelector.children.slice(0, -1);
+		childNodes.push(lastClone);
+
+		return childNodes;
+	}
+
+	return this.parentSelector.children;
+};
+},{"../../error":40,"../../node":18,"../":7}],26:[function(require,module,exports){
+'use strict';
+
+var Extender = require('../');
+
+Extender.prototype.visitMedia = function(mediaNode) {
+	var mediaQueryListNode = this.visit(mediaNode.children[0]);
+
+	var parentMediaQueryList = this.parentMediaQueryList;
+	this.parentMediaQueryList = mediaQueryListNode;
+
+	this.visit(mediaNode.children[1]);
+
+	this.parentMediaQueryList = parentMediaQueryList;
+};
+},{"../":7}],27:[function(require,module,exports){
+'use strict';
+
+var Node = require('../../node');
+var Extender = require('../');
+
+Extender.prototype.visitMediaQueryList = function(mediaQueryListNode) {
+	if (this.parentMediaQueryList) {
+		var childNodes = [];
+		var length = this.parentMediaQueryList.children.length;
+
+		this.parentMediaQueryList.children.forEach(function(parentMediaQuery, i) {
+			this.parentMediaQuery = parentMediaQuery;
+
+			var mediaQueryListClone = i === length - 1 ?
+				mediaQueryListNode :
+				Node.clone(mediaQueryListNode);
+			childNodes = childNodes.concat(this.visit(mediaQueryListClone.children));
+		}, this);
+
+		mediaQueryListNode.children = childNodes;
+	} else {
+		this.parentMediaQuery = null;
+		this.visit(mediaQueryListNode.children);
+	}
+};
+},{"../../node":18,"../":7}],28:[function(require,module,exports){
+'use strict';
+
+var Extender = require('../');
+
+Extender.prototype.visitMediaQuery = function(mediaQueryNode) {
+	if (this.parentMediaQuery) {
+		mediaQueryNode.children = this.parentMediaQuery.children.concat(mediaQueryNode.children);
+	}
+};
+},{"../":7}],29:[function(require,module,exports){
+'use strict';
+
+var MediaFilter = require('../mediaFilter');
+var RulesetFilter = require('../rulesetFilter');
+var SelectorExtender = require('../selectorExtender');
+var Extender = require('../');
+
+Extender.prototype.visitExtend = function(extendNode) {
+	var nodes = this.extendBoundaryNode.children;
+
+	if (this.parentMediaQueryList) {
+		var mediaNodes = new MediaFilter().filter(nodes, this.parentMediaQueryList, options);
+		nodes = [];
+		mediaNodes.forEach(function(mediaNode) {
+			nodes = nodes.concat(mediaNode.children);
+		});
+	}
+
+	var options = {
+		extendNode: extendNode,
+		insideVoid: this.insideVoid
+	};
+
+	var rulesetNodes = [];
+	var selectorListNode = extendNode.children[0];
+	selectorListNode.children.forEach(function(selectorNode) {
+		rulesetNodes = rulesetNodes.concat(new RulesetFilter().filter(nodes, selectorNode, options));
+	});
+
+	rulesetNodes.forEach(function(rulesetNode) {
+		new SelectorExtender().extend(rulesetNode, this.parentSelectorList, options);
+	}, this);
+
+	return null;
+};
+},{"../mediaFilter":66,"../rulesetFilter":67,"../selectorExtender":68,"../":7}],30:[function(require,module,exports){
+'use strict';
+
+var Extender = require('../');
+
+Extender.prototype.visitVoid = function(voidNode) {
+	var insideVoid = this.insideVoid;
+	this.insideVoid = true;
+
+	var extendBoundaryNode = this.extendBoundaryNode;
+	this.extendBoundaryNode = voidNode;
+
+	this.visit(voidNode.children);
+
+	this.insideVoid = insideVoid;
+	this.extendBoundaryNode = extendBoundaryNode;
+};
+},{"../":7}],35:[function(require,module,exports){
 'use strict';
 
 var Prefixer = require('../');
@@ -9384,7 +10211,7 @@ Prefixer.prototype.visitRuleset = function(rulesetNode) {
 		this.visit(ruleListNode.children);
 	}
 };
-},{"../":9}],24:[function(require,module,exports){
+},{"../":9}],36:[function(require,module,exports){
 'use strict';
 
 var Node = require('../../node');
@@ -9433,7 +10260,15 @@ Prefixer.prototype.visitProperty = function(propertyNode) {
 	propertyNodes.push(propertyNode);
 	return propertyNodes;
 };
-},{"../../node":65,"../propertyNamePrefixer":100,"../linearGradientPrefixer":101,"../":9}],25:[function(require,module,exports){
+},{"../../node":18,"../propertyNamePrefixer":69,"../linearGradientPrefixer":70,"../":9}],31:[function(require,module,exports){
+'use strict';
+
+var Normalizer = require('../');
+
+Normalizer.prototype.visitRoot = function(rootNode) {
+	return this.visit(rootNode.children);
+};
+},{"../":8}],37:[function(require,module,exports){
 'use strict';
 
 var _ = require('../../helper');
@@ -9469,1539 +10304,7 @@ Prefixer.prototype.visitKeyframes = function(keyframesNode) {
 
 	return keyframesNodes;
 };
-},{"../../helper":2,"../../node":65,"../":9}],69:[function(require,module,exports){
-'use strict';
-
-var Evaluator = require('../');
-
-Evaluator.prototype.visitSelector = function(selectorNode) {
-	this.visit(selectorNode.children);
-
-	var childNodes = [];
-	var prevIsCombinator = false;
-	selectorNode.children.forEach(function(childNode) {
-		// make sure selector interpolation not to result in
-		// two consecutive combinators
-		if (childNode.type === 'combinator') {
-			if (prevIsCombinator) {
-				childNodes.pop();
-			} else {
-				prevIsCombinator = true;
-			}
-		} else {
-			prevIsCombinator = false;
-		}
-
-		childNodes.push(childNode);
-	}, this);
-
-	selectorNode.children = childNodes;
-};
-},{"../":6}],68:[function(require,module,exports){
-'use strict';
-
-var Evaluator = require('../');
-
-Evaluator.prototype.visitRuleset = function(rulesetNode) {
-	this.visit(rulesetNode.children[0]);
-
-	this.scope.add();
-
-	var ruleListNode = this.visit(rulesetNode.children[1]);
-
-	this.scope.remove();
-
-	if (!ruleListNode.children.length) {
-		return null;
-	}
-};
-},{"../":6}],70:[function(require,module,exports){
-'use strict';
-
-var _ = require('../../helper');
-var Parser = require('../../parser');
-var Evaluator = require('../');
-
-Evaluator.prototype.visitSelectorInterpolation = function(selectorInterpolationNode) {
-	this.visit(selectorInterpolationNode.children);
-
-	var valueNode = selectorInterpolationNode.children[0];
-	if (valueNode.type !== 'string') {
-		selectorInterpolationNode.type = 'typeSelector';
-		return;
-	}
-
-	var value = valueNode.children[0].trim();
-	var options = _.mixin({}, this.options, {
-		startRule: 'selector',
-		loc: valueNode.loc
-	});
-	var selectorNode;
-
-	try{
-		selectorNode = new Parser(options).parse(value);
-	} catch (error) {
-		error.message = 'error parsing selector interpolation: ' + error.message;
-		throw error;
-	}
-
-	return selectorNode.children;
-};
-},{"../../helper":2,"../../parser":4,"../":6}],71:[function(require,module,exports){
-'use strict';
-
-var RooleError = require('../../error');
-var Evaluator = require('../');
-
-Evaluator.prototype.visitClassSelector = function(classSelectorNode) {
-	this.visit(classSelectorNode.children);
-
-	var valueNode = classSelectorNode.children[0];
-	if (valueNode.type !== 'identifier') {
-		throw RooleError("'" + valueNode.type + "' can not be used in class selector", valueNode);
-	}
-	var value = valueNode.children[0];
-
-	if (this.parentModuleName) {
-		valueNode.children[0] = this.parentModuleName + value;
-	}
-};
-},{"../../error":102,"../":6}],72:[function(require,module,exports){
-'use strict';
-
-var Evaluator = require('../');
-
-Evaluator.prototype.visitAssignment = function(assignmentNode) {
-	var variableNode = assignmentNode.children[0];
-	var variableName = variableNode.children[0];
-	var operator = assignmentNode.children[1];
-	var valueNode = this.visit(assignmentNode.children[2]);
-
-	switch (operator) {
-	case '?=':
-		if (!this.scope.resolve(variableName)) {
-			this.scope.define(variableName, valueNode);
-		}
-		return null;
-	case '=':
-		this.scope.define(variableName, valueNode);
-		return null;
-	}
-	operator = operator.charAt(0);
-	var oldValueNode = this.visit(variableNode);
-	valueNode = this.visit({
-		type: 'arithmetic',
-		operator: operator,
-		children: [oldValueNode, valueNode],
-		loc: assignmentNode.loc,
-	});
-	this.scope.define(variableName, valueNode);
-	return null;
-};
-},{"../":6}],74:[function(require,module,exports){
-'use strict';
-
-var Scope = require('../scope');
-var Evaluator = require('../');
-
-Evaluator.prototype.visitFunction = function(functionNode) {
-	var parameterListNode = functionNode.children[0];
-	parameterListNode.children.forEach(function(parameterNode) {
-		if (parameterNode.type !== 'parameter') {
-			return;
-		}
-
-		parameterNode.children[1] = this.visit(parameterNode.children[1]);
-	}, this);
-
-	functionNode.scope = new Scope(this.scope);
-};
-},{"../scope":67,"../":6}],73:[function(require,module,exports){
-'use strict';
-
-var RooleError = require('../../error');
-var Node = require('../../node');
-var Evaluator = require('../');
-
-Evaluator.prototype.visitCall = function(callNode) {
-	var functionNode = this.visit(callNode.children[0]);
-
-	if (typeof functionNode === 'function') {
-		this.visit(callNode.children[1]);
-		return functionNode.call(this, callNode);
-	}
-
-	if (functionNode.type === 'identifier') {
-		this.visit(callNode.children[1]);
-		callNode.children[0] = functionNode.children[0];
-		return;
-	}
-
-	if (functionNode.type !== 'function') {
-		throw RooleError("'" + functionNode.type + "' is not a 'function'", functionNode);
-	}
-
-	var argumentListNode = this.visit(callNode.children[1]);
-	var argumentNodes = argumentListNode.children;
-
-	var scope = this.scope;
-	this.scope = functionNode.scope;
-	this.scope.add();
-
-	var listNode = Node.toListNode(argumentListNode);
-	this.scope.define('arguments', listNode);
-
-	var parameterListNode = functionNode.children[0];
-	var parameterNodes = parameterListNode.children;
-
-	parameterNodes.forEach(function(parameterNode, i) {
-		var variableNode = parameterNode.children[0];
-		var variableName = variableNode.children[0];
-
-		if (parameterNode.type === 'restParameter') {
-			var argListNode = {
-				type: 'argumentList',
-				children: argumentNodes.slice(i),
-				loc: argumentListNode.loc,
-			};
-			var listNode = Node.toListNode(argListNode);
-			this.scope.define(variableName, listNode);
-		} else if (i < argumentNodes.length) {
-			this.scope.define(variableName, argumentNodes[i]);
-		} else {
-			var valueNode = parameterNode.children[1];
-			if (!valueNode)
-				valueNode = {
-					type: 'null',
-					loc: argumentListNode.loc,
-				};
-
-			this.scope.define(variableName, valueNode);
-		}
-	}, this);
-
-	var ruleListClone = Node.clone(functionNode.children[1]);
-
-	var context = this.context;
-
-	var returnedNode;
-	if (callNode.mixin) {
-		this.context = 'mixin';
-		returnedNode = this.visit(ruleListClone.children);
-	} else {
-		this.context = 'call';
-
-		try {
-			this.visit(ruleListClone);
-		} catch (error) {
-			if (error instanceof Error) {
-				throw error;
-			}
-
-			returnedNode = error;
-		}
-
-		if (!returnedNode) {
-			returnedNode = {
-				type: 'null',
-				loc: callNode.loc,
-			};
-		}
-	}
-
-	this.context = context;
-
-	this.scope.remove();
-	this.scope = scope;
-
-	return returnedNode;
-};
-},{"../../error":102,"../../node":65,"../":6}],75:[function(require,module,exports){
-'use strict';
-
-var RooleError = require('../../error');
-var Evaluator = require('../');
-
-Evaluator.prototype.visitReturn = function(returnNode) {
-	if (!this.context) {
-		throw RooleError('@return is only allowed inside @function', returnNode);
-	}
-
-	if (this.context === 'call') {
-		throw this.visit(returnNode.children[0]);
-	}
-
-	return null;
-};
-},{"../../error":102,"../":6}],76:[function(require,module,exports){
-'use strict';
-
-var RooleError = require('../../error');
-var Node = require('../../node');
-var Evaluator = require('../');
-
-Evaluator.prototype.visitVariable = function(variableNode) {
-	var variableName = variableNode.children[0];
-	var valueNode = this.scope.resolve(variableName);
-
-	if (!valueNode) {
-		throw RooleError('$' + variableName + ' is undefined', variableNode);
-	}
-
-	valueNode = Node.clone(valueNode, false);
-	valueNode.loc = variableNode.loc;
-
-	return valueNode;
-};
-},{"../../error":102,"../../node":65,"../":6}],77:[function(require,module,exports){
-'use strict';
-
-var RooleError = require('../../error');
-var Node = require('../../node');
-var Evaluator = require('../');
-
-Evaluator.prototype.visitIdentifier = function(identifierNode) {
-	var childNodes = this.visit(identifierNode.children);
-
-	var value = childNodes.map(function(childNode) {
-		var value = Node.toString(childNode);
-		if (value === null) {
-			throw RooleError("'" + childNode.type + "' is not allowed to be interpolated in 'identifier'", childNode);
-		}
-
-		return value;
-	}, this).join('');
-
-	identifierNode.children = [value];
-};
-},{"../../error":102,"../../node":65,"../":6}],78:[function(require,module,exports){
-'use strict';
-
-var RooleError = require('../../error');
-var Node = require('../../node');
-var Evaluator = require('../');
-
-Evaluator.prototype.visitString = function(stringNode) {
-	if (stringNode.quote === "'") {
-		return;
-	}
-
-	var childNodes = this.visit(stringNode.children);
-	var value = childNodes.map(function(childNode) {
-		var value = Node.toString(childNode);
-		if (value === null) {
-			throw RooleError("'" + childNode.type + "' is not allowed to be interpolated in 'string'", childNode);
-		}
-
-		if (childNode.type === 'string') {
-			value = value.replace(/\\?"/g, function(quote) {
-				return quote.length === 1 ? '\\"' : quote;
-			});
-		}
-
-		return value;
-	}, this).join('');
-	stringNode.children = [value];
-};
-},{"../../error":102,"../../node":65,"../":6}],79:[function(require,module,exports){
-'use strict';
-
-var RooleError = require('../../error');
-var Node = require('../../node');
-var Evaluator = require('../');
-
-Evaluator.prototype.visitRange = function(rangeNode) {
-	this.visit(rangeNode.children);
-
-	var fromNode = rangeNode.children[0];
-	var toNode = rangeNode.children[1];
-
-	var invalidNode;
-	if (Node.toNumber(fromNode) === null) {
-		invalidNode = fromNode;
-	} else if (Node.toNumber(toNode) === null) {
-		invalidNode = toNode;
-	}
-
-	if (invalidNode) {
-		throw RooleError("only numberic values are allowed in 'range'", invalidNode);
-	}
-};
-},{"../../error":102,"../../node":65,"../":6}],80:[function(require,module,exports){
-'use strict';
-
-var Node = require('../../node');
-var Evaluator = require('../');
-
-Evaluator.prototype.visitLogical = function(logicalNode) {
-	var operator = logicalNode.operator;
-	var leftNode = logicalNode.children[0];
-	var rightNode = logicalNode.children[1];
-
-	switch (operator) {
-	case 'and':
-		leftNode = this.visit(leftNode);
-		if (!Node.toBoolean(leftNode)) {
-			return leftNode;
-		}
-
-		return this.visit(rightNode);
-
-	case 'or':
-		leftNode = this.visit(leftNode);
-		if (Node.toBoolean(leftNode)) {
-			return leftNode;
-		}
-
-		return this.visit(rightNode);
-	}
-};
-},{"../../node":65,"../":6}],81:[function(require,module,exports){
-'use strict';
-
-var Node = require('../../node');
-var Evaluator = require('../');
-
-Evaluator.prototype.visitEquality = function(equalityNode) {
-	var operator = equalityNode.operator;
-	var leftNode = this.visit(equalityNode.children[0]);
-	var rightNode = this.visit(equalityNode.children[1]);
-
-	var trueNode = function() {
-		return {
-			type: 'boolean',
-			children: [true],
-			loc: leftNode.loc,
-		};
-	};
-	var falseNode = function() {
-		return {
-			type: 'boolean',
-			children: [false],
-			loc: leftNode.loc,
-		};
-	};
-
-	switch (operator) {
-	case 'is':
-		return Node.equal(leftNode, rightNode) ? trueNode() : falseNode();
-	case 'isnt':
-		return !Node.equal(leftNode, rightNode) ? trueNode() : falseNode();
-	}
-};
-},{"../../node":65,"../":6}],83:[function(require,module,exports){
-'use strict';
-
-var RooleError = require('../../error');
-var Node = require('../../node');
-var Evaluator = require('../');
-
-Evaluator.prototype.visitArithmetic = function(arithmeticNode) {
-	var operator = arithmeticNode.operator;
-	var leftNode = this.visit(arithmeticNode.children[0]);
-	var rightNode = this.visit(arithmeticNode.children[1]);
-
-	switch (leftNode.type + ' ' + operator + ' ' + rightNode.type) {
-	case 'number + number':
-	case 'percentage + number':
-	case 'percentage + percentage':
-	case 'percentage + dimension':
-	case 'dimension + number':
-	case 'dimension + percentage':
-	case 'dimension + dimension':
-	case 'identifier + number':
-	case 'identifier + boolean':
-	case 'identifier + identifier':
-	case 'string + number':
-	case 'string + boolean':
-	case 'string + identifier':
-	case 'string + string':
-		var leftClone = Node.clone(leftNode);
-		leftClone.children[0] += rightNode.children[0];
-		return leftClone;
-
-	case 'identifier + percentage':
-	case 'identifier + dimension':
-	case 'string + dimension':
-		var leftClone = Node.clone(leftNode);
-		leftClone.children[0] += rightNode.children.join('');
-		return leftClone;
-
-	case 'string + percentage':
-		var leftClone = Node.clone(leftNode);
-		leftClone.children[0] += rightNode.children[0] + '%';
-		return leftClone;
-
-	case 'number + percentage':
-	case 'number + dimension':
-	case 'number + string':
-	case 'boolean + identifier':
-	case 'boolean + string':
-	case 'identifier + string':
-		var rightClone = Node.clone(rightNode);
-		rightClone.children[0] = leftNode.children[0] + rightClone.children[0];
-		return rightClone;
-
-	case 'dimension + identifier':
-	case 'dimension + string':
-		var rightClone = Node.clone(rightNode);
-		rightClone.children[0] = leftNode.children.join('') + rightClone.children[0];
-		return rightClone;
-
-	case 'percentage + string':
-		var rightClone = Node.clone(rightNode);
-		rightClone.children[0] = leftNode.children[0] + '%' + rightClone.children[0];
-		return rightClone;
-
-	case 'number - number':
-	case 'percentage - percentage':
-	case 'percentage - number':
-	case 'percentage - dimension':
-	case 'dimension - dimension':
-	case 'dimension - number':
-	case 'dimension - percentage':
-		var leftClone = Node.clone(leftNode);
-		leftClone.children[0] -= rightNode.children[0];
-		return leftClone;
-
-	case 'number - dimension':
-	case 'number - percentage':
-		var rightClone = Node.clone(rightNode);
-		rightClone.children[0] = leftNode.children[0] - rightNode.children[0];
-		return rightClone;
-
-	case 'number * number':
-	case 'percentage * percentage':
-	case 'percentage * number':
-	case 'percentage * dimension':
-	case 'dimension * dimension':
-	case 'dimension * number':
-	case 'dimension * percentage':
-		var leftClone = Node.clone(leftNode);
-		leftClone.children[0] *= rightNode.children[0];
-		return leftClone;
-
-	case 'number * dimension':
-	case 'number * percentage':
-		var rightClone = Node.clone(rightNode);
-		rightClone.children[0] = leftNode.children[0] * rightNode.children[0];
-		return rightClone;
-
-	case 'number / number':
-	case 'percentage / percentage':
-	case 'percentage / number':
-	case 'percentage / dimension':
-	case 'dimension / dimension':
-	case 'dimension / number':
-	case 'dimension / percentage':
-		var divisor = rightNode.children[0];
-		if (!divisor) {
-			throw RooleError('divide by zero', rightNode);
-		}
-
-		var leftClone = Node.clone(leftNode);
-		leftClone.children[0] /= divisor;
-		return leftClone;
-
-	case 'number / dimension':
-	case 'number / percentage':
-		var divisor = rightNode.children[0];
-		if (!divisor) {
-			throw RooleError('divide by zero', rightNode);
-		}
-
-		var rightClone = Node.clone(rightNode);
-		rightClone.children[0] = leftNode.children[0] / divisor;
-		return rightClone;
-
-	case 'number % number':
-	case 'number % percentage':
-	case 'number % dimension':
-	case 'percentage % number':
-	case 'percentage % percentage':
-	case 'percentage % dimension':
-	case 'dimension % number':
-	case 'dimension % percentage':
-	case 'dimension % dimension':
-		var leftClone = Node.clone(leftNode);
-		leftClone.children[0] %= rightNode.children[0];
-		return leftClone;
-	}
-
-	throw RooleError("unsupported binary operation: '" + leftNode.type + "' " + operator + " '" + rightNode.type + "'", leftNode);
-};
-},{"../../error":102,"../../node":65,"../":6}],82:[function(require,module,exports){
-'use strict';
-
-var Node = require('../../node');
-var Evaluator = require('../');
-
-Evaluator.prototype.visitRelational = function(relationalNode) {
-	var operator = relationalNode.operator;
-	var leftNode = this.visit(relationalNode.children[0]);
-	var rightNode = this.visit(relationalNode.children[1]);
-
-	var trueNode = function() {
-		return {
-			type: 'boolean',
-			children: [true],
-			loc: leftNode.loc,
-		};
-	};
-	var falseNode = function() {
-		return {
-			type: 'boolean',
-			children: [false],
-			loc: leftNode.loc,
-		};
-	};
-
-	var leftValue, rightValue;
-	if (
-		leftNode.type === 'identifier' && rightNode.type === 'identifier' ||
-		leftNode.type === 'string' && rightNode.type === 'string'
-	) {
-		leftValue = leftNode.children[0];
-		rightValue = rightNode.children[0];
-	} else {
-		leftValue = Node.toNumber(leftNode);
-		if (leftValue === null) {
-			return falseNode();
-		}
-
-		rightValue = Node.toNumber(rightNode);
-		if (rightValue === null) {
-			return falseNode();
-		}
-	}
-
-	switch (operator) {
-	case '>':
-		return leftValue > rightValue ? trueNode() : falseNode();
-	case '>=':
-		return leftValue >= rightValue ? trueNode() : falseNode();
-	case '<':
-		return leftValue < rightValue ? trueNode() : falseNode();
-	case '<=':
-		return leftValue <= rightValue ? trueNode() : falseNode();
-	}
-};
-},{"../../node":65,"../":6}],84:[function(require,module,exports){
-'use strict';
-
-var RooleError = require('../../error');
-var Node = require('../../node');
-var Evaluator = require('../');
-
-Evaluator.prototype.visitUnary = function(unaryNode) {
-	var operator = unaryNode.operator;
-	var operandNode = this.visit(unaryNode.children[0]);
-
-	switch (operator + operandNode.type) {
-	case '+number':
-	case '+percentage':
-	case '+dimension':
-		var operandClone = Node.clone(operandNode);
-		return operandClone;
-
-	case '-number':
-	case '-percentage':
-	case '-dimension':
-		var operandClone = Node.clone(operandNode);
-		operandClone.children[0] = -operandClone.children[0];
-		return operandClone;
-
-	case '-identifier':
-		var operandClone = Node.clone(operandNode);
-		operandClone.children[0] = '-' + operandClone.children[0];
-		return operandClone;
-	}
-
-	throw RooleError("unsupported unary operation: " + operator + "'" + operandNode.type + "'", unaryNode);
-};
-},{"../../error":102,"../../node":65,"../":6}],85:[function(require,module,exports){
-'use strict';
-
-var Evaluator = require('../');
-
-Evaluator.prototype.visitMedia = function(mediaNode) {
-	this.visit(mediaNode.children[0]);
-
-	this.scope.add();
-	var ruleListNode = this.visit(mediaNode.children[1]);
-	this.scope.remove();
-
-	if (!ruleListNode.children.length) {
-		return null;
-	}
-};
-},{"../":6}],86:[function(require,module,exports){
-'use strict';
-
-var Evaluator = require('../');
-
-Evaluator.prototype.visitMediaQuery = function(mediaQueryNode) {
-	var childNodes = this.visit(mediaQueryNode.children);
-
-	if (this.interpolatingMediaQuery) {
-		return childNodes;
-	}
-};
-},{"../":6}],87:[function(require,module,exports){
-'use strict';
-
-var _ = require('../../helper');
-var Parser = require('../../parser');
-var Evaluator = require('../');
-
-Evaluator.prototype.visitMediaInterpolation = function(mediaInterpolationNode) {
-	this.visit(mediaInterpolationNode.children);
-
-	var valueNode = mediaInterpolationNode.children[0];
-	if (valueNode.type !== 'string') {
-		mediaInterpolationNode.type = 'mediaType';
-		return;
-	}
-
-	var value = valueNode.children[0].trim();
-	var options = _.mixin({}, this.options, {
-		startRule: 'mediaQuery',
-		loc: valueNode.loc
-	});
-	var mediaQueryNode;
-
-	try{
-		mediaQueryNode = new Parser(options).parse(value);
-	} catch (error) {
-		error.message = 'error parsing media query interpolation: ' + error.message;
-		throw error;
-	}
-
-	this.interpolatingMediaQuery = true;
-	mediaQueryNode = this.visit(mediaQueryNode);
-	this.interpolatingMediaQuery = false;
-
-	return mediaQueryNode;
-};
-},{"../../helper":2,"../../parser":4,"../":6}],88:[function(require,module,exports){
-'use strict';
-
-var Evaluator = require('../');
-
-Evaluator.prototype.visitVoid = function(voidNode) {
-	this.scope.add();
-	this.visit(voidNode.children);
-	this.scope.remove();
-};
-},{"../":6}],89:[function(require,module,exports){
-'use strict';
-
-var Evaluator = require('../');
-
-Evaluator.prototype.visitBlock = function(blockNode) {
-	this.scope.add();
-
-	var ruleListNode = blockNode.children[0];
-	this.visit(ruleListNode);
-
-	this.scope.remove();
-
-	return ruleListNode.children;
-};
-},{"../":6}],90:[function(require,module,exports){
-'use strict';
-
-var Node = require('../../node');
-var Evaluator = require('../');
-
-Evaluator.prototype.visitIf = function(ifNode) {
-	var conditionNode = this.visit(ifNode.children[0]);
-
-	if (Node.toBoolean(conditionNode)) {
-		var ruleListNode = ifNode.children[1];
-		return this.visit(ruleListNode.children);
-	}
-
-	var alternativeNode = ifNode.children[2];
-	if (!alternativeNode) {
-		return null;
-	}
-
-	if (alternativeNode.type === 'if') {
-		return this.visit(alternativeNode);
-	}
-
-	return this.visit(alternativeNode.children);
-};
-},{"../../node":65,"../":6}],91:[function(require,module,exports){
-'use strict';
-
-var RooleError = require('../../error');
-var Node = require('../../node');
-var Evaluator = require('../');
-
-Evaluator.prototype.visitFor = function(forNode) {
-	var stepNode = this.visit(forNode.children[2]);
-	var stepNumber = 1;
-	if (stepNode) {
-		stepNumber = Node.toNumber(stepNode);
-		if (stepNumber === null) {
-			throw RooleError("step number must be a numberic value", stepNode);
-		}
-
-		if (!stepNumber) {
-			throw RooleError("step number is not allowed to be zero", stepNode);
-		}
-	}
-
-	var valueVariableNode = forNode.children[0];
-	var indexVariableNode = forNode.children[1];
-	var listNode = this.visit(forNode.children[3]);
-	listNode = Node.toListNode(listNode);
-	var ruleListNode = forNode.children[4];
-
-	var valueVariableName = valueVariableNode.children[0];
-
-	if (listNode.type === 'null') {
-		this.scope.define(valueVariableName, listNode);
-
-		if (indexVariableNode) {
-			var indexVariableName = indexVariableNode.children[0];
-			var indexNode = {
-				type: 'null',
-				loc: indexVariableNode.loc,
-			};
-			this.scope.define(indexVariableName, indexNode);
-		}
-
-		return null;
-	}
-
-	if (listNode.type !== 'list') {
-		this.scope.define(valueVariableName, listNode);
-
-		if (indexVariableNode) {
-			var indexVariableName = indexVariableNode.children[0];
-			var indexNode = {
-				type: 'number',
-				children: [0],
-				loc: indexVariableNode.loc,
-			};
-			this.scope.define(indexVariableName, indexNode);
-		}
-
-		return this.visit(ruleListNode.children);
-	}
-
-	var itemNodes = listNode.children;
-	var lastIndex = (itemNodes.length - 1) / 2;
-	var ruleNodes = [];
-
-	for (
-		var i = stepNumber > 0 ? 0 : lastIndex;
-		stepNumber > 0 ? i <= lastIndex : i >= 0;
-		i += stepNumber
-	) {
-		var itemNode = itemNodes[i * 2];
-		this.scope.define(valueVariableName, itemNode);
-
-		if (indexVariableNode) {
-			var indexVariableName = indexVariableNode.children[0];
-			var indexNode = {
-				type: 'number',
-				children: [i],
-				loc: indexVariableNode.loc,
-			};
-			this.scope.define(indexVariableName, indexNode);
-		}
-
-		var isLast = i === (stepNumber > 0 ? lastIndex : 0);
-		var ruleListClone = isLast ? ruleListNode : Node.clone(ruleListNode);
-		this.visit(ruleListClone.children);
-		ruleNodes = ruleNodes.concat(ruleListClone.children);
-	}
-
-	return ruleNodes;
-};
-},{"../../error":102,"../../node":65,"../":6}],92:[function(require,module,exports){
-'use strict';
-
-var Evaluator = require('../');
-
-Evaluator.prototype.visitKeyframes = function(keyframesNode) {
-	keyframesNode.children[0] = this.visit(keyframesNode.children[0]);
-
-	this.scope.add();
-
-	var keyframeListNode = this.visit(keyframesNode.children[1]);
-
-	this.scope.remove();
-
-	if (!keyframeListNode.children.length) {
-		return null;
-	}
-};
-},{"../":6}],93:[function(require,module,exports){
-'use strict';
-
-var Evaluator = require('../');
-
-Evaluator.prototype.visitKeyframe = function(keyframeNode) {
-	this.visit(keyframeNode.children[0]);
-
-	this.scope.add();
-
-	var ruleListNode = this.visit(keyframeNode.children[1]);
-
-	this.scope.remove();
-
-	if (!ruleListNode.children.length) {
-		return null;
-	}
-};
-},{"../":6}],94:[function(require,module,exports){
-'use strict';
-
-var RooleError = require('../../error');
-var Node = require('../../node');
-var Evaluator = require('../');
-
-Evaluator.prototype.visitModule = function(moduleNode) {
-	var parentModuleName = this.parentModuleName || '';
-
-	var nameNode = this.visit(moduleNode.children[0]);
-	var name = Node.toString(nameNode);
-	if (name === null) {
-		throw RooleError("'" + nameNode.type + "' can not be used as a module name" , nameNode);
-	}
-
-	var separatorNode = this.visit(moduleNode.children[1]);
-	var separator = separatorNode ? Node.toString(separatorNode) : '-';
-	if (separator === null) {
-		throw RooleError("'" + separatorNode.type + "' can not be used as a module name separator" , separatorNode);
-	}
-
-	this.parentModuleName = parentModuleName + name + separator;
-
-	var ruleListNode = this.visit(moduleNode.children[2]);
-
-	this.parentModuleName = parentModuleName;
-
-	return ruleListNode.children;
-};
-},{"../../error":102,"../../node":65,"../":6}],95:[function(require,module,exports){
-'use strict';
-
-var Evaluator = require('../');
-
-Evaluator.prototype.visitFontFace = function(fontFaceNode) {
-	var ruleList = this.visit(fontFaceNode.children[0]);
-
-	if (!ruleList.children.length) {
-		return null;
-	}
-};
-},{"../":6}],14:[function(require,module,exports){
-'use strict';
-
-var Extender = require('../');
-
-Extender.prototype.visitRuleset = function(rulesetNode) {
-	var selectorListNode = this.visit(rulesetNode.children[0]);
-
-	var parentSelectorList = this.parentSelectorList;
-	this.parentSelectorList = selectorListNode;
-
-	this.visit(rulesetNode.children[1]);
-
-	this.parentSelectorList = parentSelectorList;
-};
-},{"../":7}],13:[function(require,module,exports){
-'use strict';
-
-var Extender = require('../');
-
-Extender.prototype.visitRoot = function(rootNode) {
-	var extendBoundaryNode = this.extendBoundaryNode;
-	this.extendBoundaryNode = rootNode;
-
-	this.visit(rootNode.children);
-
-	this.extendBoundaryNode = extendBoundaryNode;
-};
-},{"../":7}],15:[function(require,module,exports){
-'use strict';
-
-var Node = require('../../node');
-var Extender = require('../');
-
-Extender.prototype.visitSelectorList = function(selectorListNode) {
-	var selectorListClone = Node.clone(selectorListNode);
-	selectorListNode.originalNode = selectorListClone;
-
-	if (this.parentSelectorList) {
-		var childNodes = [];
-		var length = this.parentSelectorList.children.length;
-
-		this.parentSelectorList.children.forEach(function(parentSelector, i) {
-			this.parentSelector = parentSelector;
-
-			var selectorListClone = i === length - 1 ?
-				selectorListNode :
-				Node.clone(selectorListNode);
-			childNodes = childNodes.concat(this.visit(selectorListClone.children));
-		}, this);
-
-		selectorListNode.children = childNodes;
-	} else {
-		this.parentSelector = null;
-		this.visit(selectorListNode.children);
-	}
-};
-},{"../../node":65,"../":7}],16:[function(require,module,exports){
-'use strict';
-
-var RooleError = require('../../error');
-var Extender = require('../');
-
-Extender.prototype.visitSelector = function(selectorNode) {
-	this.visit(selectorNode.children);
-
-	if (this.hasAmpersandSelector) {
-		this.hasAmpersandSelector = false;
-		return;
-	}
-
-	var firstNode = selectorNode.children[0];
-	var startWithCombinator = firstNode.type === 'combinator';
-	if (startWithCombinator) {
-		if (!this.parentSelector) {
-			throw RooleError("selector starting with a combinator is not allowed at the top level", firstNode);
-		}
-
-		selectorNode.children = this.parentSelector.children.concat(selectorNode.children);
-	} else if (this.parentSelector) {
-		var combinator = {
-			type: 'combinator',
-			children: [' '],
-			loc: selectorNode.loc,
-		};
-		selectorNode.children = this.parentSelector.children.concat(combinator, selectorNode.children);
-	}
-};
-},{"../../error":102,"../":7}],17:[function(require,module,exports){
-'use strict';
-
-var RooleError = require('../../error');
-var Node = require('../../node');
-var Extender = require('../');
-
-Extender.prototype.visitAmpersandSelector = function(ampersandSelectorNode) {
-	if (!this.parentSelector) {
-		throw RooleError("& selector is not allowed at the top level", ampersandSelectorNode);
-	}
-
-	this.hasAmpersandSelector = true;
-
-	var valueNode = ampersandSelectorNode.children[0];
-	if (valueNode) {
-		var lastNode = this.parentSelector.children[this.parentSelector.children.length - 1];
-		switch (lastNode.type) {
-		case 'classSelector':
-		case 'hashSelector':
-		case 'typeSelector':
-			break;
-		default:
-			throw RooleError("parent selector '" + lastNode.type + "' is not allowed to be appended", ampersandSelectorNode);
-		}
-
-		var lastClone = Node.clone(lastNode);
-		var identifierNode = lastClone.children[0];
-		identifierNode.children[0] += valueNode.children[0];
-		var childNodes = this.parentSelector.children.slice(0, -1);
-		childNodes.push(lastClone);
-
-		return childNodes;
-	}
-
-	return this.parentSelector.children;
-};
-},{"../../error":102,"../../node":65,"../":7}],19:[function(require,module,exports){
-'use strict';
-
-var Node = require('../../node');
-var Extender = require('../');
-
-Extender.prototype.visitMediaQueryList = function(mediaQueryListNode) {
-	if (this.parentMediaQueryList) {
-		var childNodes = [];
-		var length = this.parentMediaQueryList.children.length;
-
-		this.parentMediaQueryList.children.forEach(function(parentMediaQuery, i) {
-			this.parentMediaQuery = parentMediaQuery;
-
-			var mediaQueryListClone = i === length - 1 ?
-				mediaQueryListNode :
-				Node.clone(mediaQueryListNode);
-			childNodes = childNodes.concat(this.visit(mediaQueryListClone.children));
-		}, this);
-
-		mediaQueryListNode.children = childNodes;
-	} else {
-		this.parentMediaQuery = null;
-		this.visit(mediaQueryListNode.children);
-	}
-};
-},{"../../node":65,"../":7}],18:[function(require,module,exports){
-'use strict';
-
-var Extender = require('../');
-
-Extender.prototype.visitMedia = function(mediaNode) {
-	var mediaQueryListNode = this.visit(mediaNode.children[0]);
-
-	var parentMediaQueryList = this.parentMediaQueryList;
-	this.parentMediaQueryList = mediaQueryListNode;
-
-	this.visit(mediaNode.children[1]);
-
-	this.parentMediaQueryList = parentMediaQueryList;
-};
-},{"../":7}],20:[function(require,module,exports){
-'use strict';
-
-var Extender = require('../');
-
-Extender.prototype.visitMediaQuery = function(mediaQueryNode) {
-	if (this.parentMediaQuery) {
-		mediaQueryNode.children = this.parentMediaQuery.children.concat(mediaQueryNode.children);
-	}
-};
-},{"../":7}],21:[function(require,module,exports){
-'use strict';
-
-var MediaFilter = require('../mediaFilter');
-var RulesetFilter = require('../rulesetFilter');
-var SelectorExtender = require('../selectorExtender');
-var Extender = require('../');
-
-Extender.prototype.visitExtend = function(extendNode) {
-	var nodes = this.extendBoundaryNode.children;
-
-	if (this.parentMediaQueryList) {
-		var mediaNodes = new MediaFilter().filter(nodes, this.parentMediaQueryList, options);
-		nodes = [];
-		mediaNodes.forEach(function(mediaNode) {
-			nodes = nodes.concat(mediaNode.children);
-		});
-	}
-
-	var options = {
-		extendNode: extendNode,
-		insideVoid: this.insideVoid
-	};
-
-	var rulesetNodes = [];
-	var selectorListNode = extendNode.children[0];
-	selectorListNode.children.forEach(function(selectorNode) {
-		rulesetNodes = rulesetNodes.concat(new RulesetFilter().filter(nodes, selectorNode, options));
-	});
-
-	rulesetNodes.forEach(function(rulesetNode) {
-		new SelectorExtender().extend(rulesetNode, this.parentSelectorList, options);
-	}, this);
-
-	return null;
-};
-},{"../mediaFilter":103,"../rulesetFilter":104,"../selectorExtender":105,"../":7}],22:[function(require,module,exports){
-'use strict';
-
-var Extender = require('../');
-
-Extender.prototype.visitVoid = function(voidNode) {
-	var insideVoid = this.insideVoid;
-	this.insideVoid = true;
-
-	var extendBoundaryNode = this.extendBoundaryNode;
-	this.extendBoundaryNode = voidNode;
-
-	this.visit(voidNode.children);
-
-	this.insideVoid = insideVoid;
-	this.extendBoundaryNode = extendBoundaryNode;
-};
-},{"../":7}],26:[function(require,module,exports){
-'use strict';
-
-var Compiler = require('../');
-
-Compiler.prototype.visitRoot = function(root) {
-	var comments = this.comments(root);
-	var rules = root.children.reduce(function (css, child, i) {
-		var str = this.visit(child);
-		if (!child.level && i) css += '\n';
-		return css + str + '\n';
-	}.bind(this), '');
-	return comments + rules;
-};
-},{"../":10}],27:[function(require,module,exports){
-'use strict';
-
-var Compiler = require('../');
-
-Compiler.prototype.visitRuleset = function(ruleset) {
-	var level = this.level;
-	this.level += ruleset.level || 0;
-
-	var indent = this.indent();
-	var comments = this.comments(ruleset);
-	var selList = this.visit(ruleset.children[0]);
-	var ruleList = this.visit(ruleset.children[1]);
-
-	this.level = level;
-	return comments + indent + selList + ' ' + ruleList;
-};
-},{"../":10}],28:[function(require,module,exports){
-'use strict';
-
-var Compiler = require('../');
-
-Compiler.prototype.visitSelectorList = function(selList) {
-	return this.visit(selList.children).join(',\n' + this.indent());
-};
-},{"../":10}],29:[function(require,module,exports){
-'use strict';
-
-var Compiler = require('../');
-
-Compiler.prototype.visitCombinator = function(comb) {
-	var value = comb.children[0];
-	if (value !== ' ') value = ' ' + value + ' ';
-	return value;
-};
-},{"../":10}],30:[function(require,module,exports){
-'use strict';
-
-var Compiler = require('../');
-
-Compiler.prototype.visitUniversalSelector = function() {
-	return '*';
-};
-},{"../":10}],31:[function(require,module,exports){
-'use strict';
-
-var Compiler = require('../');
-
-Compiler.prototype.visitClassSelector = function(sel) {
-	return '.' + this.visit(sel.children[0]);
-};
-},{"../":10}],32:[function(require,module,exports){
-'use strict';
-
-var Compiler = require('../');
-
-Compiler.prototype.visitHashSelector = function(sel) {
-	return '#' + this.visit(sel.children[0]);
-};
-},{"../":10}],33:[function(require,module,exports){
-'use strict';
-
-var Compiler = require('../');
-
-Compiler.prototype.visitAttributeSelector = function(sel) {
-	var attr = this.visit(sel.children).join(sel.operator);
-	return '[' + attr + ']';
-};
-},{"../":10}],34:[function(require,module,exports){
-'use strict';
-
-var Compiler = require('../');
-
-Compiler.prototype.visitNegationSelector = function(sel) {
-	return ':not(' + this.visit(sel.children[0]) + ')';
-};
-},{"../":10}],35:[function(require,module,exports){
-'use strict';
-
-var Compiler = require('../');
-
-Compiler.prototype.visitPseudoSelector = function(sel) {
-	var colon = sel.doubleColon ? '::' : ':';
-	var name = this.visit(sel.children[0]);
-	var args = this.visit(sel.children[1]) || '';
-	if (args) args = '(' + args + ')';
-	return colon + name + args;
-};
-},{"../":10}],36:[function(require,module,exports){
-'use strict';
-
-var Compiler = require('../');
-
-Compiler.prototype.visitProperty = function(prop) {
-	var name = this.visit(prop.children[0]);
-	var value = this.visit(prop.children[1]);
-	var priority = prop.priority || '';
-	if (priority) priority = ' ' + priority;
-	var indent = this.indent();
-	var comments = this.comments(prop);
-	return comments + indent + name + ': ' +  value + priority + ';';
-};
-},{"../":10}],37:[function(require,module,exports){
-'use strict';
-
-var Compiler = require('../');
-
-Compiler.prototype.visitRuleList = function(ruleList) {
-	++this.level;
-
-	var rules = this.visit(ruleList.children).join('\n');
-
-	--this.level;
-	return '{\n' + rules + '\n' + this.indent() + '}';
-};
-},{"../":10}],39:[function(require,module,exports){
-'use strict';
-
-var Compiler = require('../');
-
-Compiler.prototype.visitMediaQueryList = function(mqList) {
-	return this.visit(mqList.children).join(', ');
-};
-},{"../":10}],38:[function(require,module,exports){
-'use strict';
-
-var Compiler = require('../');
-
-Compiler.prototype.visitMedia = function(media) {
-	var level = this.level;
-	this.level += media.level || 0;
-
-	var comments = this.comments(media);
-	var indent = this.indent();
-	var mqList = media.children[0];
-	var mqs = mqList.children;
-	mqList = this.visit(mqs).join(',\n' + this.indent());
-	mqList = (mqs.length === 1 ? ' ' : '\n' + this.indent()) + mqList;
-	var ruleList = this.visit(media.children[1]);
-
-	this.level = level;
-	return comments + indent + '@media' + mqList + ' ' + ruleList;
-};
-},{"../":10}],40:[function(require,module,exports){
-'use strict';
-
-var Compiler = require('../');
-
-Compiler.prototype.visitMediaQuery = function(mq) {
-	return this.visit(mq.children).join(' and ');
-};
-},{"../":10}],41:[function(require,module,exports){
-'use strict';
-
-var Compiler = require('../');
-
-Compiler.prototype.visitMediaType = function(mt) {
-	var modifier = mt.modifier || '';
-	if (modifier) modifier += ' ';
-	var name = this.visit(mt.children[0]);
-
-	return modifier + name;
-};
-},{"../":10}],42:[function(require,module,exports){
-'use strict';
-
-var Compiler = require('../');
-
-Compiler.prototype.visitMediaFeature = function(mf) {
-	var name = this.visit(mf.children[0]);
-	var value = this.visit(mf.children[1]) || '';
-	if (value) value = ': ' + value;
-	return '(' + name + value + ')';
-};
-},{"../":10}],44:[function(require,module,exports){
-'use strict';
-
-var Compiler = require('../');
-
-Compiler.prototype.visitUrl = function(url) {
-	url = this.visit(url.children[0]);
-	return 'url(' + url + ')';
-};
-},{"../":10}],43:[function(require,module,exports){
-'use strict';
-
-var Compiler = require('../');
-
-Compiler.prototype.visitImport = function(imp) {
-	var comments = this.comments(imp);
-	var url = this.visit(imp.children[0]);
-	var mq = this.visit(imp.children[1]) || '';
-	if (mq) mq = ' ' + mq;
-	return comments + '@import ' + url + mq + ';';
-};
-},{"../":10}],45:[function(require,module,exports){
-'use strict';
-
-var Compiler = require('../');
-
-Compiler.prototype.visitString = function(str) {
-	return str.quote + str.children[0] + str.quote;
-};
-},{"../":10}],46:[function(require,module,exports){
-'use strict';
-
-var Compiler = require('../');
-
-Compiler.prototype.visitNumber = function(num) {
-	num = +num.children[0].toFixed(this.options.precision);
-	return num.toString();
-};
-},{"../":10}],47:[function(require,module,exports){
-'use strict';
-
-var Compiler = require('../');
-
-Compiler.prototype.visitPercentage = function(per) {
-	var num = +per.children[0].toFixed(this.options.precision);
-	return num + '%';
-};
-},{"../":10}],48:[function(require,module,exports){
-'use strict';
-
-var Compiler = require('../');
-
-Compiler.prototype.visitDimension = function(dimen) {
-	var num = +dimen.children[0].toFixed(this.options.precision);
-	var unit = dimen.children[1];
-	return num + unit;
-};
-},{"../":10}],49:[function(require,module,exports){
-'use strict';
-
-var Compiler = require('../');
-
-Compiler.prototype.visitColor = function(color) {
-	return '#' + color.children[0];
-};
-},{"../":10}],50:[function(require,module,exports){
-'use strict';
-
-var Compiler = require('../');
-
-Compiler.prototype.visitCall = function(call) {
-	var name = this.visit(call.children[0]);
-	var args = this.visit(call.children[1]);
-	return name + '(' + args + ')';
-};
-},{"../":10}],51:[function(require,module,exports){
-'use strict';
-
-var Compiler = require('../');
-
-Compiler.prototype.visitArgumentList = function(argList) {
-	return this.visit(argList.children).join(', ');
-};
-},{"../":10}],52:[function(require,module,exports){
-'use strict';
-
-var Node = require('../../node');
-var Compiler = require('../');
-
-Compiler.prototype.visitRange = function(range) {
-	return this.visit(Node.toListNode(range));
-};
-},{"../../node":65,"../":10}],53:[function(require,module,exports){
-'use strict';
-
-var Compiler = require('../');
-
-Compiler.prototype.visitNull = function() {
-	return 'null';
-};
-},{"../":10}],54:[function(require,module,exports){
-'use strict';
-
-var Compiler = require('../');
-
-Compiler.prototype.visitSeparator = function(sep) {
-	sep = sep.children[0];
-	if (sep === ',') sep += ' ';
-	return sep;
-};
-},{"../":10}],55:[function(require,module,exports){
-'use strict';
-
-var Compiler = require('../');
-
-Compiler.prototype.visitKeyframes = function(kfs) {
-	var comments = this.comments(kfs);
-	var prefix = kfs.prefix || '';
-	if (prefix) prefix = '-' + prefix + '-';
-	var name = this.visit(kfs.children[0]);
-	var ruleList = this.visit(kfs.children[1]);
-	return comments + '@' + prefix + 'keyframes ' + name + ' ' + ruleList;
-};
-},{"../":10}],56:[function(require,module,exports){
-'use strict';
-
-var Compiler = require('../');
-
-Compiler.prototype.visitKeyframe = function(kf) {
-	var comments = this.comments(kf);
-	var indent = this.indent();
-	var sel = this.visit(kf.children[0]);
-	var ruleList = this.visit(kf.children[1]);
-	return comments + indent + sel + ' ' + ruleList;
-};
-},{"../":10}],58:[function(require,module,exports){
-'use strict';
-
-var Compiler = require('../');
-
-Compiler.prototype.visitFontFace = function(ff) {
-	var comments = this.comments(ff);
-	var ruleList = this.visit(ff.children[0]);
-	return comments + '@font-face '+ ruleList;
-};
-},{"../":10}],57:[function(require,module,exports){
-'use strict';
-
-var Compiler = require('../');
-
-Compiler.prototype.visitKeyframeSelectorList = function(selList) {
-	return this.visit(selList.children).join(', ');
-};
-},{"../":10}],59:[function(require,module,exports){
-'use strict';
-
-var Compiler = require('../');
-
-Compiler.prototype.visitPage = function(page) {
-	var comments = this.comments(page);
-	var name = this.visit(page.children[0]) || '';
-	if (name) name = ' :' + name;
-	var ruleList = this.visit(page.children[1]);
-	return comments + '@page' + name + ' ' + ruleList;
-};
-},{"../":10}],61:[function(require,module,exports){
-'use strict';
-
-var Normalizer = require('../');
-
-Normalizer.prototype.visitRoot = function(rootNode) {
-	return this.visit(rootNode.children);
-};
-},{"../":8}],60:[function(require,module,exports){
-'use strict';
-
-var Compiler = require('../');
-
-Compiler.prototype.visitCharset = function(charset) {
-	var comments = this.comments(charset);
-	var value = this.visit(charset.children[0]);
-	return comments + '@charset ' + value + ';';
-};
-},{"../":10}],62:[function(require,module,exports){
+},{"../../helper":2,"../../node":18,"../":9}],32:[function(require,module,exports){
 'use strict';
 
 var Normalizer = require('../');
@@ -11043,7 +10346,59 @@ Normalizer.prototype.visitRuleset = function(ruleset) {
 
 	return rules;
 };
-},{"../":8}],63:[function(require,module,exports){
+},{"../":8}],39:[function(require,module,exports){
+exports.node                 = require('./node');
+exports.stylesheet           = require('./stylesheet');
+exports.ruleset              = require('./ruleset');
+exports.selectorList         = require('./selectorList');
+// exports.combinator           = require('./combinator');
+// exports.universalSelector    = require('./universalSelector');
+exports.classSelector        = require('./classSelector');
+// exports.hashSelector         = require('./hashSelector');
+// exports.attributeSelector    = require('./attributeSelector');
+// exports.negationSelector     = require('./negationSelector');
+exports.pseudoSelector       = require('./pseudoSelector');
+exports.property             = require('./property');
+exports.ruleList             = require('./ruleList');
+// exports.media                = require('./media');
+// exports.mediaQueryList       = require('./mediaQueryList');
+// exports.mediaQuery           = require('./mediaQuery');
+// exports.mediaType            = require('./mediaType');
+// exports.mediaFeature         = require('./mediaFeature');
+exports.import               = require('./import');
+exports.url                  = require('./url');
+exports.string               = require('./string');
+exports.number               = require('./number');
+exports.percentage           = require('./percentage');
+exports.dimension            = require('./dimension');
+exports.color                = require('./color');
+exports.call                 = require('./call');
+exports.argumentList         = require('./argumentList');
+exports.range                = require('./range');
+exports.null                 = require('./null');
+exports.separator            = require('./separator');
+exports.keyframes            = require('./keyframes');
+exports.keyframe             = require('./keyframe');
+exports.keyframeSelectorList = require('./keyframeSelectorList');
+exports.fontFace             = require('./fontFace');
+exports.page                 = require('./page');
+exports.charset              = require('./charset');
+},{"./node":71,"./stylesheet":72,"./ruleset":73,"./selectorList":74,"./pseudoSelector":75,"./classSelector":76,"./property":77,"./ruleList":78,"./import":79,"./url":80,"./string":81,"./number":82,"./percentage":83,"./dimension":84,"./color":85,"./call":86,"./argumentList":87,"./range":88,"./null":89,"./separator":90,"./keyframes":91,"./keyframe":92,"./keyframeSelectorList":93,"./fontFace":94,"./page":95,"./charset":96}],33:[function(require,module,exports){
+'use strict';
+
+var Normalizer = require('../');
+
+Normalizer.prototype.visitVoid = function(voidNode) {
+	var inVoid = this.inVoid;
+	this.inVoid = true;
+
+	var ruleList = voidNode.children[0];
+	var children = this.visit(ruleList.children);
+
+	this.inVoid = inVoid;
+	return children;
+};
+},{"../":8}],34:[function(require,module,exports){
 'use strict';
 
 var RooleError = require('../../error');
@@ -11097,22 +10452,7 @@ Normalizer.prototype.visitMedia = function(media) {
 
 	return rules;
 };
-},{"../../error":102,"../":8}],64:[function(require,module,exports){
-'use strict';
-
-var Normalizer = require('../');
-
-Normalizer.prototype.visitVoid = function(voidNode) {
-	var inVoid = this.inVoid;
-	this.inVoid = true;
-
-	var ruleList = voidNode.children[0];
-	var children = this.visit(ruleList.children);
-
-	this.inVoid = inVoid;
-	return children;
-};
-},{"../":8}],102:[function(require,module,exports){
+},{"../../error":40,"../":8}],40:[function(require,module,exports){
 /**
  * RooleError
  *
@@ -11122,12 +10462,535 @@ Normalizer.prototype.visitVoid = function(voidNode) {
 
 module.exports = RooleError;
 
-function RooleError(message, node) {
-	var error = new Error(message);
-	error.loc = node.loc;
-	return error;
+function RooleError(msg, node) {
+	this.message = msg;
+	this.loc = node.loc;
 }
-},{}],100:[function(require,module,exports){
+
+RooleError.prototype = Object.create(Error.prototype);
+RooleError.prototype.constructor = RooleError;
+RooleError.prototype.name = 'RooleError';
+},{}],14:[function(require,module,exports){
+/**
+ * Visitor
+ *
+ * Visit each node in the ast.
+ */
+'use strict';
+
+var P = require('p-promise');
+var Translator = require('./translator');
+
+module.exports = TranslatorAsync;
+
+function TranslatorAsync() {}
+
+TranslatorAsync.prototype = new Translator();
+
+TranslatorAsync.prototype._visitNode = function (node) {
+	return P(node).then(this._visit.bind(this)).then(function (ret) {
+		if (ret === undefined) ret = node;
+		return ret;
+	});
+};
+
+TranslatorAsync.prototype._visitNodes = function (nodes) {
+	var rets = [];
+	var self = this;
+	return nodes.reduce(function (promise, node) {
+		return promise.then(function () {
+			return self._visitNode(node);
+		}).then(function (ret) {
+			rets.push(ret);
+		});
+	}, P()).then(function () {
+		return self._replaceNodes(rets, nodes);
+	});
+};
+},{"./translator":38,"p-promise":11}],41:[function(require,module,exports){
+'use strict';
+
+module.exports = function (evaluator, node) {
+	if (!node.children) return;
+	return evaluator.visit(node.children).then(function () {
+		return node;
+	});
+};
+},{}],42:[function(require,module,exports){
+'use strict';
+
+module.exports = function (evaluator, ruleset) {
+	return evaluator.visit(ruleset.children[0]).then(function () {
+		evaluator.scope.push();
+		return evaluator.visit(ruleset.children[1]);
+	}).then(function () {
+		evaluator.scope.pop();
+	});
+};
+},{}],43:[function(require,module,exports){
+'use strict';
+
+module.exports = function (evaluator, sel) {
+	return evaluator.visit(sel.children).then(function (children) {
+		var nodes = [];
+		var prevIsComb = false;
+
+		// make sure selector interpolation not to result in
+		// two consecutive combinators
+		children.forEach(function (child) {
+			if (child.type !== 'combinator') {
+				prevIsComb = false;
+			} else if (prevIsComb) {
+				nodes.pop();
+			} else {
+				prevIsComb = true;
+			}
+			nodes.push(child);
+		});
+		sel.children = nodes;
+	});
+};
+},{}],60:[function(require,module,exports){
+'use strict';
+
+module.exports = function (evaluator, kfs) {
+	return evaluator.visit(kfs.children[0]).then(function (name) {
+		kfs.children[0] = name;
+		evaluator.scope.push();
+		return evaluator.visit(kfs.children[1]);
+	}).then(function () {
+		evaluator.scope.pop();
+	});
+};
+},{}],61:[function(require,module,exports){
+'use strict';
+
+module.exports = function (evaluator, kf) {
+	return evaluator.visit(kf.children[0]).then(function () {
+		evaluator.scope.push();
+		return evaluator.visit(kf.children[1]);
+	}).then(function () {
+		evaluator.scope.pop();
+	});
+};
+},{}],62:[function(require,module,exports){
+'use strict';
+
+module.exports = function(evaluator, ff) {
+	evaluator.scope.push();
+	return evaluator.visit(ff.children).then(function () {
+		evaluator.scope.pop();
+	});
+};
+},{}],71:[function(require,module,exports){
+'use strict';
+
+module.exports = function (compiler, node) {
+	return compiler.visit(node.children).join('');
+};
+},{}],75:[function(require,module,exports){
+'use strict';
+
+module.exports = function(compiler, sel) {
+	var colon = sel.doubleColon ? '::' : ':';
+	var name = compiler.visit(sel.children[0]);
+	var args = compiler.visit(sel.children[1]) || '';
+	if (args) args = '(' + args + ')';
+	return colon + name + args;
+};
+},{}],72:[function(require,module,exports){
+'use strict';
+
+module.exports = function (compiler, stylesheet) {
+	var comments = compiler.comments(stylesheet);
+	var rules = stylesheet.children.reduce(function (css, child, i) {
+		var str = compiler.visit(child);
+		if (!child.level && i) css += '\n';
+		return css + str + '\n';
+	}, '');
+	return comments + rules;
+};
+},{}],73:[function(require,module,exports){
+'use strict';
+
+module.exports = function(compiler, ruleset) {
+	var level = compiler.level;
+	compiler.level += ruleset.level || 0;
+	var indent = compiler.indent();
+	var comments = compiler.comments(ruleset);
+	var selList = compiler.visit(ruleset.children[0]);
+	var ruleList = compiler.visit(ruleset.children[1]);
+	compiler.level = level;
+	return comments + indent + selList + ' ' + ruleList;
+};
+},{}],74:[function(require,module,exports){
+'use strict';
+
+module.exports = function(compiler, selList) {
+	return compiler.visit(selList.children).join(',\n' + compiler.indent());
+};
+},{}],76:[function(require,module,exports){
+'use strict';
+
+module.exports = function(compiler, sel) {
+	return '.' + compiler.visit(sel.children[0]);
+};
+},{}],77:[function(require,module,exports){
+'use strict';
+
+module.exports = function(compiler, prop) {
+	var name = compiler.visit(prop.children[0]);
+	var value = compiler.visit(prop.children[1]);
+	var priority = prop.priority || '';
+	if (priority) priority = ' ' + priority;
+	var indent = compiler.indent();
+	var comments = compiler.comments(prop);
+	return comments + indent + name + ': ' +  value + priority + ';';
+};
+},{}],78:[function(require,module,exports){
+'use strict';
+
+module.exports = function(compiler, ruleList) {
+	++compiler.level;
+	var rules = compiler.visit(ruleList.children).join('\n');
+	--compiler.level;
+	return '{\n' + rules + '\n' + compiler.indent() + '}';
+};
+},{}],79:[function(require,module,exports){
+'use strict';
+
+module.exports = function(compiler, importNode) {
+	var comments = compiler.comments(importNode);
+	var url = compiler.visit(importNode.children[0]);
+	var mq = compiler.visit(importNode.children[1]) || '';
+	if (mq) mq = ' ' + mq;
+	return comments + '@import ' + url + mq + ';';
+};
+},{}],80:[function(require,module,exports){
+'use strict';
+
+module.exports = function(compiler, url) {
+	url = compiler.visit(url.children[0]);
+	return 'url(' + url + ')';
+};
+},{}],81:[function(require,module,exports){
+'use strict';
+
+module.exports = function(compiler, str) {
+	return str.quote + str.children[0] + str.quote;
+};
+},{}],82:[function(require,module,exports){
+'use strict';
+
+module.exports = function(compiler, num) {
+	num = +num.children[0].toFixed(compiler.options.precision);
+	return num.toString();
+};
+},{}],83:[function(require,module,exports){
+'use strict';
+
+module.exports = function(compiler, percent) {
+	var num = +percent.children[0].toFixed(compiler.options.precision);
+	return num + '%';
+};
+},{}],84:[function(require,module,exports){
+'use strict';
+
+module.exports = function(compiler, dimen) {
+	var num = +dimen.children[0].toFixed(compiler.options.precision);
+	var unit = dimen.children[1];
+	return num + unit;
+};
+},{}],85:[function(require,module,exports){
+'use strict';
+
+module.exports = function(compiler, color) {
+	return '#' + color.children[0];
+};
+},{}],86:[function(require,module,exports){
+'use strict';
+
+module.exports = function(compiler, call) {
+	var name = compiler.visit(call.children[0]);
+	var args = compiler.visit(call.children[1]);
+	return name + '(' + args + ')';
+};
+},{}],90:[function(require,module,exports){
+'use strict';
+
+module.exports = function(compiler, sep) {
+	sep = sep.children[0];
+	if (sep === ',') sep += ' ';
+	return sep;
+};
+},{}],87:[function(require,module,exports){
+'use strict';
+
+module.exports = function(compiler, argList) {
+	return compiler.visit(argList.children).join(', ');
+};
+},{}],89:[function(require,module,exports){
+'use strict';
+
+module.exports = function() {
+	return 'null';
+};
+},{}],91:[function(require,module,exports){
+'use strict';
+
+module.exports = function(compiler, kfs) {
+	var comments = compiler.comments(kfs);
+	var prefix = kfs.prefix || '';
+	if (prefix) prefix = '-' + prefix + '-';
+	var name = compiler.visit(kfs.children[0]);
+	var ruleList = compiler.visit(kfs.children[1]);
+	return comments + '@' + prefix + 'keyframes ' + name + ' ' + ruleList;
+};
+},{}],92:[function(require,module,exports){
+'use strict';
+
+module.exports = function(compiler, kf) {
+	var comments = compiler.comments(kf);
+	var indent = compiler.indent();
+	var sel = compiler.visit(kf.children[0]);
+	var ruleList = compiler.visit(kf.children[1]);
+	return comments + indent + sel + ' ' + ruleList;
+};
+},{}],93:[function(require,module,exports){
+'use strict';
+
+module.exports = function(compiler, selList) {
+	return compiler.visit(selList.children).join(', ');
+};
+},{}],94:[function(require,module,exports){
+'use strict';
+
+module.exports = function(compiler, ff) {
+	var comments = compiler.comments(ff);
+	var ruleList = compiler.visit(ff.children[0]);
+	return comments + '@font-face '+ ruleList;
+};
+},{}],95:[function(require,module,exports){
+'use strict';
+
+module.exports = function(compiler, page) {
+	var comments = compiler.comments(page);
+	var name = compiler.visit(page.children[0]) || '';
+	if (name) name = ' :' + name;
+	var ruleList = compiler.visit(page.children[1]);
+	return comments + '@page' + name + ' ' + ruleList;
+};
+},{}],96:[function(require,module,exports){
+'use strict';
+
+module.exports = function(compiler, charset) {
+	var comments = compiler.comments(charset);
+	var value = compiler.visit(charset.children[0]);
+	return comments + '@charset ' + value + ';';
+};
+},{}],66:[function(require,module,exports){
+/**
+ * Media Filter
+ *
+ * Find medias matching the passed media queries
+ */
+'use strict';
+
+var _ = require('../helper');
+var Node = require('../node');
+var Visitor = require('../visitor');
+
+var MediaFilter = module.exports = function() {};
+
+MediaFilter.stop = {};
+
+MediaFilter.prototype = new Visitor();
+
+MediaFilter.prototype.filter = function(ast, mediaQueryListNode) {
+	this.mediaQueryListNode = mediaQueryListNode;
+	this.mediaNodes = [];
+
+	try {
+		this.visit(ast);
+	} catch (error) {
+		if (error !== MediaFilter.stop) {
+			throw error;
+		}
+	}
+
+	return this.mediaNodes;
+};
+
+MediaFilter.prototype.visitRoot =
+MediaFilter.prototype.visitVoid =
+MediaFilter.prototype.visitRuleset =
+MediaFilter.prototype.visitRuleList = MediaFilter.prototype.visitNode;
+
+MediaFilter.prototype.visitNode = _.noop;
+
+MediaFilter.prototype.visitMedia = function(mediaNode) {
+	var mediaQueryListNode = mediaNode.children[0];
+	var ruleListNode = mediaNode.children[1];
+
+	if (mediaQueryListNode === this.mediaQueryListNode) {
+		this.mediaNodes.push(mediaNode);
+		throw MediaFilter.stop;
+	}
+
+	if (Node.equal(mediaQueryListNode, this.mediaQueryListNode)) {
+		this.mediaNodes.push(mediaNode);
+	} else {
+		this.visit(ruleListNode);
+	}
+};
+},{"../helper":2,"../node":18,"../visitor":20}],67:[function(require,module,exports){
+/**
+ * Ruleset Filter
+ *
+ * Find ruleset node matching the passed selector
+ */
+'use strict';
+
+var _ = require('../helper');
+var Node = require('../node');
+var Visitor = require('../visitor');
+var RulesetFilter = module.exports = function() {};
+
+RulesetFilter.stop = {};
+
+RulesetFilter.prototype = new Visitor();
+
+RulesetFilter.prototype.filter = function(ast, selectorNode, options) {
+	this.selectorNode = selectorNode;
+	this.extendNode = options.extendNode;
+	this.options = options;
+	this.rulesetNodes = [];
+
+	try {
+		this.visit(ast);
+	} catch (error) {
+		if (error !== RulesetFilter.stop) {
+			throw error;
+		}
+	}
+
+	return this.rulesetNodes;
+};
+
+RulesetFilter.prototype.visitRoot =
+RulesetFilter.prototype.visitVoid =
+RulesetFilter.prototype.visitRuleList = RulesetFilter.prototype.visitNode;
+
+RulesetFilter.prototype.visitNode = _.noop;
+
+RulesetFilter.prototype.visitExtend = function(extendNode) {
+	if (extendNode === this.extendNode) {
+		throw RulesetFilter.stop;
+	}
+};
+
+RulesetFilter.prototype.visitRuleset = function(rulesetNode) {
+	var selectorListNode = rulesetNode.children[0];
+
+	var selectorMatched = selectorListNode.children.some(function(selectorNode) {
+		if (Node.equal(this.selectorNode, selectorNode)) {
+			this.rulesetNodes.push(rulesetNode);
+			return true;
+		}
+	}, this);
+	if (selectorMatched) {
+		return;
+	}
+
+	var ruleListNode = rulesetNode.children[1];
+	this.visit(ruleListNode);
+};
+},{"../helper":2,"../node":18,"../visitor":20}],68:[function(require,module,exports){
+/**
+ * Selector Extender
+ *
+ * Extend selectors in the passed ruleset with the passed parent selectors
+ */
+'use strict';
+
+var _ = require('../helper');
+var Node = require('../node');
+var Visitor = require('../visitor');
+var Extender = require('./');
+
+var SelectorExtender = module.exports = function() {};
+
+SelectorExtender.stop = {};
+
+SelectorExtender.prototype = new Visitor();
+
+SelectorExtender.prototype.extend = function(rulesetNode, parentSelectorList, options) {
+	this.parentSelectorList = parentSelectorList;
+	this.extendNode = options.extendNode;
+	this.insideVoid = options.insideVoid;
+
+	var selectorListNode = rulesetNode.children[0];
+	selectorListNode.children = selectorListNode.children.concat(parentSelectorList.children);
+
+	if (!this.insideVoid) {
+		selectorListNode.extendedSelectors = selectorListNode.extendedSelectors ?
+			selectorListNode.extendedSelectors.concat(parentSelectorList.children) :
+			parentSelectorList.children;
+	}
+
+	var ruleListNode = rulesetNode.children[1];
+
+	try {
+		this.visit(ruleListNode);
+	} catch (error) {
+		if (error !== SelectorExtender.stop) {
+			throw error;
+		}
+	}
+};
+
+SelectorExtender.prototype.visitRoot =
+SelectorExtender.prototype.visitMedia =
+SelectorExtender.prototype.visitRuleList = SelectorExtender.prototype.visitNode;
+
+SelectorExtender.prototype.visitNode = _.noop;
+
+SelectorExtender.prototype.visitExtend = function(extendNode) {
+	if (extendNode === this.extendNode) {
+		throw SelectorExtender.stop;
+	}
+};
+
+SelectorExtender.prototype.visitRuleset = function(rulesetNode) {
+	var selectorListNode = this.visit(rulesetNode.children[0]);
+
+	var parentSelectorList = this.parentSelectorList;
+	this.parentSelectorList = selectorListNode;
+
+	var ruleListNode = rulesetNode.children[1];
+	this.visit(ruleListNode);
+
+	this.parentSelectorList = parentSelectorList;
+};
+
+SelectorExtender.prototype.visitSelectorList = function(selectorListNode) {
+	var selectorListClone = Node.clone(selectorListNode.originalNode);
+
+	var extender = new Extender();
+	extender.parentSelectorList = this.parentSelectorList;
+	selectorListClone = extender.extend(selectorListClone, this.options);
+
+	selectorListNode.children = selectorListNode.children.concat(selectorListClone.children);
+
+	if (!this.insideVoid) {
+		selectorListNode.extendedSelectors = selectorListNode.extendedSelectors ?
+			selectorListNode.extendedSelectors.concat(selectorListClone.children) :
+			selectorListClone.children;
+	}
+
+	return selectorListClone;
+};
+},{"../helper":2,"../node":18,"../visitor":20,"./":7}],69:[function(require,module,exports){
 /**
  * PropertyNamePrefixer
  *
@@ -11195,7 +11058,7 @@ PropertyNamePrefixer.prototype.visitIdentifier = function(identifierNode) {
 
 	return prefixedPropertyNameNodes;
 };
-},{"../helper":2,"../visitor":12,"../node":65}],101:[function(require,module,exports){
+},{"../helper":2,"../node":18,"../visitor":20}],70:[function(require,module,exports){
 /**
  * LinearGradientPrefixer
  *
@@ -11293,218 +11156,336 @@ LinearGradientPrefixer.prototype.visitCall = function(callNode) {
 		return positionNode;
 	});
 };
-},{"../helper":2,"../visitor":12,"../node":65}],103:[function(require,module,exports){
-/**
- * Media Filter
- *
- * Find medias matching the passed media queries
- */
-'use strict';
-
-var _ = require('../helper');
-var Node = require('../node');
-var Visitor = require('../visitor');
-
-var MediaFilter = module.exports = function() {};
-
-MediaFilter.stop = {};
-
-MediaFilter.prototype = new Visitor();
-
-MediaFilter.prototype.filter = function(ast, mediaQueryListNode) {
-	this.mediaQueryListNode = mediaQueryListNode;
-	this.mediaNodes = [];
-
-	try {
-		this.visit(ast);
-	} catch (error) {
-		if (error !== MediaFilter.stop) {
-			throw error;
-		}
-	}
-
-	return this.mediaNodes;
-};
-
-MediaFilter.prototype.visitRoot =
-MediaFilter.prototype.visitVoid =
-MediaFilter.prototype.visitRuleset =
-MediaFilter.prototype.visitRuleList = MediaFilter.prototype.visitNode;
-
-MediaFilter.prototype.visitNode = _.noop;
-
-MediaFilter.prototype.visitMedia = function(mediaNode) {
-	var mediaQueryListNode = mediaNode.children[0];
-	var ruleListNode = mediaNode.children[1];
-
-	if (mediaQueryListNode === this.mediaQueryListNode) {
-		this.mediaNodes.push(mediaNode);
-		throw MediaFilter.stop;
-	}
-
-	if (Node.equal(mediaQueryListNode, this.mediaQueryListNode)) {
-		this.mediaNodes.push(mediaNode);
-	} else {
-		this.visit(ruleListNode);
-	}
-};
-},{"../helper":2,"../node":65,"../visitor":12}],104:[function(require,module,exports){
-/**
- * Ruleset Filter
- *
- * Find ruleset node matching the passed selector
- */
-'use strict';
-
-var _ = require('../helper');
-var Node = require('../node');
-var Visitor = require('../visitor');
-var RulesetFilter = module.exports = function() {};
-
-RulesetFilter.stop = {};
-
-RulesetFilter.prototype = new Visitor();
-
-RulesetFilter.prototype.filter = function(ast, selectorNode, options) {
-	this.selectorNode = selectorNode;
-	this.extendNode = options.extendNode;
-	this.options = options;
-	this.rulesetNodes = [];
-
-	try {
-		this.visit(ast);
-	} catch (error) {
-		if (error !== RulesetFilter.stop) {
-			throw error;
-		}
-	}
-
-	return this.rulesetNodes;
-};
-
-RulesetFilter.prototype.visitRoot =
-RulesetFilter.prototype.visitVoid =
-RulesetFilter.prototype.visitRuleList = RulesetFilter.prototype.visitNode;
-
-RulesetFilter.prototype.visitNode = _.noop;
-
-RulesetFilter.prototype.visitExtend = function(extendNode) {
-	if (extendNode === this.extendNode) {
-		throw RulesetFilter.stop;
-	}
-};
-
-RulesetFilter.prototype.visitRuleset = function(rulesetNode) {
-	var selectorListNode = rulesetNode.children[0];
-
-	var selectorMatched = selectorListNode.children.some(function(selectorNode) {
-		if (Node.equal(this.selectorNode, selectorNode)) {
-			this.rulesetNodes.push(rulesetNode);
-			return true;
-		}
-	}, this);
-	if (selectorMatched) {
-		return;
-	}
-
-	var ruleListNode = rulesetNode.children[1];
-	this.visit(ruleListNode);
-};
-},{"../helper":2,"../node":65,"../visitor":12}],105:[function(require,module,exports){
-/**
- * Selector Extender
- *
- * Extend selectors in the passed ruleset with the passed parent selectors
- */
-'use strict';
-
-var _ = require('../helper');
-var Node = require('../node');
-var Visitor = require('../visitor');
-var Extender = require('./');
-
-var SelectorExtender = module.exports = function() {};
-
-SelectorExtender.stop = {};
-
-SelectorExtender.prototype = new Visitor();
-
-SelectorExtender.prototype.extend = function(rulesetNode, parentSelectorList, options) {
-	this.parentSelectorList = parentSelectorList;
-	this.extendNode = options.extendNode;
-	this.insideVoid = options.insideVoid;
-
-	var selectorListNode = rulesetNode.children[0];
-	selectorListNode.children = selectorListNode.children.concat(parentSelectorList.children);
-
-	if (!this.insideVoid) {
-		selectorListNode.extendedSelectors = selectorListNode.extendedSelectors ?
-			selectorListNode.extendedSelectors.concat(parentSelectorList.children) :
-			parentSelectorList.children;
-	}
-
-	var ruleListNode = rulesetNode.children[1];
-
-	try {
-		this.visit(ruleListNode);
-	} catch (error) {
-		if (error !== SelectorExtender.stop) {
-			throw error;
-		}
-	}
-};
-
-SelectorExtender.prototype.visitRoot =
-SelectorExtender.prototype.visitMedia =
-SelectorExtender.prototype.visitRuleList = SelectorExtender.prototype.visitNode;
-
-SelectorExtender.prototype.visitNode = _.noop;
-
-SelectorExtender.prototype.visitExtend = function(extendNode) {
-	if (extendNode === this.extendNode) {
-		throw SelectorExtender.stop;
-	}
-};
-
-SelectorExtender.prototype.visitRuleset = function(rulesetNode) {
-	var selectorListNode = this.visit(rulesetNode.children[0]);
-
-	var parentSelectorList = this.parentSelectorList;
-	this.parentSelectorList = selectorListNode;
-
-	var ruleListNode = rulesetNode.children[1];
-	this.visit(ruleListNode);
-
-	this.parentSelectorList = parentSelectorList;
-};
-
-SelectorExtender.prototype.visitSelectorList = function(selectorListNode) {
-	var selectorListClone = Node.clone(selectorListNode.originalNode);
-
-	var extender = new Extender();
-	extender.parentSelectorList = this.parentSelectorList;
-	selectorListClone = extender.extend(selectorListClone, this.options);
-
-	selectorListNode.children = selectorListNode.children.concat(selectorListClone.children);
-
-	if (!this.insideVoid) {
-		selectorListNode.extendedSelectors = selectorListNode.extendedSelectors ?
-			selectorListNode.extendedSelectors.concat(selectorListClone.children) :
-			selectorListClone.children;
-	}
-
-	return selectorListClone;
-};
-},{"../helper":2,"../node":65,"../visitor":12,"./":7}],97:[function(require,module,exports){
+},{"../helper":2,"../node":18,"../visitor":20}],46:[function(require,module,exports){
 'use strict';
 
 var RooleError = require('../../error');
-var bif = require('../');
+var Node = require('../../node');
 
-bif.len = function(callNode) {
+module.exports = function (evaluator, call) {
+	return evaluator.visit(call.children).then(function (children) {
+		var func = children[0];
+		var argList = children[1];
+
+		if (typeof func === 'function') return func(call);
+		if (func.type === 'identifier') return;
+		if (func.type !== 'function') {
+			throw new RooleError(func.type + " is not a Function", func);
+		}
+		var scope = evaluator.scope;
+		evaluator.scope = func.scope;
+		evaluator.scope.push();
+
+		var list = Node.toListNode(argList);
+		evaluator.scope.define('arguments', list);
+
+		var paramList = func.children[0];
+		var params = paramList.children;
+		var args = argList.children;
+		params.forEach(function (param, i) {
+			var ident = param.children[0];
+			var name = ident.children[0];
+			var val;
+			if (param.type === 'restParameter') {
+				val = Node.toListNode({
+					type: 'argumentList',
+					children: args.slice(i),
+					loc: argList.loc,
+				});
+			} else if (i < args.length) {
+				val = args[i];
+			} else {
+				val = param.children[1];
+				if (!val) val = { type: 'null', loc: argList.loc };
+			}
+			evaluator.scope.define(name, val);
+		});
+
+		var context = evaluator.context;
+		var ruleList = func.children[1];
+		var clone = Node.clone(ruleList);
+		var ret;
+		if (call.mixin) {
+			evaluator.context = 'mixin';
+			ret = evaluator.visit(clone).then(function (ruleList) {
+				return ruleList.children;
+			});
+		} else {
+			evaluator.context = 'call';
+			var returned;
+			ret = evaluator.visit(clone).then(null, function (ret) {
+				if (ret instanceof Error) throw ret;
+				returned = ret;
+			}).then(function () {
+				return returned || { type: 'null', loc: call.loc };
+			});
+		}
+		return ret.then(function (node) {
+			evaluator.scope.pop();
+			evaluator.scope = scope;
+			evaluator.context = context;
+			return node;
+		});
+	});
+};
+},{"../../error":40,"../../node":18}],48:[function(require,module,exports){
+'use strict';
+
+var RooleError = require('../../error');
+
+module.exports = function (evaluator, ret) {
+	if (!evaluator.context) throw new RooleError('@return is only allowed inside @function', ret);
+	if (evaluator.context === 'call') throw evaluator.visit(ret.children[0]);
+	return null;
+};
+},{"../../error":40}],44:[function(require,module,exports){
+'use strict';
+
+var RooleError = require('../../error');
+
+module.exports = function (evaluator, sel) {
+	return evaluator.visit(sel.children).then(function (children) {
+		var ident = children[0];
+		if (ident.type !== 'identifier') {
+			throw new RooleError(ident.type + " is not allowed in class selector", ident);
+		}
+		if (!evaluator.module) return;
+		ident.children[0] = evaluator.module + ident.children[0];
+	});
+};
+},{"../../error":40}],45:[function(require,module,exports){
+'use strict';
+
+var Node = require('../../node');
+
+module.exports = function (evaluator, assign) {
+	return evaluator.visit(assign.children[1]).then(function (val) {
+		var varNode = assign.children[0];
+		var name = varNode.children[0];
+		var op = assign.operator;
+
+		switch (op) {
+		case '?=':
+			if (!evaluator.scope.resolve(name)) {
+				evaluator.scope.define(name, val);
+			}
+			return null;
+		case '=':
+			evaluator.scope.define(name, val);
+			return null;
+		default:
+			op = op.charAt(0);
+			return evaluator.visit(varNode).then(function (origVal) {
+				val = Node.perform(op, origVal, val);
+				evaluator.scope.define(name, val);
+				return null;
+			});
+		}
+	});
+};
+},{"../../node":18}],49:[function(require,module,exports){
+'use strict';
+
+var RooleError = require('../../error');
+var Node = require('../../node');
+
+module.exports = function (evaluator, variable) {
+	var name = variable.children[0];
+	var val = evaluator.scope.resolve(name);
+	if (!val) throw new RooleError('$' + name + ' is undefined', variable);
+	val = Node.clone(val, false);
+	val.loc = variable.loc;
+	return val;
+};
+},{"../../error":40,"../../node":18}],50:[function(require,module,exports){
+'use strict';
+
+var RooleError = require('../../error');
+var Node = require('../../node');
+
+module.exports = function (evaluator, ident) {
+	return evaluator.visit(ident.children).then(function (children) {
+		var val = children.map(function (child) {
+			var val = Node.toString(child);
+			if (val === undefined) throw new RooleError(child.type + " is not allowed to be interpolated in Identifier", child);
+			return val;
+		}).join('');
+		ident.children = [val];
+	});
+};
+},{"../../error":40,"../../node":18}],52:[function(require,module,exports){
+'use strict';
+
+var RooleError = require('../../error');
+var Node = require('../../node');
+
+module.exports = function (evaulator, range) {
+	return evaulator.visit(range.children).then(function (children) {
+		var from = children[0];
+		var to = children[1];
+
+		var invalid;
+		if (Node.toNumber(from) === undefined) invalid = from;
+		else if (Node.toNumber(to) === undefined) invalid = to;
+
+		if (invalid) throw new RooleError(invalid.type + ' is not a numberic value', invalid);
+	});
+};
+},{"../../error":40,"../../node":18}],51:[function(require,module,exports){
+'use strict';
+
+var RooleError = require('../../error');
+var Node = require('../../node');
+
+module.exports = function (evaluator, str) {
+	if (str.quote === "'") return;
+	return evaluator.visit(str.children).then(function (children) {
+		var val = children.map(function (child) {
+			var val = Node.toString(child);
+			if (val === undefined) throw new RooleError(child.type + " is not allowed to be interpolated in String", child);
+			// escape lone double quotes
+			if (child.type === 'String') {
+				val = val.replace(/\\?"/g, function(quote) {
+					return quote.length === 1 ? '\\"' : quote;
+				});
+			}
+			return val;
+		}).join('');
+		str.children = [val];
+	});
+};
+},{"../../error":40,"../../node":18}],53:[function(require,module,exports){
+'use strict';
+
+var Node = require('../../node');
+
+module.exports = function (evaluator, logical) {
+	return evaluator.visit(logical.children[0]).then(function (left) {
+		var op = logical.operator;
+		if (
+			op === 'and' && !Node.toBoolean(left) ||
+			op === 'or' && Node.toBoolean(left)
+		) {
+			return left;
+		}
+		return evaluator.visit(logical.children[1]);
+	});
+};
+},{"../../node":18}],54:[function(require,module,exports){
+'use strict';
+
+var Node = require('../../node');
+
+module.exports = function (evaluator, eq) {
+	return evaluator.visit(eq.children).then(function (children) {
+		var op = eq.operator;
+		var left = children[0];
+		var right = children[1];
+
+		var val = op === 'is' && Node.equal(left, right) ||
+			op === 'isnt' && !Node.equal(left, right);
+
+		return {
+			type: 'boolean',
+			children: [val],
+			loc: left.loc,
+		};
+	});
+};
+},{"../../node":18}],55:[function(require,module,exports){
+'use strict';
+
+var Node = require('../../node');
+
+module.exports = function (evaluator, rel) {
+	return evaluator.visit(rel.children).then(function (children) {
+		var op = rel.operator;
+		var left = children[0];
+		var right = children[1];
+		var loc = left.loc;
+
+		left = Node.toValue(left);
+		right = Node.toValue(right);
+
+		var val = op === '>' && left > right ||
+			op === '<' && left < right ||
+			op === '>=' && left >= right ||
+			op === '<=' && left <= right;
+
+		return {
+			type: 'boolean',
+			children: [val],
+			loc: loc,
+		};
+	});
+};
+},{"../../node":18}],56:[function(require,module,exports){
+'use strict';
+
+var Node = require('../../node');
+
+module.exports = function (evaluator, arith) {
+	return evaluator.visit(arith.children).then(function (children) {
+		return Node.perform(arith.operator, children[0], children[1]);
+	});
+};
+},{"../../node":18}],57:[function(require,module,exports){
+'use strict';
+
+var RooleError = require('../../error');
+var Node = require('../../node');
+
+module.exports = function (evaluator, unary) {
+	return evaluator.visit(unary.children[0]).then(function (right) {
+		var op = unary.operator;
+		switch (op + right.type) {
+		case '+number':
+		case '+percentage':
+		case '+dimension':
+			return right;
+		case '-number':
+		case '-percentage':
+		case '-dimension':
+			var clone = Node.clone(right);
+			clone.children[0] = -clone.children[0];
+			return clone;
+		case '-identifier':
+			var clone = Node.clone(right);
+			clone.children[0] = '-' + clone.children[0];
+			return clone;
+		}
+		throw new RooleError("unsupported unary operation: " + op + right.type, unary);
+	});
+};
+},{"../../error":40,"../../node":18}],58:[function(require,module,exports){
+'use strict';
+
+var Node = require('../../node');
+
+module.exports = function (evaluator, ifNode) {
+	return evaluator.visit(ifNode.children[0]).then(function (cond) {
+		if (Node.toBoolean(cond)) {
+			return evaluator.visit(ifNode.children[1]).then(function (ruleList) {
+				return ruleList.children;
+			});
+		}
+		var alter = ifNode.children[2];
+		if (!alter) return null;
+		return evaluator.visit(alter).then(function (ruleList) {
+			if (alter.type === 'if') return ruleList;
+			return ruleList.children;
+		});
+	});
+};
+},{"../../node":18}],63:[function(require,module,exports){
+'use strict';
+
+var RooleError = require('../../error');
+
+module.exports = function(callNode) {
 	var argumentListNode = callNode.children[1];
 	if (!argumentListNode.children.length) {
-		throw RooleError('no arguments passed', callNode);
+		throw new RooleError('no arguments passed', callNode);
 	}
 
 	var argumentNode = argumentListNode.children[0];
@@ -11521,75 +11502,23 @@ bif.len = function(callNode) {
 		loc: callNode.loc,
 	};
 };
-},{"../../error":102,"../":96}],99:[function(require,module,exports){
+},{"../../error":40}],64:[function(require,module,exports){
 'use strict';
 
 var Node = require('../../node');
 var RooleError = require('../../error');
-var bif = require('../');
 
-bif.opp = function(callNode) {
-	var argumentListNode = callNode.children[1];
-	if (!argumentListNode.children.length) {
-		throw RooleError('no arguments passed', callNode);
-	}
-
-	var argumentNode = argumentListNode.children[0];
-	var argumentClone = Node.clone(argumentNode);
-
-	if (argumentClone.type === 'list') {
-		argumentClone.children[0] = toOppNode(argumentClone.children[0]);
-		argumentClone.children[2] = toOppNode(argumentClone.children[2]);
-		return argumentClone;
-	}
-
-	return toOppNode(argumentClone);
-};
-
-function toOppNode(node) {
-	var pos = Node.toString(node);
-	if (pos === null || (pos = toOppPos(pos)) == null) {
-		throw RooleError('invalid position', node);
-	}
-
-	node.children[0] = pos;
-	return node;
-}
-
-function toOppPos(pos) {
-	switch(pos) {
-	case 'left':
-		return 'right';
-	case 'right':
-		return 'left';
-	case 'top':
-		return 'bottom';
-	case 'bottom':
-		return 'top';
-	case 'center':
-		return 'center';
-	}
-
-	return null;
-}
-},{"../../node":65,"../../error":102,"../":96}],98:[function(require,module,exports){
-'use strict';
-
-var Node = require('../../node');
-var RooleError = require('../../error');
-var bif = require('../');
-
-bif.unit = function(callNode) {
+module.exports = function(callNode) {
 	var argumentListNode = callNode.children[1];
 	var length = argumentListNode.children.length;
 	if (!length) {
-		throw RooleError('no arguments passed', callNode);
+		throw new RooleError('no arguments passed', callNode);
 	}
 
 	var targetNode = argumentListNode.children[0];
 	var value = Node.toNumber(targetNode);
-	if (value === null) {
-		throw RooleError("'" + targetNode.type + "' is not a numberic value", targetNode);
+	if (value === undefined) {
+		throw new RooleError("'" + targetNode.type + "' is not a numberic value", targetNode);
 	}
 
 	if (length === 1) {
@@ -11667,10 +11596,161 @@ bif.unit = function(callNode) {
 		};
 
 	default:
-		throw RooleError("'" + unitNode.type + "' is not a valid unit", unitNode);
+		throw new RooleError("'" + unitNode.type + "' is not a valid unit", unitNode);
 	}
 };
-},{"../../node":65,"../../error":102,"../":96}]},{},[1])(1)
+},{"../../node":18,"../../error":40}],65:[function(require,module,exports){
+'use strict';
+
+var Node = require('../../node');
+var RooleError = require('../../error');
+
+module.exports = function(callNode) {
+	var argumentListNode = callNode.children[1];
+	if (!argumentListNode.children.length) {
+		throw new RooleError('no arguments passed', callNode);
+	}
+
+	var argumentNode = argumentListNode.children[0];
+	var argumentClone = Node.clone(argumentNode);
+
+	if (argumentClone.type === 'list') {
+		argumentClone.children[0] = toOppNode(argumentClone.children[0]);
+		argumentClone.children[2] = toOppNode(argumentClone.children[2]);
+		return argumentClone;
+	}
+
+	return toOppNode(argumentClone);
+};
+
+function toOppNode(node) {
+	var pos = Node.toString(node);
+	if (pos === null || (pos = toOppPos(pos)) == null) {
+		throw new RooleError('invalid position', node);
+	}
+
+	node.children[0] = pos;
+	return node;
+}
+
+function toOppPos(pos) {
+	switch(pos) {
+	case 'left':
+		return 'right';
+	case 'right':
+		return 'left';
+	case 'top':
+		return 'bottom';
+	case 'bottom':
+		return 'top';
+	case 'center':
+		return 'center';
+	}
+
+	return null;
+}
+},{"../../node":18,"../../error":40}],88:[function(require,module,exports){
+'use strict';
+
+var Node = require('../../node');
+module.exports = function(compiler, range) {
+	return compiler.visit(Node.toListNode(range));
+};
+},{"../../node":18}],47:[function(require,module,exports){
+'use strict';
+
+var P = require('p-promise');
+
+module.exports = function (evaluator, func) {
+	func.scope = evaluator.scope.clone();
+	var paramList = func.children[0];
+	var params = paramList.children;
+
+	return params.reduce(function (promise, param) {
+		return promise.then(function () {
+			return evaluator.visit(param.children[1]);
+		}).then(function (defaultVal) {
+			if (!defaultVal) return;
+			param.children[1] = defaultVal;
+		});
+	}, P());
+};
+},{"p-promise":11}],59:[function(require,module,exports){
+'use strict';
+
+var P = require('p-promise');
+var RooleError = require('../../error');
+var Node = require('../../node');
+
+module.exports = function (evaluator, forNode) {
+	var stepNum;
+	return evaluator.visit(forNode.children[2]).then(function (step) {
+		stepNum = 1;
+		if (step) {
+			stepNum = Node.toNumber(step);
+			if (stepNum === undefined) throw new RooleError("step must be a numberic value", step);
+			if (stepNum === 0) throw new RooleError("step is not allowed to be zero", step);
+		}
+		return evaluator.visit(forNode.children[3]);
+	}).then(function (list) {
+		var valVar = forNode.children[0];
+		var idxVar = forNode.children[1];
+		var valVarName = valVar.children[0];
+		var idxVarName;
+		if (idxVar) idxVarName = idxVar.children[0];
+		var items = Node.toArray(list);
+
+		if (!items.length) {
+			if (!evaluator.scope.resolve(valVarName)) {
+				evaluator.scope.define(valVarName, {
+					type: 'null',
+					loc: valVar.loc,
+				});
+			}
+			if (idxVar && !evaluator.scope.resolve(idxVarName)) {
+				evaluator.scope.define(idxVarName, {
+					type: 'null',
+					loc: idxVar.loc,
+				});
+			}
+			return null;
+		}
+
+		var ruleList = forNode.children[4];
+		var rules = [];
+		var promise = P();
+		if (stepNum > 0) {
+			for (var i = 0, last = items.length - 1; i <= last; i += stepNum) {
+				visitRuleList(items[i], i, i === last);
+			}
+		} else {
+			for (var i = items.length - 1; i >= 0; i += stepNum) {
+				visitRuleList(items[i], i, i === 0);
+			}
+		}
+		return promise.then(function () {
+			return rules;
+		});
+
+		function visitRuleList(item, i, isLast) {
+			promise = promise.then(function () {
+				evaluator.scope.define(valVarName, item);
+				if (idxVar) {
+					evaluator.scope.define(idxVarName, {
+						type: 'number',
+						children: [i],
+						loc: idxVar.loc,
+					});
+				}
+				var clone = isLast ? ruleList : Node.clone(ruleList);
+				return evaluator.visit(clone);
+			}).then(function (clone) {
+				rules = rules.concat(clone.children);
+			});
+		}
+	});
+};
+},{"../../error":40,"../../node":18,"p-promise":11}]},{},[1])(1)
 });
 ;/**
  * Compile style and link elements in the HTML.

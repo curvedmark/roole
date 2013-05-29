@@ -284,13 +284,6 @@ test 'not allow selector starting with a combinator at the top level', ->
 		}
 	''', {line: 1, column: 1}
 
-test 'not allow & selector at the top level', ->
-	assert.failAt '''
-		& {
-			width: auto;
-		}
-	''', {line: 1, column: 1}
-
 test 'interpolating selector', ->
 	assert.compileTo '''
 		$sel = ' body ';

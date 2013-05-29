@@ -208,6 +208,19 @@ test 'loop list', ->
 		}
 	'''
 
+test 'loop empty list', ->
+	assert.compileTo '''
+		@for $val, $key in 1...1 {}
+
+		body {
+			-foo: $val $key;
+		}
+	''', '''
+		body {
+			-foo: null null;
+		}
+	'''
+
 test 'loop number', ->
 	assert.compileTo '''
 		@for $i in 1 {
@@ -218,23 +231,6 @@ test 'loop number', ->
 	''', '''
 		.span-1 {
 			width: 60px;
-		}
-	'''
-
-test 'loop null', ->
-	assert.compileTo '''
-		@for $i in null {
-			body {
-				margin: 0;
-			}
-		}
-
-		body {
-			-foo: $i;
-		}
-	''', '''
-		body {
-			-foo: null;
 		}
 	'''
 
@@ -290,18 +286,5 @@ test 'loop value with index', ->
 	''', '''
 		.icon-foo {
 			content: "0 foo";
-		}
-	'''
-
-test 'loop null with index', ->
-	assert.compileTo '''
-		@for $value, $i in null {}
-
-		body {
-			-foo: $value $i;
-		}
-	''', '''
-		body {
-			-foo: null null;
 		}
 	'''

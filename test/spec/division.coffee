@@ -92,7 +92,7 @@ test 'percentage / percentage', ->
 		}
 	''', '''
 		body {
-			-foo: 1%;
+			-foo: 1;
 		}
 	'''
 
@@ -103,23 +103,12 @@ test 'percentage / 0%, not allowed', ->
 		}
 	''', {line: 2, column: 13}
 
-test 'percentage / dimension', ->
-	assert.compileTo '''
+test 'percentage / dimension, not allowed', ->
+	assert.failAt '''
 		body {
 			-foo: 1% / 2px;
 		}
-	''', '''
-		body {
-			-foo: 0.5%;
-		}
-	'''
-
-test 'percentage / 0px, not allowed', ->
-	assert.failAt '''
-		body {
-			-foo: 1% / 0px;
-		}
-	''', {line: 2, column: 13}
+	''', {line: 2, column: 8}
 
 test 'dimension / number', ->
 	assert.compileTo '''
@@ -139,23 +128,19 @@ test 'dimension / 0, not allowed', ->
 		}
 	''', {line: 2, column: 14}
 
-test 'dimension / percentage', ->
-	assert.compileTo '''
+test 'dimension / percentage, not allowed', ->
+	assert.failAt '''
 		body {
 			-foo: 1px / 2%;
 		}
-	''', '''
-		body {
-			-foo: 0.5px;
-		}
-	'''
+	''', {line: 2, column: 8}
 
 test 'dimension / 0%, not allowed', ->
 	assert.failAt '''
 		body {
 			-foo: 1px / 0%;
 		}
-	''', {line: 2, column: 14}
+	''', {line: 2, column: 8}
 
 test 'dimension / dimension', ->
 	assert.compileTo '''
@@ -164,7 +149,7 @@ test 'dimension / dimension', ->
 		}
 	''', '''
 		body {
-			-foo: 1px;
+			-foo: 1;
 		}
 	'''
 
@@ -175,7 +160,7 @@ test 'dimension / dimension, different units', ->
 		}
 	''', '''
 		body {
-			-foo: 0.5em;
+			-foo: 0.5;
 		}
 	'''
 

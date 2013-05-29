@@ -202,12 +202,21 @@ test 'import empty file', ->
 		}
 	'''
 
-test 'not importing file with variables in the path', ->
-	assert.compileTo '''
-		$path = 'tabs';
-		@import $path;
-	''', '''
-		@import 'tabs';
+test 'importing file with variables in the path', ->
+	assert.compileTo [
+		'tabs.roo': '''
+			.tabs {
+				overflow: hidden;
+			}
+		'''
+		'''
+			$path = 'tabs';
+			@import $path;
+		'''
+	], '''
+		.tabs {
+			overflow: hidden;
+		}
 	'''
 
 test 'not allow importing of a file with a syntax error', ->

@@ -9,107 +9,81 @@ var roole = typeof window === 'undefined' ? global.roole : window.roole;
 var assert = exports;
 
 assert.compileTo = function(options, input, css) {
-	if (arguments.length < 3) {
-		css = input;
-		input = options;
-		options = {};
-	}
+    if (arguments.length < 3) {
+        css = input;
+        input = options;
+        options = {};
+    }
 
-	if (Array.isArray(input)) {
-		var imports = input;
-		input = imports.pop();
-		var files = {};
-		imports.forEach(function (file) {
-			_.mixin(files, file);
-		});
-		options.imports = files;
-	}
+    if (Array.isArray(input)) {
+        var imports = input;
+        input = imports.pop();
+        var files = {};
+        imports.forEach(function (file) {
+            _.mixin(files, file);
+        });
+        options.imports = files;
+    }
 
-	if (css) css += '\n';
-	options.prettyError = true;
+    if (css) css += '\n';
+    options.prettyError = true;
 
-	var called = false;
-	roole.compile(input, options, function(error, output) {
-		called = true;
+    return roole.compile(input, options).then(function (output) {
+        if (output === css) return;
+        var err = new Error('');
+        err.actual = output;
+        err.expected = css;
+        err.showDiff = true;
 
-		if (error) {
-			throw error;
-		}
+        output = output ? '\n"""\n' + output + '\n"""\n' : ' ' + output + '\n';
+        css = css ? '\n"""\n' + css + '\n"""' : ' empty string';
+        err.message = 'input compiled to' + output + 'instead of' + css;
 
-		if (output !== css) {
-			error = new Error('');
-			// error.actual = output;
-			// error.expected = css;
-			// error.showDiff = true;
-
-			output = output ? '\n"""\n' + output + '\n"""\n' : ' ' + output + '\n';
-			css = css ? '\n"""\n' + css + '\n"""' : ' empty string';
-			error.message = 'input compiled to' + output + 'instead of' + css;
-
-			throw error;
-		}
-	});
-
-	if (!called) {
-		throw new Error('input is never compiled');
-	}
+        throw err;
+    });
 };
 
 assert.failAt = function(options, input, loc) {
-	if (arguments.length < 3) {
-		loc = input;
-		input = options;
-		options = {};
-	}
+    if (arguments.length < 3) {
+        loc = input;
+        input = options;
+        options = {};
+    }
 
-	if (Array.isArray(input)) {
-		var imports = input;
-		input = imports.pop();
-		var files = {};
-		imports.forEach(function (file) {
-			_.mixin(files, file);
-		});
-		options.imports = files;
-	}
+    if (Array.isArray(input)) {
+        var imports = input;
+        input = imports.pop();
+        var files = {};
+        imports.forEach(function (file) {
+            _.mixin(files, file);
+        });
+        options.imports = files;
+    }
 
-	options.prettyError = true;
+    options.prettyError = true;
 
-	if (!loc.filename) { loc.filename = ''; }
+    if (!loc.filename) { loc.filename = ''; }
 
-	var called = false;
-	roole.compile(input, options, function(error) {
-		if (!error) {
-			throw new Error('no error is thrown');
-		}
-
-		if (!error.loc) {
-			throw error;
-		}
-
-		called = true;
-
-		if (error.loc.line !== loc.line) {
-			var message = 'error has line number ' + error.line + ' instead of ' + loc.line;
-			error.message = message + ':\n\n' + error.message;
-			throw error;
-		}
-
-		if (error.loc.column !== loc.column) {
-			var message = 'error has column number ' + error.column + ' instead of ' + loc.column;
-			error.message = message + ':\n\n' + error.message;
-			throw error;
-		}
-
-		if (error.loc.filename !== loc.filename) {
-			var message = 'error has file path ' + error.filename + ' instead of ' + loc.filename;
-			error.message = message + ':\n\n' + error.message;
-			throw error;
-		}
-	});
-
-	if (!called) {
-		throw new Error('input is never compiled');
-	}
+    return roole.compile(input, options).then(function () {
+        throw new Error('no error is thrown');
+    }, function (err) {
+        if (!err.loc) throw err;
+        if (err.loc.line !== loc.line) {
+            var message = 'error has line number ' + err.loc.line + ' instead of ' + loc.line;
+            err.message = message + ':\n\n' + err.message;
+            throw err;
+        }
+        if (err.loc.column !== loc.column) {
+            var message = 'error has column number ' + err.loc.column + ' instead of ' + loc.column;
+            err.message = message + ':\n\n' + err.message;
+            throw err;
+        }
+        if (err.loc.filename !== loc.filename) {
+            var message = 'error has file path ' + err.loc.filename + ' instead of ' + loc.filename;
+            err.message = message + ':\n\n' + err.message;
+            throw err;
+        }
+    });
 };
 
 assert.compileToWithCmd = function(cmd, input, output, done) {

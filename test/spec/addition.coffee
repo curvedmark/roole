@@ -45,7 +45,7 @@ test 'number + function, not allowed', ->
 		body {
 			-foo: 1 + $function;
 		}
-	''', {line: 7, column: 8}
+	''', { line: 7, column: 8 }
 
 test 'number + string', ->
 	assert.compileTo '''
@@ -80,16 +80,12 @@ test 'percentage + percentage', ->
 		}
 	'''
 
-test 'percentage + dimension', ->
-	assert.compileTo '''
+test 'percentage + dimension, not allowed', ->
+	assert.failAt '''
 		body {
 			-foo: 2% + 1px;
 		}
-	''', '''
-		body {
-			-foo: 3%;
-		}
-	'''
+	''', { line: 2, column: 8 }
 
 test 'percentage + string', ->
 	assert.compileTo '''
@@ -135,16 +131,12 @@ test 'dimension + dimension, different units', ->
 		}
 	'''
 
-test 'dimension + identifier', ->
-	assert.compileTo '''
+test 'dimension + identifier, not allowed', ->
+	assert.failAt '''
 		body {
 			-foo: 1px + id;
 		}
-	''', '''
-		body {
-			-foo: 1pxid;
-		}
-	'''
+	''', { line: 2, column: 8 }
 
 test 'dimension + string', ->
 	assert.compileTo '''

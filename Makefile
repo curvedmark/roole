@@ -10,7 +10,7 @@ all: min
 parser: lib/parser/generatedParser.js
 
 lib/parser/generatedParser.js: lib/parser/grammar.pegjs node_modules
-	$(BIN)/pegjs --allowed-start-rules root,selector,mediaQuery $< $@
+	$(BIN)/pegjs --allowed-start-rules stylesheet,selector,mediaQuery $< $@
 
 #
 # Browser Build
@@ -40,7 +40,7 @@ dist/roole.min.js: dist/roole.js node_modules
 test: parser node_modules
 	$(BIN)/mocha \
 		--compilers coffee:coffee-script \
-		--require test/global.js \
+		--require test/setup.js \
 		--ui qunit \
 		--bail \
 		test/spec/*.coffee
@@ -48,7 +48,7 @@ test: parser node_modules
 test-cli: parser node_modules
 	$(BIN)/mocha \
 		--compilers coffee:coffee-script \
-		--require test/global.js \
+		--require test/setup.js \
 		--ui qunit \
 		--bail \
 		test/io/cli.coffee

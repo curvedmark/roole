@@ -57,16 +57,12 @@ test 'percentage - percentage', ->
 		}
 	'''
 
-test 'percentage - dimension', ->
-	assert.compileTo '''
+test 'percentage - dimension, not allowed', ->
+	assert.failAt '''
 		body {
 			-foo: 1% - 2px;
 		}
-	''', '''
-		body {
-			-foo: -1%;
-		}
-	'''
+	''', { line: 2, column: 8 }
 
 test 'dimension - number', ->
 	assert.compileTo '''
