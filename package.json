@@ -43,6 +43,6 @@
     "mkdirp": false,
     "path": false,
     "fs": false,
-    "./lib/importer/fs-loader.js": "./lib/importer/xhr-loader.js"
+    "./lib/evaluator/loader.js": "./lib/evaluator/xhr-loader.js"
   }
 }
