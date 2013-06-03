@@ -36,7 +36,8 @@
     "jshint": "1.x",
     "browserify": "curvedmark/node-browserify#resolve",
     "coffeeify": "0.4.x",
-    "brpkg": "0.1.x"
+    "brpkg": "0.1.x",
+    "mocha-as-promised": "1.x"
   },
   "browser": {
     "child_process": false,
