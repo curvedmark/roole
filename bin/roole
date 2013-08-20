@@ -50,7 +50,7 @@ program.args.forEach(function (arg) {
 			}
 
 			if (!css && !program.force && !program.watch) {
-				console.log('INFO: %d compiled to empty string, not writing to file', file.input.name);
+				console.log('INFO: %d compiled to empty string, not writing to file', filename);
 				return;
 			}
 
