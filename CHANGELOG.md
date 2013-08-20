@@ -1,3 +1,10 @@
+## WIP
+
+- Add builtin functions `$len()`, `$unit()`, `opp()`
+- `@function` has lexical scope
+- Retain multi-line comments before CSS rules
+- Allow importing libraries.
+
 ## 0.4.1 - 2013-03-28
 
 - Fix function called within mixin returning incorrect value

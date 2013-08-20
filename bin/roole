@@ -1,261 +1,137 @@
 #!/usr/bin/env node
-'use strict';
 
-var P = require('p-promise');
-var fs = require('fs');
 var path = require('path');
-var EventEmitter = require('events').EventEmitter;
-var mkdirp = require('mkdirp');
+var fs = require('fs-extra');
 var program = require('commander');
-var slice = [].slice;
-var _ = require('../lib/helper');
-var roole = require('../lib/roole');
+var chokidar = require('chokidar');
+var roole = require('..');
+var ver = require('../package.json').version;
 
 program
-	.version(roole.version, '-v, --version')
+	.version(ver, '-v, --version')
 	.usage('[options] [file|dir ...]')
-	.option('-p, --print', 'Output compiled CSS to stdout')
+	.option('-s, --stdout', 'Output compiled CSS to stdout')
 	.option('-o, --out <dir>', 'Write compiled files to <dir>')
 	.option('-w, --watch', 'Watch files and re-compile if changed')
 	.option('-f, --force', 'Create files even when compile to empty string')
-	.option('    --prefix <names>', 'Space-separated vendor names to use for prefixing')
+	.option('    --prefixes <names>', 'comma-separated vendor names to use for prefixing')
 	.option('    --indent <str>', 'Indentation string to use in CSS')
-	.option('    --precision <num>', 'Max number of decimal digits to use in CSS')
+	.option('    --precision <num>', 'Max number of decimal digits to use in CSS', parseInt)
 	.option('    --skip-prefixed', 'Not generate prefixed rule that already exists')
 	.parse(process.argv);
 
-var options = _.mixin({}, program, {prettyError: true});
-var emitter = new EventEmitter();
-
 if (!program.args.length) {
-	compileStdin();
-} else if (program.print) {
-	compileAndPrintFiles(program.args);
-} else if (program.watch) {
-	compileAndWatchFiles(program.args);
-} else {
-	compileAndWriteFiles(program.args);
-}
-
-function compileStdin() {
-	readStdin().then(compile).done(function (css) {
-		process.stdout.write(css);
-	});
-}
-
-function compileAndPrintFiles(filenames) {
-	resolveFiles(filenames).then(compileFiles).done(printFiles);
-}
-
-function compileAndWatchFiles(filenames) {
-	resolveFiles(filenames).then(compileFiles).then(writeFiles)
-		.then(null, printError).then(function (files) {
-			emitter.on('skip', printSkipInfo)
-				.on('write', printWriteInfo)
-				.on('watch', printWatchInfo);
-			return files;
-		}).done(watchFiles);
-
-	function printSkipInfo(file) {
-		console.log('  %s compiled to empty string, not writing to file', file.input.name );
-	}
-
-	function printWriteInfo(file) {
-		console.log('  compiled %s to %s', file.input.name, file.output.name);
-	}
-
-	function printWatchInfo(filename) {
-		console.log('  watching %s', filename);
-	}
-}
-
-function compileAndWriteFiles(filenames) {
-	emitter.on('skip', printSkipInfo);
-	resolveFiles(filenames).then(compileFiles).done(writeFiles);
-
-	function printSkipInfo(file) {
-		console.log('INFO: %d compiled to empty string, not writing to file', file.input.name);
-	}
-}
-
-function readStdin() {
-	var deferred = P.defer();
 	var stdin = '';
 	process.stdin.resume();
 	process.stdin.setEncoding('utf8');
 	process.stdin.on('data', function(chunk) { stdin += chunk; });
 	process.stdin.on('end', function(){
-		deferred.resolve(stdin);
-	});
-	process.stdin.on('error', function (error) {
-		deferred.reject(error);
-	});
-	return deferred.promise;
-}
-
-function compile(input, opts) {
-	var deferred = P.defer();
-	roole.compile(input, opts || options, function (err, css) {
-		if (err) deferred.reject(err);
-		else deferred.resolve(css);
-	});
-	return deferred.promise;
-}
-
-function resolveFiles(filenames, base, rooOnly) {
-	return checkFiles(filenames, function (filename) {
-		if (!rooOnly || /\.roo$/.test(filename)) {
-			return resolveFile(filename, base);
-		}
-	}, function (dirname) {
-		return resolveDir(dirname, base);
-	}).then(function (files) {
-		files = files.filter(function (filter) {
-			return filter;
+		roole.compile(stdin, program, function (err, css) {
+			if (err) throw err;
+			process.stdout.write(css);
 		});
-		return _.flatten(files);
 	});
+	return;
 }
 
-function checkFiles(filenames, fileAction, dirAction) {
-	return statFiles(filenames).then(function (stats) {
-		var results = filenames.map(function (filename, i) {
-			return action(filename, stats[i]);
-		}).filter(function (result) {
-			return result;
-		});
-		return P.all(results);
-	});
+program.args.forEach(function (arg) {
+	if (!program.stdout && program.watch) console.log('  watching %s', arg);
 
-	function action(filename, stats) {
+	resolve(arg, function (filename) {
+		var opts = Object.create(program);
+		opts.prettyError = true;
+
+		compileFile(filename, opts, function (err, css) {
+			if (err) throw err;
+
+			if (program.stdout) {
+				if (css) process.stdout.write(css);
+				return;
+			}
+
+			if (!css && !program.force && !program.watch) {
+				console.log('INFO: %d compiled to empty string, not writing to file', file.input.name);
+				return;
+			}
+
+			var out;
+			if (program.out) {
+				if (arg === filename) {
+					var base = path.basename(filename);
+					out =  path.resolve(program.out, base);
+				} else {
+					var sub = path.relative(arg, filename);
+					out = path.resolve(program.out, sub);
+				}
+			} else {
+				out = filename;
+			}
+			out = out.replace(/(\.roo)?$/, '.css');
+			fs.createFileSync(out);
+
+			if (css || program.force) fs.writeFileSync(out, css);
+
+			if (program.watch) {
+				var imports = Object.keys(opts.imports);
+
+				watch(filename, imports, out);
+			}
+		});
+	});
+});
+
+function resolve(filename, cb, rooOnly) {
+	fs.stat(filename, function (err, stats) {
+		if (err) throw err;
 		if (stats.isFile()) {
-			return fileAction(filename);
-		} else if (stats.isDirectory()) {
-			return dirAction(filename);
+			if (rooOnly && path.extname(filename) !== '.roo') return;
+			return cb(filename);
 		}
-	}
-}
+		if (!stats.isDirectory()) return;
 
-function statFiles(filenames) {
-	var stats = filenames.map(function (filename) {
-		return statFile(filename);
-	});
-	return P.all(stats);
-}
+		fs.readdir(filename, function (err, bases) {
+			if (err) throw err;
 
-function statFile(filename) {
-	return nfcall(fs.stat, filename);
-}
-
-function nfcall(method) {
-	var deferred = P.defer();
-	var args = slice.call(arguments, 1);
-	args.push(function (err) {
-		if (err) deferred.reject(err);
-		else {
-			var args = slice.call(arguments, 1);
-			if (args.length === 1) args = args[0];
-			deferred.resolve(args);
-		}
-	});
-	method.apply(undefined, args);
-	return deferred.promise;
-}
-
-function resolveFile(filename, base) {
-	var out = filename.replace(/\.roo$|$/, '.css');
-	if (program.out) {
-		out = base ? path.relative(base, out) : path.basename(out);
-		out = path.join(program.out, out);
-	}
-	return readFile(filename).then(function (content) {
-		return {
-			input: {name: filename, content: content},
-			output: {name: out}
-		};
-	});
-}
-
-function readFile(filename) {
-	return nfcall(fs.readFile, filename, 'utf8');
-}
-
-function resolveDir(dirname, base) {
-	return readDir(dirname).then(function (filenames) {
-		return resolveFiles(filenames, base || dirname, true);
-	});
-}
-
-function readDir(dirname) {
-	return nfcall(fs.readdir, dirname).then(function (filenames) {
-		return filenames.map(function (filename) {
-			return path.join(dirname, filename);
+			bases.forEach(function (base) {
+				resolve(path.resolve(filename, base), cb, true);
+			});
 		});
 	});
 }
 
-function compileFiles(files) {
-	files = files.map(compileFile);
-	return P.all(files);
-}
-
-function compileFile(file) {
-	var opts = _.mixin({}, options, {filename: file.input.name});
-	return compile(file.input.content, opts).then(function (output) {
-		file.output.content = output;
-		return file;
-	});
-}
-
-function printFiles(files) {
-	var content = files.filter(function(file) {
-		return file.output.content;
-	}).map(function(file) {
-		return file.output.content;
-	}).join('\n');
-	process.stdout.write(content);
-}
-
-function printError(error) {
-	console.error('%s: %s', error.name, error.message);
-}
-
-function writeFiles(files) {
-	files = files.map(writeFile);
-	return P.all(files);
-}
-
-function writeFile(file) {
-	if (!file.output.content && !program.force) {
-		emitter.emit('skip', file);
-		return file;
+function compileFile(filename, opts, cb) {
+	if (!cb) {
+		cb = opts;
+		opts = { prettyError: true }
 	}
-	var dir = path.dirname(file.output.name);
-	return nfcall(mkdirp, dir).then(function () {
-		return nfcall(fs.writeFile, file.output.name, file.output.content);
-	}).then(function () {
-		emitter.emit('write', file);
-		return file;
+	fs.readFile(filename, 'utf8', function (err, data) {
+		if (err) return cb(err);
+
+		opts.filename = filename;
+		roole.compile(data, opts, cb);
 	});
 }
 
-function watchFiles(files) {
-	program.args.forEach(function (filename) {
-		emitter.emit('watch', filename);
-	});
-	files.forEach(watchFile);
-}
+function watch(filename, imports, out) {
+	imports.push(filename);
 
-function watchFile(file) {
-	fs.watchFile(file.input.name, {interval: 100}, function(curr, prev) {
-		if (curr.mtime <= prev.mtime) {
-			return;
-		}
-		readFile(file.input.name).then(function (content) {
-			file.input.content = content;
-			return file;
-		}).then(compileFile).then(writeFile).then(null, function (error) {
-			printError(error);
+	imports.forEach(function (imp) {
+		var watcher = chokidar.watch(imp, { persistent: true });
+		watcher.on('change', function () {
+			compileFile(filename, function (err, css) {
+				if (err) {
+					console.error('%s: %s', err.name, err.message);
+					return;
+				}
+
+				if (!css) {
+					console.log('  %s compiled to empty string, not writing to file', filename);
+					return;
+				}
+
+				fs.writeFileSync(out, css);
+				console.log('  compiled %s to %s', filename, out);
+			});
 		});
 	});
 }

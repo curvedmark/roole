@@ -1,6 +1,6 @@
 {
   "name": "roole",
-  "version": "0.5.0-dev",
+  "version": "0.5.0-wip",
   "description": "A language that compiles to CSS",
   "keywords": [
     "css",
@@ -19,31 +19,22 @@
     "url": "git://github.com/curvedmark/roole.git"
   },
   "scripts": {
-    "test": "make test-all"
+    "test": "mocha --bail --compilers coffee:coffee-script --ui qunit"
   },
   "dependencies": {
-    "mkdirp": "0.3.x",
-    "commander": "1.x",
-    "p-promise": "0.2.x"
+    "commander": "2.x",
+    "promise-now": "1.x",
+    "roole-parser": "*",
+    "roole-evaluator": "*",
+    "roole-prefixer": "*",
+    "roole-compiler": "*",
+    "pinpoint": "1.x",
+    "fs-extra": "0.6.x",
+    "chokidar": "0.6.x"
   },
   "devDependencies": {
-    "pegjs": "git://github.com/dmajda/pegjs.git#798ed6a8a4fbfc36b312ba09d428a5832808d9d6",
-    "mustache": "0.7.x",
     "mocha": "1.8.x",
-    "mocha-phantomjs": "2.x",
-    "coffee-script": "1.x",
-    "uglify-js": "2.x",
-    "jshint": "1.x",
-    "browserify": "curvedmark/node-browserify#resolve",
-    "coffeeify": "0.4.x",
-    "brpkg": "0.1.x",
-    "mocha-as-promised": "1.x"
-  },
-  "browser": {
-    "child_process": false,
-    "mkdirp": false,
-    "path": false,
-    "fs": false,
-    "./lib/evaluator/loader.js": "./lib/evaluator/xhr-loader.js"
+    "mocha-as-promised": "1.x",
+    "coffee-script": "1.x"
   }
 }
