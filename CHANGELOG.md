@@ -4,6 +4,7 @@
 - `@function` has lexical scope
 - Retain multi-line comments before CSS rules
 - Allow importing libraries.
+- Add builtin variable `$__dirname`
 
 ## 0.4.1 - 2013-03-28
 

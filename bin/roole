@@ -26,6 +26,8 @@ if (!program.args.length) {
 	process.stdin.setEncoding('utf8');
 	process.stdin.on('data', function(chunk) { stdin += chunk; });
 	process.stdin.on('end', function(){
+		if (!program.out) program.out = process.cwd();
+
 		roole.compile(stdin, program, function (err, css) {
 			if (err) throw err;
 			process.stdout.write(css);
@@ -38,8 +40,24 @@ program.args.forEach(function (arg) {
 	if (!program.stdout && program.watch) console.log('  watching %s', arg);
 
 	resolve(arg, function (filename) {
+		var cssname;
+		if (program.out) {
+			if (arg === filename) {
+				var base = path.basename(filename);
+				cssname =  path.resolve(program.out, base);
+			} else {
+				var sub = path.relative(arg, filename);
+				cssname = path.resolve(program.out, sub);
+			}
+		} else {
+			cssname = filename;
+		}
+		cssname = cssname.replace(/(\.roo)?$/, '.css');
+		var out = path.dirname(cssname);
+
 		var opts = Object.create(program);
 		opts.prettyError = true;
+		opts.out = out
 
 		compileFile(filename, opts, function (err, css) {
 			if (err) throw err;
@@ -54,27 +72,14 @@ program.args.forEach(function (arg) {
 				return;
 			}
 
-			var out;
-			if (program.out) {
-				if (arg === filename) {
-					var base = path.basename(filename);
-					out =  path.resolve(program.out, base);
-				} else {
-					var sub = path.relative(arg, filename);
-					out = path.resolve(program.out, sub);
-				}
-			} else {
-				out = filename;
-			}
-			out = out.replace(/(\.roo)?$/, '.css');
-			fs.createFileSync(out);
+			fs.createFileSync(cssname);
 
-			if (css || program.force) fs.writeFileSync(out, css);
+			if (css || program.force) fs.writeFileSync(cssname, css);
 
 			if (program.watch) {
 				var imports = Object.keys(opts.imports);
 
-				watch(filename, imports, out);
+				watch(filename, imports, cssname);
 			}
 		});
 	});
@@ -100,10 +105,6 @@ function resolve(filename, cb, rooOnly) {
 }
 
 function compileFile(filename, opts, cb) {
-	if (!cb) {
-		cb = opts;
-		opts = { prettyError: true }
-	}
 	fs.readFile(filename, 'utf8', function (err, data) {
 		if (err) return cb(err);
 
@@ -112,13 +113,18 @@ function compileFile(filename, opts, cb) {
 	});
 }
 
-function watch(filename, imports, out) {
+function watch(filename, imports, cssname) {
 	imports.push(filename);
 
+	var out = path.dirname(cssname);
 	imports.forEach(function (imp) {
 		var watcher = chokidar.watch(imp, { persistent: true });
 		watcher.on('change', function () {
-			compileFile(filename, function (err, css) {
+			var opts = {
+				prettyError: true,
+				out: out
+			};
+			compileFile(filename, opts, function (err, css) {
 				if (err) {
 					console.error('%s: %s', err.name, err.message);
 					return;
@@ -129,8 +135,8 @@ function watch(filename, imports, out) {
 					return;
 				}
 
-				fs.writeFileSync(out, css);
-				console.log('  compiled %s to %s', filename, out);
+				fs.writeFileSync(cssname, css);
+				console.log('  compiled %s to %s', filename, cssname);
 			});
 		});
 	});
