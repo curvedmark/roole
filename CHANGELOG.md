@@ -6,6 +6,7 @@
 - Allow importing libraries.
 - Add builtin variable `$__dirname`
 - Retain arithmetic expressions in `calc()`
+- Support square bracket list syntax (e.g, `[]`)
 
 ## 0.4.1 - 2013-03-28
 
