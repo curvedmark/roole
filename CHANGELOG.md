@@ -5,6 +5,7 @@
 - Retain multi-line comments before CSS rules
 - Allow importing libraries.
 - Add builtin variable `$__dirname`
+- Retain arithmetic expressions in `calc()`
 
 ## 0.4.1 - 2013-03-28
 
