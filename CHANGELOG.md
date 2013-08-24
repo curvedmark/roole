@@ -1,5 +1,6 @@
 ## WIP
 
+- Allow variables in `@import` paths
 - Add builtin functions `$len()`, `$unit()`, `opp()`
 - `@function` has lexical scope
 - Retain multi-line comments before CSS rules
@@ -7,6 +8,8 @@
 - Add builtin variable `$__dirname`
 - Retain arithmetic expressions in `calc()`
 - Support square bracket list syntax (e.g, `[]`)
+- Empty range (e.g., `1...1`) evaluates to empty list (i.e., `[]`) instead of `null`
+- Support member expression (e.g, `[0 1 2][1]`, `[0 1 2][0..1]`)
 
 ## 0.4.1 - 2013-03-28
 
