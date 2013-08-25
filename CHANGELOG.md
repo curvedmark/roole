@@ -10,6 +10,7 @@
 - Support square bracket list syntax (e.g, `[]`)
 - Empty range (e.g., `1...1`) evaluates to empty list (i.e., `[]`) instead of `null`
 - Support member expression (e.g, `[0 1 2][1]`, `[0 1 2][0..1]`)
+- Expose builtin object with `roole.builtin`
 
 ## 0.4.1 - 2013-03-28
 
