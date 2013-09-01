@@ -125,37 +125,37 @@ test "compile from stdin", ->
 	run 'cat a.roo | roole', (stdout) ->
 		assert.equal stdout, 'body {}\n'
 
-test "compile file containing $__dirname", ->
+test "compile file containing relative url", ->
 	create 'a.roo', '@import "./b";'
-	create 'b/index.roo', 'a { content: "$__dirname/b.png" }'
+	create 'b/index.roo', 'a { content: url(b.png) }'
 
 	run 'roole a.roo', () ->
 		assert.file 'a.css', '''
 			a {
-				content: "b/b.png";
+				content: url(b/b.png);
 			}
 		'''
 
-test "compile file containing $__dirname to stdout", ->
+test "compile file containing relative url to stdout", ->
 	create 'a.roo', '@import "./b";'
-	create 'b/index.roo', 'a { content: "$__dirname/b.png" }'
+	create 'b/index.roo', 'a { content: url(b.png) }'
 
 	run 'roole --stdout a.roo', (stdout) ->
 		assert.equal stdout, '''
 			a {
-				content: "b/b.png";
+				content: url(b/b.png);
 			}
 
 		'''
 
-test "compile stdin containing $__dirname", ->
+test "compile stdin containing relative url", ->
 	create 'a.roo', '@import "./b";'
-	create 'b/index.roo', 'a { content: "$__dirname/b.png" }'
+	create 'b/index.roo', 'a { content: url(b.png) }'
 
 	run 'cat a.roo | roole', (stdout) ->
 		assert.equal stdout, '''
 			a {
-				content: "b/b.png";
+				content: url(b/b.png);
 			}
 
 		'''

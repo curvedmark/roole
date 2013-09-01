@@ -12,7 +12,6 @@
 - `@function` has lexical scope
 - Retain multi-line comments before CSS rules
 - Allow importing libraries.
-- Add builtin variable `$__dirname`
 - Retain arithmetic expressions in `calc()`
 - Support square bracket list syntax (e.g, `[]`)
 - Empty range (e.g., `1...1`) evaluates to empty list (i.e., `[]`) instead of `null`
