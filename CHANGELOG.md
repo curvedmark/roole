@@ -11,13 +11,14 @@
 	- `$unshift()`
 - `@function` has lexical scope
 - Retain multi-line comments before CSS rules
-- Allow importing libraries.
+- Allow importing libraries (`@import 'tabs';` imports `node_modules/tabs`).
 - Retain arithmetic expressions in `calc()`
 - Support square bracket list syntax (e.g, `[]`)
-- Empty range (e.g., `1...1`) evaluates to empty list (i.e., `[]`) instead of `null`
+- Empty ranges (e.g., `1...1`) evaluate to empty list (i.e., `[]`) instead of `null`
 - Support member expression (e.g, `[0 1 2][1]`, `[0 1 2][0..1]`)
 - Expose builtin object with `roole.builtin`
 - Prefix property `text-overflow` [Mikhail Troshev]
+- Relative urls are relative to the current file
 
 ## 0.4.1 - 2013-03-28
 
