@@ -20,16 +20,19 @@ program
 	.option('    --skip-prefixed', 'Not generate prefixed rule that already exists')
 	.parse(process.argv);
 
+program.errorContextIndent = '    ';
+
 if (!program.args.length) {
 	var stdin = '';
 	process.stdin.resume();
 	process.stdin.setEncoding('utf8');
 	process.stdin.on('data', function(chunk) { stdin += chunk; });
 	process.stdin.on('end', function(){
+		program.filename = process.cwd() + '/';
 		if (!program.out) program.out = process.cwd();
 
 		roole.compile(stdin, program, function (err, css) {
-			if (err) throw err;
+			if (err) exitWithError(err);
 			process.stdout.write(css);
 		});
 	});
@@ -56,11 +59,10 @@ program.args.forEach(function (arg) {
 		var out = path.dirname(cssname);
 
 		var opts = Object.create(program);
-		opts.prettyError = true;
 		opts.out = out
 
 		compileFile(filename, opts, function (err, css) {
-			if (err) throw err;
+			if (err) exitWithError(err);
 
 			if (program.stdout) {
 				if (css) process.stdout.write(css);
@@ -126,7 +128,7 @@ function watch(filename, imports, cssname) {
 			};
 			compileFile(filename, opts, function (err, css) {
 				if (err) {
-					console.error('%s: %s', err.name, err.message);
+					displayError(err);
 					return;
 				}
 
@@ -140,4 +142,22 @@ function watch(filename, imports, cssname) {
 			});
 		});
 	});
+}
+
+function exitWithError(err) {
+	if (!err.loc) throw err;
+
+	displayError(err);
+	process.exit(1);
+}
+
+function displayError(err) {
+	if (!err.loc) {
+		console.err(err.toString());
+		return;
+	}
+
+	console.error(err.loc.filename + ':' + err.loc.line + ':' + err.loc.column + '\n');
+	console.error(err.toString() + '\n');
+	console.error(err.context);
 }
