@@ -1,4 +1,4 @@
-## WIP
+## 0.5.0 - 2013-09-03
 
 - Allow variables in `@import` paths
 - Add builtin functions:
@@ -9,6 +9,7 @@
 	- `$push()`
 	- `$shift()`
 	- `$unshift()`
+	- `$img-size()`
 - `@function` has lexical scope
 - Retain multi-line comments before CSS rules
 - Allow importing libraries (`@import 'tabs';` imports `node_modules/tabs`).
