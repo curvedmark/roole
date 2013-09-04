@@ -132,6 +132,8 @@ function watch(filename, imports, cssname) {
 					return;
 				}
 
+				watcher.add(Object.keys(opts.imports));
+
 				if (!css) {
 					console.log('  %s compiled to empty string, not writing to file', filename);
 					return;
