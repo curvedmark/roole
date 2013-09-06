@@ -125,6 +125,17 @@ test "compile from stdin", ->
 	run 'cat a.roo | roole', (stdout) ->
 		assert.equal stdout, 'body {}\n'
 
+
+test "compile file importing other files", ->
+	create 'foo/a.roo', '@import "./b";'
+	create 'foo/b.roo', 'a {}'
+
+	run 'roole foo/a.roo', () ->
+		assert.file 'foo/a.css', '''
+			a {}
+		'''
+		assert.fileNotExists 'foo/b.css'
+
 test "compile file containing relative url", ->
 	create 'a.roo', '@import "./b";'
 	create 'b/index.roo', 'a { content: url(b.png) }'

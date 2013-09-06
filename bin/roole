@@ -6,6 +6,8 @@ var program = require('commander');
 var chokidar = require('chokidar');
 var roole = require('..');
 var ver = require('../package.json').version;
+var cwd = process.cwd();
+var watcher;
 
 program
 	.version(ver, '-v, --version')
@@ -21,17 +23,14 @@ program
 	.parse(process.argv);
 
 program.errorContextIndent = '    ';
+if (program.out) program.out = path.resolve(program.out);
 
 if (!program.args.length) {
-	var stdin = '';
-	process.stdin.resume();
-	process.stdin.setEncoding('utf8');
-	process.stdin.on('data', function(chunk) { stdin += chunk; });
-	process.stdin.on('end', function(){
+	getStdin(function (data) {
 		program.filename = process.cwd() + '/';
-		if (!program.out) program.out = process.cwd();
+		if (!program.out) program.out = cwd;
 
-		roole.compile(stdin, program, function (err, css) {
+		roole.compile(data, program, function (err, css) {
 			if (err) exitWithError(err);
 			process.stdout.write(css);
 		});
@@ -40,117 +39,125 @@ if (!program.args.length) {
 }
 
 program.args.forEach(function (arg) {
-	if (!program.stdout && program.watch) console.log('  watching %s', arg);
+	compile(path.resolve(arg));
+});
 
-	resolve(arg, function (filename) {
-		var cssname;
-		if (program.out) {
-			if (arg === filename) {
-				var base = path.basename(filename);
-				cssname =  path.resolve(program.out, base);
-			} else {
-				var sub = path.relative(arg, filename);
-				cssname = path.resolve(program.out, sub);
-			}
-		} else {
-			cssname = filename;
+function getStdin(cb) {
+	var data = '';
+	process.stdin.resume();
+	process.stdin.setEncoding('utf8');
+	process.stdin.on('data', function(chunk) { data += chunk; });
+	process.stdin.on('end', function(){
+		cb(data);
+	});
+}
+
+function compile(filename, root) {
+	fs.stat(filename, function (err, stats) {
+		if (err) throw err;
+
+		if (stats.isFile(filename)) {
+			// skip files not ending in .roo when compiling a dir
+			if (root && path.extname(filename) !== '.roo') return;
+			return compileFile(filename, root);
 		}
-		cssname = cssname.replace(/(\.roo)?$/, '.css');
-		var out = path.dirname(cssname);
+		if (!stats.isDirectory()) return;
+
+		var dirname = filename;
+		fs.readdir(dirname, function (err, filenames) {
+			if (err) throw err;
+
+			filenames.forEach(function (filename) {
+				filename = path.resolve(dirname, filename);
+				compile(filename, root || dirname);
+			});
+		});
+	});
+}
+
+function compileFile(filename, root) {
+	var outname;
+	if (program.out) {
+		if (root) {
+			var relative = path.relative(root, filename);
+			outname = path.resolve(program.out, relative);
+		} else {
+			var basename = path.basename(filename);
+			outname =  path.resolve(program.out, basename);
+		}
+	} else {
+		outname = filename;
+	}
+
+	if (path.extname(outname) !== '.roo') outname += '.css';
+	else outname = outname.replace(/\.roo$/, '.css');
+
+	compileFileTo(filename, outname, program.watch);
+}
+
+function compileFileTo(filename, outname) {
+	fs.readFile(filename, 'utf8', function (err, data) {
+		if (err) throw err;
 
 		var opts = Object.create(program);
-		opts.out = out
+		opts.filename = filename;
+		opts.out = path.dirname(outname);
 
-		compileFile(filename, opts, function (err, css) {
-			if (err) exitWithError(err);
+		roole.compile(data, opts, function (err, css) {
+			if (err) {
+				if (program.watch) {
+					displayError(err);
+					return;
+				}
+				throw err;
+			}
 
 			if (program.stdout) {
 				if (css) process.stdout.write(css);
 				return;
 			}
 
-			if (!css && !program.force && !program.watch) {
-				console.log('INFO: %d compiled to empty string, not writing to file', filename);
+			if (!css && !program.force) {
+				filename = path.relative(cwd, filename);
+				var msg = program.watch
+					? '  %s compiled to empty string, not writing to file'
+					: 'INFO: %s compiled to empty string, not writing to file';
+
+				console.log(msg, filename);
 				return;
 			}
 
-			fs.createFileSync(cssname);
+			fs.outputFile(outname, css, function (err) {
+				if (err) throw err;
 
-			if (css || program.force) fs.writeFileSync(cssname, css);
+				if (!program.watch) return;
 
-			if (program.watch) {
 				var imports = Object.keys(opts.imports);
-
-				watch(filename, imports, cssname);
-			}
-		});
-	});
-});
-
-function resolve(filename, cb, rooOnly) {
-	fs.stat(filename, function (err, stats) {
-		if (err) throw err;
-		if (stats.isFile()) {
-			if (rooOnly && path.extname(filename) !== '.roo') return;
-			return cb(filename);
-		}
-		if (!stats.isDirectory()) return;
-
-		fs.readdir(filename, function (err, bases) {
-			if (err) throw err;
-
-			bases.forEach(function (base) {
-				resolve(path.resolve(filename, base), cb, true);
+				watchFile(filename, imports, outname);
 			});
 		});
 	});
 }
 
-function compileFile(filename, opts, cb) {
-	fs.readFile(filename, 'utf8', function (err, data) {
-		if (err) return cb(err);
+function watchFile(filename, imports, outname) {
+	if (watcher) {
+		var msg = '  compiled %s to %s';
+		filename = path.relative(cwd, filename);
+		outname = path.relative(cwd, outname);
+		console.log('  compiled %s to %s', filename, outname);
 
-		opts.filename = filename;
-		roole.compile(data, opts, cb);
+		watcher.add(imports);
+		return;
+	}
+
+	var filenames = imports.concat(filename);
+	watcher = chokidar.watch(filenames, { persistent: true });
+	watcher.on('change', function () {
+		compileFileTo(filename, outname);
 	});
-}
 
-function watch(filename, imports, cssname) {
-	imports.push(filename);
-
-	var out = path.dirname(cssname);
-	imports.forEach(function (imp) {
-		var watcher = chokidar.watch(imp, { persistent: true });
-		watcher.on('change', function () {
-			var opts = {
-				prettyError: true,
-				out: out
-			};
-			compileFile(filename, opts, function (err, css) {
-				if (err) {
-					displayError(err);
-					return;
-				}
-
-				watcher.add(Object.keys(opts.imports));
-
-				if (!css) {
-					console.log('  %s compiled to empty string, not writing to file', filename);
-					return;
-				}
-
-				fs.writeFileSync(cssname, css);
-				console.log('  compiled %s to %s', filename, cssname);
-			});
-		});
-	});
-}
-
-function exitWithError(err) {
-	if (!err.loc) throw err;
-
-	displayError(err);
-	process.exit(1);
+	filename = path.relative(cwd, filename);
+	console.log('  watching %s', filename);
 }
 
 function displayError(err) {
