@@ -1,3 +1,10 @@
+## WIP
+
+- Support unit syntax (e.g., `()%` and `()em`)
+- Change default value of precision option to 5
+- Support mixin rulesets (experimental)
+- If a string is passed to `$len()`, it returns the length of it
+
 ## 0.5.1 - 2013-09-11
 
 - Fix `$push()` and `$unshift()` to empty list
