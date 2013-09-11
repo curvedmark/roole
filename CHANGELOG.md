@@ -1,3 +1,8 @@
+## 0.5.1 - 2013-09-11
+
+- Fix `$push()` and `$unshift()` to empty list
+- Support assigning using member expression with empty list to remove items
+
 ## 0.5.0 - 2013-09-03
 
 - Allow variables in `@import` paths
@@ -12,7 +17,7 @@
 	- `$img-size()`
 - `@function` has lexical scope
 - Retain multi-line comments before CSS rules
-- Allow importing libraries (`@import 'tabs';` imports `node_modules/tabs`).
+- Allow importing libraries (e.g, `@import 'tabs';` imports `node_modules/tabs`).
 - Retain arithmetic expressions in `calc()`
 - Support square bracket list syntax (e.g, `[]`)
 - Empty ranges (e.g., `1...1`) evaluate to empty list (i.e., `[]`) instead of `null`
