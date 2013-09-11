@@ -32,7 +32,7 @@ if (!program.args.length) {
 
 		roole.compile(data, program, function (err, css) {
 			if (err) exitWithError(err);
-			process.stdout.write(css);
+			console.log(css);
 		});
 	});
 	return;
@@ -105,15 +105,13 @@ function compileFileTo(filename, outname) {
 
 		roole.compile(data, opts, function (err, css) {
 			if (err) {
-				if (program.watch) {
-					displayError(err);
-					return;
-				}
-				throw err;
+				displayError(err);
+				if (program.watch) return;
+				process.exit(1);
 			}
 
 			if (program.stdout) {
-				if (css) process.stdout.write(css);
+				if (css) console.log(css);
 				return;
 			}
 
@@ -127,6 +125,7 @@ function compileFileTo(filename, outname) {
 				return;
 			}
 
+			if (css) css += '\n';
 			fs.outputFile(outname, css, function (err) {
 				if (err) throw err;
 

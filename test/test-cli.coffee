@@ -17,8 +17,6 @@ assert.file = (filename, content) ->
 		throw new Error "no such file '" + filename + "'" if err.errno is 34
 		throw err
 
-	content += '\n' if content
-
 	assert.strictEqual data, content
 
 assert.fileNotExists = (filename) ->
@@ -67,8 +65,8 @@ test "compile file", ->
 	create 'c.roo', '// comment'
 
 	run 'roole a.roo b c.roo', ->
-		assert.file 'a.css', 'body {}'
-		assert.file 'b.css', 'div {}'
+		assert.file 'a.css', 'body {}\n'
+		assert.file 'b.css', 'div {}\n'
 		assert.fileNotExists 'c.css'
 
 test "compile dir", ->
@@ -77,7 +75,7 @@ test "compile dir", ->
 	create 'foo/c.roo', ''
 
 	run 'roole foo', ->
-		assert.file 'foo/a/a.css', 'body {}'
+		assert.file 'foo/a/a.css', 'body {}\n'
 		assert.fileNotExists 'foo/b.css'
 		assert.fileNotExists 'foo/c.css'
 
@@ -86,16 +84,16 @@ test "compile file with --out", ->
 	create 'foo/b/b.roo', 'div {}'
 
 	run 'roole --out bar foo/a.roo foo/b/b.roo', ->
-		assert.file 'bar/a.css', 'body {}'
-		assert.file 'bar/b.css', 'div {}'
+		assert.file 'bar/a.css', 'body {}\n'
+		assert.file 'bar/b.css', 'div {}\n'
 
 test "compile dir with --out", ->
 	create 'foo/a.roo', 'body {}'
 	create 'foo/b/b.roo', 'div {}'
 
 	run 'roole --out bar foo', ->
-		assert.file 'bar/a.css', 'body {}'
-		assert.file 'bar/b/b.css', 'div {}'
+		assert.file 'bar/a.css', 'body {}\n'
+		assert.file 'bar/b/b.css', 'div {}\n'
 
 test "compile file with --force", ->
 	create 'a.roo', ''
@@ -133,6 +131,7 @@ test "compile file importing other files", ->
 	run 'roole foo/a.roo', () ->
 		assert.file 'foo/a.css', '''
 			a {}
+
 		'''
 		assert.fileNotExists 'foo/b.css'
 
@@ -145,6 +144,7 @@ test "compile file containing relative url", ->
 			a {
 				content: url(b/b.png);
 			}
+
 		'''
 
 test "compile file containing relative url to stdout", ->
