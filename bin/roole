@@ -23,12 +23,10 @@ program
 	.parse(process.argv);
 
 if (program.out) program.out = path.resolve(program.out);
+program.base = process.cwd();
 
 if (!program.args.length) {
 	readStdin(function (data) {
-		program.filename = process.cwd() + '/';
-		if (!program.out) program.out = cwd;
-
 		roole.compile(data, program, function (err, css) {
 			if (err) {
 				displayError(err);
@@ -94,7 +92,7 @@ function compileFile(filename, root) {
 	if (path.extname(outname) !== '.roo') outname += '.css';
 	else outname = outname.replace(/\.roo$/, '.css');
 
-	compileFileTo(filename, outname, program.watch);
+	compileFileTo(filename, outname);
 }
 
 function compileFileTo(filename, outname) {

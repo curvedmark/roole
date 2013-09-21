@@ -125,7 +125,7 @@ test "compile from stdin", ->
 
 
 test "compile file importing other files", ->
-	create 'foo/a.roo', '@import "./b";'
+	create 'foo/a.roo', '@import "./b.roo";'
 	create 'foo/b.roo', 'a {}'
 
 	run 'roole foo/a.roo', () ->
@@ -142,6 +142,18 @@ test "compile file containing relative url", ->
 	run 'roole a.roo', () ->
 		assert.file 'a.css', '''
 			a {
+				content: url(b.png);
+			}
+
+		'''
+
+test "compile file containing prefixed relative url", ->
+	create 'a.roo', '@import "./b";'
+	create 'b/index.roo', 'a { content: url(./b.png) }'
+
+	run 'roole a.roo', () ->
+		assert.file 'a.css', '''
+			a {
 				content: url(b/b.png);
 			}
 
@@ -154,6 +166,18 @@ test "compile file containing relative url to stdout", ->
 	run 'roole --stdout a.roo', (stdout) ->
 		assert.equal stdout, '''
 			a {
+				content: url(b.png);
+			}
+
+		'''
+
+test "compile file containing prefixed relative url to stdout", ->
+	create 'a.roo', '@import "./b";'
+	create 'b/index.roo', 'a { content: url(./b.png) }'
+
+	run 'roole --stdout a.roo', (stdout) ->
+		assert.equal stdout, '''
+			a {
 				content: url(b/b.png);
 			}
 
@@ -162,6 +186,18 @@ test "compile file containing relative url to stdout", ->
 test "compile stdin containing relative url", ->
 	create 'a.roo', '@import "./b";'
 	create 'b/index.roo', 'a { content: url(b.png) }'
+
+	run 'cat a.roo | roole', (stdout) ->
+		assert.equal stdout, '''
+			a {
+				content: url(b.png);
+			}
+
+		'''
+
+test "compile stdin containing prefixed relative url", ->
+	create 'a.roo', '@import "./b";'
+	create 'b/index.roo', 'a { content: url(./b.png) }'
 
 	run 'cat a.roo | roole', (stdout) ->
 		assert.equal stdout, '''
