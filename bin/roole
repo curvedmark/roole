@@ -26,12 +26,15 @@ program.errorContextIndent = '    ';
 if (program.out) program.out = path.resolve(program.out);
 
 if (!program.args.length) {
-	getStdin(function (data) {
+	readStdin(function (data) {
 		program.filename = process.cwd() + '/';
 		if (!program.out) program.out = cwd;
 
 		roole.compile(data, program, function (err, css) {
-			if (err) exitWithError(err);
+			if (err) {
+				displayError(err);
+				process.exit(1);
+			}
 			console.log(css);
 		});
 	});
@@ -42,7 +45,7 @@ program.args.forEach(function (arg) {
 	compile(path.resolve(arg));
 });
 
-function getStdin(cb) {
+function readStdin(cb) {
 	var data = '';
 	process.stdin.resume();
 	process.stdin.setEncoding('utf8');
