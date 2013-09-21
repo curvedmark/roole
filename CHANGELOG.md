@@ -1,9 +1,11 @@
-## WIP
+## 0.6.0 - 2013-09-21
 
 - Support unit syntax (e.g., `()%` and `()em`)
 - Change default value of precision option to 5
-- Support mixin rulesets (experimental)
+- Support mixin rulesets
 - If a string is passed to `$len()`, it returns the length of it
+- Relative urls starting with `./` and `../` are relative to the directory of the current file. Others are relative to cwd
+- Support importing JavaScript files
 
 ## 0.5.1 - 2013-09-11
 
@@ -31,7 +33,7 @@
 - Support member expression (e.g, `[0 1 2][1]`, `[0 1 2][0..1]`)
 - Expose builtin object with `roole.builtin`
 - Prefix property `text-overflow` [Mikhail Troshev]
-- Relative urls are relative to the current file
+- Relative urls are relative to the directory of the current file
 
 ## 0.4.1 - 2013-03-28
 
