@@ -22,7 +22,6 @@ program
 	.option('    --skip-prefixed', 'Not generate prefixed rule that already exists')
 	.parse(process.argv);
 
-program.errorContextIndent = '    ';
 if (program.out) program.out = path.resolve(program.out);
 
 if (!program.args.length) {
@@ -170,5 +169,5 @@ function displayError(err) {
 
 	console.error(err.loc.filename + ':' + err.loc.line + ':' + err.loc.column + '\n');
 	console.error(err.toString() + '\n');
-	console.error(err.context);
+	console.error(err.context('    '));
 }
