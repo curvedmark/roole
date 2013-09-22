@@ -1,3 +1,8 @@
+## 0.6.1 - 2013-09-21
+
+- Remove `roole.builtin`
+- `$img-size()` handles relative urls the same way as core does
+
 ## 0.6.0 - 2013-09-21
 
 - Support unit syntax (e.g., `()%` and `()em`)
