@@ -2,6 +2,7 @@
 
 - Remove `roole.builtin`
 - `$img-size()` handles relative urls the same way as core does
+- Not adding extension names when importing files
 
 ## 0.6.0 - 2013-09-21
 
