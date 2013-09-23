@@ -1,3 +1,8 @@
+## WIP
+
+- Support `:=` assignments
+- Make `=` assignments overwrite variables in outer scopes
+
 ## 0.6.1 - 2013-09-21
 
 - Remove `roole.builtin`
