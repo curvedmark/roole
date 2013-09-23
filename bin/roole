@@ -161,7 +161,7 @@ function watchFile(filename, imports, outname) {
 
 function displayError(err) {
 	if (!err.loc) {
-		console.err(err.toString());
+		console.error(err.toString() + err.stack);
 		return;
 	}
 
