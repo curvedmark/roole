@@ -4,6 +4,7 @@
 - Make `=` assignments overwrite variables in outer scopes
 - Support expression in interpolations (e.g., `"1 + 1 is { 1 + 1 }"`)
 - Change module name to class selector (e.g., `@module .icon {}`)
+- Add `roole.use()` for extending Roole
 
 ## 0.6.1 - 2013-09-21
 
