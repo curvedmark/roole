@@ -22,7 +22,7 @@
     "test": "mocha --bail --compilers coffee:coffee-script --ui qunit"
   },
   "dependencies": {
-    "roole-parser": "0.11.x",
+    "roole-parser": "0.12.x",
     "roole-evaluator": "0.20.x",
     "roole-prefixer": "0.3.x",
     "roole-compiler": "0.5.x",
