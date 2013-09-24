@@ -1,4 +1,4 @@
-## WIP
+## 0.6.2 - 2013-09-24
 
 - Support `:=` assignments, which force creating a local variable
 - Make `=` assignments overwrite variables in outer scopes
