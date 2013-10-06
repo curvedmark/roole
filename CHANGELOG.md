@@ -1,3 +1,9 @@
+## WIP
+
+- Remove `roole.builtin`
+- Add `global` option for importing variables from JavaScript
+- Functions added with `roole.use()` are called before prefixing
+
 ## 0.6.2 - 2013-09-24
 
 - Support `:=` assignments, which force creating a local variable
