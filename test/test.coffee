@@ -14,7 +14,7 @@ test "compile", ->
 	'''
 
 test "use", ->
-	roole.use (node, options)-> { type: null }
+	roole.use (node, options)-> { type: 'null' }
 	assert.compileTo '''
 		body { margin: 0 }
 	''', '''
