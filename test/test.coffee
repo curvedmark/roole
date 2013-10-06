@@ -1,4 +1,5 @@
 assert = require './assert';
+roole = require '..';
 
 test "compile", ->
 	assert.compileTo '''
@@ -10,4 +11,12 @@ test "compile", ->
 			-moz-box-sizing: border-box;
 			box-sizing: border-box;
 		}
+	'''
+
+test "use", ->
+	roole.use (node, options)-> { type: null }
+	assert.compileTo '''
+		body { margin: 0 }
+	''', '''
+		null
 	'''
