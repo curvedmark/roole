@@ -106,7 +106,11 @@ function compileFileTo(filename, outname) {
 		roole.compile(data, opts, function (err, css) {
 			if (err) {
 				displayError(err);
-				if (program.watch) return;
+				if (program.watch) {
+					var imports = Object.keys(opts.imports);
+					watchFile(filename, imports, outname);
+					return;
+				}
 				process.exit(1);
 			}
 
@@ -117,11 +121,14 @@ function compileFileTo(filename, outname) {
 
 			if (!css && !program.force) {
 				filename = path.relative(cwd, filename);
-				var msg = program.watch
-					? '  %s compiled to empty string, not writing to file'
-					: 'INFO: %s compiled to empty string, not writing to file';
+				if (program.watch) {
+					console.log('  %s compiled to empty string, not writing to file', filename);
+					var imports = Object.keys(opts.imports);
+					watchFile(filename, imports, outname);
+					return;
+				}
 
-				console.log(msg, filename);
+				console.log('INFO: %s compiled to empty string, not writing to file', filename);
 				return;
 			}
 
