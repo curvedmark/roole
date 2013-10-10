@@ -172,7 +172,9 @@ function displayError(err) {
 		return;
 	}
 
-	console.error(err.loc.filename + ':' + err.loc.line + ':' + err.loc.column + '\n');
 	console.error(err.toString() + '\n');
-	console.error(err.context('    '));
+	console.error(err.context('  '));
+	if (err.loc.filename) {
+		console.error('\n' + err.loc.filename + ':' + err.loc.line + ':' + err.loc.column);
+	}
 }
