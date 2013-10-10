@@ -1,8 +1,12 @@
-## WIP
+## 0.7.0 - 2013-10-10
 
 - Remove `roole.builtin`
 - Add `global` option for importing variables from JavaScript
 - Functions added with `roole.use()` are called before prefixing
+- Remove `@extend` and `@module`
+- Remove media query support after selectors in `@mixin`
+- Compile selector lists and media query lists to single lines
+- Allow interpolating selector list/media query lists when the variable is the only item in the selector/media query
 
 ## 0.6.2 - 2013-09-24
 
