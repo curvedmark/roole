@@ -7,6 +7,7 @@
 - Remove media query support after selectors in `@mixin`
 - Compile selector lists and media query lists to single lines
 - Allow interpolating selector list/media query lists when the variable is the only item in the selector/media query
+- Swap `:=` assignments (which now overwrite variables in outer scopes) and `=` assignments (which now force creating a local variable)
 
 ## 0.6.2 - 2013-09-24
 
