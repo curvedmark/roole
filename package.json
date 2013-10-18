@@ -23,13 +23,13 @@
   },
   "dependencies": {
     "roole-parser": "0.13.x",
-    "roole-evaluator": "0.23.x",
+    "roole-evaluator": "0.24.x",
     "roole-prefixer": "0.3.x",
     "roole-compiler": "0.5.x",
     "commander": "2.x",
     "promise-now": "1.x",
     "pinpoint": "1.x",
-    "fs-extra": "0.7.x",
+    "fs-extra": "0.8.x",
     "chokidar": "0.6.x"
   },
   "devDependencies": {
