@@ -1,3 +1,8 @@
+## 0.8.0 - 2013-10-18
+
+- `@import`s containing media queryies are converted to `@media`s, if the url is a string.
+- If `base` option is not specified, relative URL translations are disabled.
+
 ## 0.7.0 - 2013-10-10
 
 - Remove `roole.builtin`
