@@ -1,3 +1,10 @@
+## 0.9.0 - 2013-10-20
+
+- Expose `roole.use(fn)` to allow defining plugins.
+- Expose `roole.on('evaluate', fn)` to allow tapping into the evaluated abstract syntax tree.
+- Expose `roole.builtin` to allow adding builtin functions
+- Selector lists and selector lists in keyframes are compiled to multiple lines.
+
 ## 0.8.0 - 2013-10-18
 
 - `@import`s containing media queryies are converted to `@media`s, if the url is a string.

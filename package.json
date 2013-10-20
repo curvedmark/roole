@@ -23,9 +23,9 @@
   },
   "dependencies": {
     "roole-parser": "0.13.x",
-    "roole-evaluator": "0.24.x",
+    "roole-evaluator": "0.25.x",
     "roole-prefixer": "0.3.x",
-    "roole-compiler": "0.5.x",
+    "roole-compiler": "0.6.x",
     "commander": "2.x",
     "promise-now": "1.x",
     "pinpoint": "1.x",

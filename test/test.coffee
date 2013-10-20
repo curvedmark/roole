@@ -13,10 +13,20 @@ test "compile", ->
 		}
 	'''
 
-test "use", ->
-	roole.use (node, options)-> { type: 'null' }
+test "on", ->
+	roole.on 'evaluate', (node, options)-> { type: 'null' }
 	assert.compileTo '''
 		body { margin: 0 }
 	''', '''
 		null
+	'''
+
+test "use", ->
+	roole.use (roole)->
+		roole.on 'evaluate', (node, options)-> { type: 'number', children: [1] }
+
+	assert.compileTo '''
+		body { margin: 0 }
+	''', '''
+		1
 	'''
