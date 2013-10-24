@@ -30,7 +30,7 @@
     "promise-now": "1.x",
     "pinpoint": "1.x",
     "fs-extra": "0.8.x",
-    "chokidar": "0.6.x"
+    "chokidar": "0.7.x"
   },
   "devDependencies": {
     "mocha": "1.8.x",
