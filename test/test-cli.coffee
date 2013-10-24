@@ -206,3 +206,15 @@ test "compile stdin containing prefixed relative url", ->
 			}
 
 		'''
+
+test "compile stdin containing relative url to different dir", ->
+	create 'a.roo', '@import "./b";'
+	create 'b/index.roo', 'a { content: url(b.png) }'
+
+	run 'cat a.roo | roole -o foo', (stdout) ->
+		assert.equal stdout, '''
+			a {
+				content: url(../b.png);
+			}
+
+		'''
